@@ -1,1 +1,1 @@
-from . import wizard
+# stub para Odoo 18
