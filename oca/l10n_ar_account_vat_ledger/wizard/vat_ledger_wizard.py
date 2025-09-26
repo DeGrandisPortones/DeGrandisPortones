@@ -14,8 +14,7 @@ class VatLedgerWizard(models.TransientModel):
     date_to   = fields.Date(required=True, default=lambda s: date.today())
     company_id = fields.Many2one("res.company", required=True, default=lambda s: s.env.company)
 
-    # --- helpers ---
-    def _fmt(self, n):  # 2 decimales, punto decimal
+    def _fmt(self, n):
         return ("%.2f" % (n or 0.0)).replace(",", ".")
 
     def _domain(self):
@@ -37,12 +36,10 @@ class VatLedgerWizard(models.TransientModel):
             dt = getattr(mv, "l10n_ar_afip_document_type", False)
             tipo = getattr(dt, "code", "") or ""
             nro = getattr(mv, "l10n_ar_afip_document_number", "") or (mv.name or "")
-            # partner doc
             partner = mv.partner_id
             doc_code = getattr(getattr(partner, "l10n_ar_afip_responsibility_type_id", False), "code", "") or ""
             doc_nro = (partner.vat or "").replace("-", "").replace(" ", "")
 
-            # agrupar por tasa
             by_rate = {}
             for line in mv.invoice_line_ids:
                 taxes_res = line.tax_ids.compute_all(
@@ -50,9 +47,9 @@ class VatLedgerWizard(models.TransientModel):
                     currency=mv.currency_id, product=line.product_id, partner=mv.partner_id
                 )
                 base = line.price_subtotal
-                tax_cnt = len(taxes_res.get("taxes", [])) or 1
-                share = base / tax_cnt
-                for t in taxes_res.get("taxes", []):
+                tax_lines = taxes_res.get("taxes", [])
+                share = base / (len(tax_lines) or 1)
+                for t in tax_lines:
                     rate = round(t.get("rate", 0.0) or 0.0, 2)
                     by_rate.setdefault(rate, {"neto": 0.0, "iva": 0.0})
                     by_rate[rate]["iva"] += t.get("amount", 0.0)
@@ -62,14 +59,12 @@ class VatLedgerWizard(models.TransientModel):
             iva_total  = sum(v["iva"]  for v in by_rate.values())
             total      = mv.amount_total
 
-            # CBTE
             cbte_lines.append(";".join([
                 str(fecha), str(tipo), str(pv), str(nro),
                 str(doc_code), str(doc_nro),
                 self._fmt(total), self._fmt(neto_total), self._fmt(iva_total)
             ]))
 
-            # ALICUOTAS
             for rate, vals in by_rate.items():
                 ali_lines.append(";".join([
                     str(tipo), str(pv), str(nro),
@@ -101,5 +96,4 @@ class VatLedgerWizard(models.TransientModel):
             "datas": base64.b64encode(txt_ali.encode("latin1","ignore")).decode(),
             "mimetype": "text/plain",
         })
-        # descarga el primero; el segundo queda en Adjuntos
         return {"type":"ir.actions.act_url","url":f"/web/content/{a1.id}?download=1","target":"self"}
