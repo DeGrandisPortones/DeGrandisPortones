@@ -1,0 +1,4 @@
+[submodule "oca/l10n-argentina"]
+	path = oca/l10n-argentina
+	url = https://github.com/OCA/l10n-argentina
+	branch = 18.0
