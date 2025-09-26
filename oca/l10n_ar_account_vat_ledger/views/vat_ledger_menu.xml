@@ -1,0 +1,7 @@
+<odoo>
+  <menuitem id="menu_vat_ledger_export"
+            name="Exportar Libro IVA Digital"
+            parent="l10n_ar_reports.menu_l10n_ar_reports_root"
+            action="action_vat_ledger_wizard"
+            groups="account.group_account_manager"/>
+</odoo>
