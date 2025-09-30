@@ -1,0 +1,8 @@
+
+<odoo>
+  <menuitem id="menu_ar_libro_iva_export"
+            name="Exportar Libro IVA Digital"
+            parent="account.menu_finance_reports"
+            action="action_ar_libro_iva_wizard"
+            groups="account.group_account_manager"/>
+</odoo>
