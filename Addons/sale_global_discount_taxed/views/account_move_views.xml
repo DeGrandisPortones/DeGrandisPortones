@@ -6,32 +6,25 @@
     <field name="inherit_id" ref="account.view_move_form"/>
     <field name="arch" type="xml">
 
-      <!-- Mostrar % en totales de la factura (editable por si se ajusta) -->
-      <xpath expr="//field[@name='amount_tax']" position="before">
-        <label for="global_discount_rate" class="o_td_label"/>
-        <div class="o_td_field">
-          <field name="global_discount_rate" widget="percentage"/>
-        </div>
-      </xpath>
+      <!-- Igual estrategia: footer propio al final del sheet -->
+      <xpath expr="//sheet" position="inside">
+        <group name="global_discount_footer_move" class="oe_subtotal_footer">
+          <!-- Subtotal (antes de descuento) -->
+          <label for="amount_untaxed_before_global" class="o_td_label"/>
+          <div class="o_td_field">
+            <field name="amount_untaxed_before_global" readonly="1"
+                   options="{'currency_field': 'currency_id'}"/>
+          </div>
 
-      <!-- Mostrar referencia "antes de global" e importe de descuento -->
-      <xpath expr="//field[@name='amount_untaxed']" position="before">
-        <label for="amount_untaxed_before_global" class="o_td_label"/>
-        <div class="o_td_field">
-          <field name="amount_untaxed_before_global" readonly="1"
-                 options="{'currency_field': 'currency_id'}"/>
-        </div>
+          <!-- Descuento global (importe) -->
+          <label for="global_discount_amount" class="o_td_label"/>
+          <div class="o_td_field">
+            <field name="global_discount_amount" readonly="1"
+                   options="{'currency_field': 'currency_id'}"/>
+          </div>
 
-        <label for="global_discount_amount" class="o_td_label"/>
-        <div class="o_td_field">
-          <field name="global_discount_amount" readonly="1"
-                 options="{'currency_field': 'currency_id'}"/>
-        </div>
+          <!-- Separador -->
+          <div class="o_td_label oe_subtotal_footer_separator"/>
+          <div class="o_td_field oe_subtotal_footer_separator"/>
 
-        <div class="o_td_label oe_subtotal_footer_separator"/>
-        <div class="o_td_field oe_subtotal_footer_separator"/>
-      </xpath>
-
-    </field>
-  </record>
-</odoo>
+          <!-- % Descuento global (editable en factura si querés retocar) -->

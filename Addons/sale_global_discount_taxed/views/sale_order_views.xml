@@ -6,34 +6,34 @@
     <field name="inherit_id" ref="sale.view_order_form"/>
     <field name="arch" type="xml">
 
-      <!-- Bloque 1: mostrar la resta explícita ANTES del Subtotal estándar -->
-      <xpath expr="//field[@name='amount_untaxed']" position="before">
-        <!-- Subtotal (antes del descuento global) -->
-        <label for="amount_untaxed_before_global" class="o_td_label"/>
-        <div class="o_td_field">
-          <field name="amount_untaxed_before_global" readonly="1"
-                 options="{'currency_field': 'currency_id'}"/>
-        </div>
+      <!-- Agregamos nuestro propio bloque de totales al final del sheet,
+           con la misma grilla de totales (label/field) para que quede alineado -->
+      <xpath expr="//sheet" position="inside">
+        <group name="global_discount_footer" class="oe_subtotal_footer">
+          <!-- Subtotal (antes de descuento) -->
+          <label for="amount_untaxed_before_global" class="o_td_label"/>
+          <div class="o_td_field">
+            <field name="amount_untaxed_before_global" readonly="1"
+                   options="{'currency_field': 'currency_id'}"/>
+          </div>
 
-        <!-- Descuento global (importe) -->
-        <label for="global_discount_amount" class="o_td_label"/>
-        <div class="o_td_field">
-          <field name="global_discount_amount" readonly="1"
-                 options="{'currency_field': 'currency_id'}"/>
-        </div>
+          <!-- Descuento global (importe) -->
+          <label for="global_discount_amount" class="o_td_label"/>
+          <div class="o_td_field">
+            <field name="global_discount_amount" readonly="1"
+                   options="{'currency_field': 'currency_id'}"/>
+          </div>
 
-        <!-- Separador visual, como usa el core -->
-        <div class="o_td_label oe_subtotal_footer_separator"/>
-        <div class="o_td_field oe_subtotal_footer_separator"/>
-      </xpath>
+          <!-- Separador -->
+          <div class="o_td_label oe_subtotal_footer_separator"/>
+          <div class="o_td_field oe_subtotal_footer_separator"/>
 
-      <!-- Bloque 2: % de descuento, alineado, DESPUÉS del Subtotal estándar -->
-      <xpath expr="//field[@name='amount_untaxed']" position="after">
-        <label for="global_discount_rate" class="o_td_label"/>
-        <div class="o_td_field">
-          <!-- Usá percentage si querés cargar 10% como 10 o 0.10; el Python normaliza -->
-          <field name="global_discount_rate" widget="percentage"/>
-        </div>
+          <!-- % Descuento global (editable) -->
+          <label for="global_discount_rate" class="o_td_label"/>
+          <div class="o_td_field">
+            <field name="global_discount_rate" widget="percentage"/>
+          </div>
+        </group>
       </xpath>
 
     </field>
