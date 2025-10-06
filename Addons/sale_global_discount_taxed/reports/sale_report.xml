@@ -2,13 +2,12 @@
 <odoo>
   <template id="report_saleorder_document_inherit_global_discount"
             inherit_id="sale.report_saleorder_document">
-    <!-- Debajo del Subtotal, mostrar el subtotal antes y el descuento global -->
-    <xpath expr="//table[contains(@class, 'table-condensed')]/tbody" position="inside">
+    <!-- Insertar filas en la tabla de totales -->
+    <xpath expr="//table[contains(@class,'o_main_total')]/tbody" position="inside">
 
-      <!-- Variables para normalizar el porcentaje -->
+      <!-- Normalizar porcentaje a fracción -->
       <t t-set="graw" t-value="o.global_discount_rate or 0.0"/>
-      <t t-set="g"
-         t-value="graw if graw &lt;= 1.0 else (graw / 100.0)"/>
+      <t t-set="g" t-value="graw if graw &lt;= 1.0 else (graw / 100.0)"/>
 
       <tr>
         <td colspan="3" class="text-end">
@@ -18,6 +17,7 @@
           <span t-esc="format_amount(o.amount_untaxed_before_global, o.currency_id)"/>
         </td>
       </tr>
+
       <tr>
         <td colspan="3" class="text-end">
           <span>Descuento global (<t t-esc="g * 100.0"/>%):</span>
@@ -26,6 +26,7 @@
           <span t-esc="format_amount(o.global_discount_amount, o.currency_id)"/>
         </td>
       </tr>
+
       <tr>
         <td colspan="4"><hr/></td>
       </tr>
