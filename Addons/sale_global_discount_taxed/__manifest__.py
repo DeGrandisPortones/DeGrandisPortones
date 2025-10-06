@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Sale Global Discount (affects taxes & invoices)",
-    "version": "18.0.1.0.2",
+    "version": "18.0.1.0.3",
     "summary": "Descuento global (%) que reduce base imponible, recalcula impuestos y se refleja en facturas y reportes",
     "category": "Sales",
     "author": "Dflex Argentina SAS",
