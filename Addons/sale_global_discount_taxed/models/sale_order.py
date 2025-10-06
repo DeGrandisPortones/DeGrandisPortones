@@ -20,6 +20,13 @@ class SaleOrder(models.Model):
         currency_field="currency_id",
         help="Importe total descontado sobre la base imponible (antes de impuestos).",
     )
+    amount_untaxed_before_global = fields.Monetary(
+        string="Subtotal (antes de descuento)",
+        compute="_amount_all",
+        store=True,
+        currency_field="currency_id",
+        help="Subtotal luego de descuento por línea, pero ANTES del descuento global.",
+    )
 
     @api.constrains("global_discount_rate")
     def _check_global_discount_rate(self):
@@ -48,37 +55,43 @@ class SaleOrder(models.Model):
     def _amount_all(self):
         """
         Aplica descuento global (%) por línea ANTES de impuestos, combinándolo
-        con el descuento propio de la línea (multiplicativo).
+        con el descuento propio de la línea (multiplicativo). Calcula además
+        el subtotal ANTES del descuento global para mostrar la resta explícita.
         """
         for order in self:
             currency = order.currency_id
             partner = order.partner_shipping_id or order.partner_id
             company = order.company_id
 
-            amount_untaxed = 0.0
+            amount_untaxed = 0.0                      # Subtotal ya CON descuento global
             amount_tax = 0.0
-            discount_base_total = 0.0
+            discount_base_total = 0.0                 # Importe descontado por el global
+            subtotal_before_global = 0.0              # Subtotal ANTES del descuento global
             groups = defaultdict(lambda: {'base': 0.0, 'amount': 0.0, 'group': False})
 
-            # --- IMPORTANTE: normalizar el valor del widget percentage ---
-            # Si viene 0..1 (fracción) lo usamos así; si viene 0..100 lo pasamos a fracción.
+            # Normalizar global: 0..1 => fracción; 0..100 => convertir a fracción
             raw = order.global_discount_rate or 0.0
             global_rate = raw if raw <= 1.0 else (raw / 100.0)
 
             for line in order.order_line.filtered(lambda l: not l.display_type):
-                # En Odoo el descuento de línea es 0..100 -> convertir a fracción
+                # Descuento de línea (0..100) -> fracción
                 line_rate = (line.discount or 0.0) / 100.0
 
-                # Factor combinado: (1 - d_linea) * (1 - d_global)
+                # Factor combinado
                 effective_factor = (1.0 - line_rate) * (1.0 - global_rate)
                 eff_price_unit = line.price_unit * effective_factor
 
-                # Cuánto aporta el DESCUENTO GLOBAL (puro) a la base de esta línea
+                # Subtotal de la línea con SOLO descuento de línea (sin global)
                 base_line_line_discount = line.price_unit * (1.0 - line_rate) * line.product_uom_qty
+                subtotal_before_global += base_line_line_discount
+
+                # Subtotal de la línea con ambos descuentos
                 base_line_both_discounts = eff_price_unit * line.product_uom_qty
+
+                # Aporte del DESCUENTO GLOBAL puro a la base
                 discount_base_total += max(0.0, base_line_line_discount - base_line_both_discounts)
 
-                # Impuestos con precio ya descontado
+                # Impuestos sobre precio ya descontado
                 taxes_res = line.tax_id.with_context(force_company=company.id).compute_all(
                     eff_price_unit,
                     currency=currency,
@@ -90,7 +103,7 @@ class SaleOrder(models.Model):
                 amount_untaxed += taxes_res["total_excluded"]
                 amount_tax += taxes_res["total_included"] - taxes_res["total_excluded"]
 
-                # Acumular por grupo de impuestos
+                # Grupos de impuestos
                 for t in taxes_res.get("taxes", []):
                     tax_obj = self.env["account.tax"].browse(t["id"])
                     group = tax_obj.tax_group_id
@@ -98,10 +111,15 @@ class SaleOrder(models.Model):
                     groups[group]["amount"] += t["amount"]
                     groups[group]["base"] += t["base"]
 
+            # Guardar totales
+            order.amount_untaxed_before_global = currency.round(subtotal_before_global)
+            order.global_discount_amount = currency.round(discount_base_total)
             order.amount_untaxed = currency.round(amount_untaxed)
             order.amount_tax = currency.round(amount_tax)
+
+            # TOTAL: (Subtotal con descuento) + Impuestos
+            # (Equivalente a: Subtotal antes - Descuento + Impuestos)
             order.amount_total = order.amount_untaxed + order.amount_tax
-            order.global_discount_amount = currency.round(discount_base_total)
 
             # Solo setear amount_by_group si existe en este entorno
             if "amount_by_group" in order._fields:
