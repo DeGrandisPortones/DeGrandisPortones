@@ -6,30 +6,34 @@
     <field name="inherit_id" ref="sale.view_order_form"/>
     <field name="arch" type="xml">
 
-      <!-- Porcentaje: lo ponemos antes de los impuestos -->
-      <xpath expr="//field[@name='amount_tax']" position="before">
-        <label for="global_discount_rate" class="o_td_label"/>
-        <div class="o_td_field">
-          <field name="global_discount_rate" widget="percentage"/>
-        </div>
-      </xpath>
-
-      <!-- Mostrar resta explícita arriba del Subtotal -->
+      <!-- Bloque 1: mostrar la resta explícita ANTES del Subtotal estándar -->
       <xpath expr="//field[@name='amount_untaxed']" position="before">
+        <!-- Subtotal (antes del descuento global) -->
         <label for="amount_untaxed_before_global" class="o_td_label"/>
         <div class="o_td_field">
           <field name="amount_untaxed_before_global" readonly="1"
                  options="{'currency_field': 'currency_id'}"/>
         </div>
 
+        <!-- Descuento global (importe) -->
         <label for="global_discount_amount" class="o_td_label"/>
         <div class="o_td_field">
           <field name="global_discount_amount" readonly="1"
                  options="{'currency_field': 'currency_id'}"/>
         </div>
 
+        <!-- Separador visual, como usa el core -->
         <div class="o_td_label oe_subtotal_footer_separator"/>
         <div class="o_td_field oe_subtotal_footer_separator"/>
+      </xpath>
+
+      <!-- Bloque 2: % de descuento, alineado, DESPUÉS del Subtotal estándar -->
+      <xpath expr="//field[@name='amount_untaxed']" position="after">
+        <label for="global_discount_rate" class="o_td_label"/>
+        <div class="o_td_field">
+          <!-- Usá percentage si querés cargar 10% como 10 o 0.10; el Python normaliza -->
+          <field name="global_discount_rate" widget="percentage"/>
+        </div>
       </xpath>
 
     </field>
