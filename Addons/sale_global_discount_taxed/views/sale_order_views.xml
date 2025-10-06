@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Heredar vista de Pedido de Venta (presupuesto) -->
+    <record id="view_order_form_global_discount" model="ir.ui.view">
+        <field name="name">sale.order.form.global.discount</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+
+            <!-- Campo en el body (por ejemplo debajo del partner) -->
+            <xpath expr="//sheet/group/group" position="after">
+                <group string="Condiciones">
+                    <field name="global_discount_rate" widget="percentage"/>
+                    <field name="global_discount_amount" readonly="1"
+                           options="{'currency_field': 'currency_id'}"/>
+                </group>
+            </xpath>
+
+            <!-- Mostrar en el bloque de totales, junto a subtotal/impuestos/total -->
+            <xpath expr="//group[@name='sale_total']" position="inside">
+                <field name="global_discount_rate" widget="percentage"/>
+                <field name="global_discount_amount" readonly="1"
+                       options="{'currency_field': 'currency_id'}"/>
+            </xpath>
+
+        </field>
+    </record>
+</odoo>
