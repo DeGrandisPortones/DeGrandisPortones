@@ -1,26 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Heredar vista de Pedido de Venta (presupuesto) -->
+    <!-- Heredar vista de Pedido de Venta (Presupuesto) -->
     <record id="view_order_form_global_discount" model="ir.ui.view">
         <field name="name">sale.order.form.global.discount</field>
         <field name="model">sale.order</field>
         <field name="inherit_id" ref="sale.view_order_form"/>
         <field name="arch" type="xml">
 
-            <!-- Campo en el body (por ejemplo debajo del partner) -->
-            <xpath expr="//sheet/group/group" position="after">
-                <group string="Condiciones">
-                    <field name="global_discount_rate" widget="percentage"/>
-                    <field name="global_discount_amount" readonly="1"
-                           options="{'currency_field': 'currency_id'}"/>
-                </group>
-            </xpath>
-
-            <!-- Mostrar en el bloque de totales, junto a subtotal/impuestos/total -->
+            <!--
+            IMPORTANTE:
+            Para evitar “desfasado”, insertamos los campos dentro del bloque de totales
+            usando el layout label/valor (o_td_label / o_td_field) como el core.
+            Si tenías el bloque en el body (grupo "Condiciones"), podés quitarlo.
+            -->
             <xpath expr="//group[@name='sale_total']" position="inside">
-                <field name="global_discount_rate" widget="percentage"/>
-                <field name="global_discount_amount" readonly="1"
-                       options="{'currency_field': 'currency_id'}"/>
+                <!-- % Global -->
+                <label for="global_discount_rate" class="o_td_label"/>
+                <div class="o_td_field">
+                    <field name="global_discount_rate" widget="percentage"/>
+                </div>
+
+                <!-- Importe Global -->
+                <label for="global_discount_amount" class="o_td_label"/>
+                <div class="o_td_field">
+                    <field name="global_discount_amount"
+                           readonly="1"
+                           options="{'currency_field': 'currency_id'}"/>
+                </div>
+
+                <!-- Separador visual (opcional, igual que otros totales) -->
+                <div class="o_td_label oe_subtotal_footer_separator"/>
+                <div class="o_td_field oe_subtotal_footer_separator"/>
             </xpath>
 
         </field>
