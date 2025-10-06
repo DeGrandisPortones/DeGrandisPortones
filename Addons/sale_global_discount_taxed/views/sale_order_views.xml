@@ -6,11 +6,11 @@
     <field name="inherit_id" ref="sale.view_order_form"/>
     <field name="arch" type="xml">
 
-      <!-- Agregamos nuestro propio bloque de totales al final del sheet,
-           con la misma grilla de totales (label/field) para que quede alineado -->
+      <!-- Footer propio robusto -->
       <xpath expr="//sheet" position="inside">
         <group name="global_discount_footer" class="oe_subtotal_footer">
-          <!-- Subtotal (antes de descuento) -->
+
+          <!-- Subtotal (antes de descuento global) -->
           <label for="amount_untaxed_before_global" class="o_td_label"/>
           <div class="o_td_field">
             <field name="amount_untaxed_before_global" readonly="1"
@@ -33,6 +33,18 @@
           <div class="o_td_field">
             <field name="global_discount_rate" widget="percentage"/>
           </div>
+
+          <!-- Separador -->
+          <div class="o_td_label oe_subtotal_footer_separator"/>
+          <div class="o_td_field oe_subtotal_footer_separator"/>
+
+          <!-- NUEVO: Total con descuento (formato de total) -->
+          <label for="amount_total_after_global" class="o_td_label"/>
+          <div class="o_td_field oe_subtotal_footer_total">
+            <field name="amount_total_after_global" readonly="1"
+                   options="{'currency_field': 'currency_id'}"/>
+          </div>
+
         </group>
       </xpath>
 
