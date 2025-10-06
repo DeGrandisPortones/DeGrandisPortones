@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-  <record id="view_order_form_global_discount" model="ir.ui.view">
-    <field name="name">sale.order.form.global.discount</field>
-    <field name="model">sale.order</field>
-    <field name="inherit_id" ref="sale.view_order_form"/>
+  <record id="view_move_form_global_discount" model="ir.ui.view">
+    <field name="name">account.move.form.global.discount</field>
+    <field name="model">account.move</field>
+    <field name="inherit_id" ref="account.view_move_form"/>
     <field name="arch" type="xml">
 
-      <!-- Porcentaje: lo ponemos antes de los impuestos -->
+      <!-- Mostrar % en totales de la factura (editable por si se ajusta) -->
       <xpath expr="//field[@name='amount_tax']" position="before">
         <label for="global_discount_rate" class="o_td_label"/>
         <div class="o_td_field">
@@ -14,7 +14,7 @@
         </div>
       </xpath>
 
-      <!-- Mostrar resta explícita arriba del Subtotal -->
+      <!-- Mostrar referencia "antes de global" e importe de descuento -->
       <xpath expr="//field[@name='amount_untaxed']" position="before">
         <label for="amount_untaxed_before_global" class="o_td_label"/>
         <div class="o_td_field">

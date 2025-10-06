@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <template id="report_invoice_document_inherit_global_discount"
+            inherit_id="account.report_invoice_document">
+    <xpath expr="//table[contains(@class, 'table-condensed')]/tbody" position="inside">
+      <tr>
+        <td colspan="3" class="text-end">
+          <span>Subtotal (antes de descuento):</span>
+        </td>
+        <td class="text-end">
+          <span t-esc="format_amount(o.amount_untaxed_before_global, o.currency_id)"/>
+        </td>
+      </tr>
+      <tr>
+        <td colspan="3" class="text-end">
+          <span>Descuento global (<t t-esc="(o.global_discount_rate if o.global_discount_rate <= 1.0 else o.global_discount_rate/100.0) * 100.0"/>%):</span>
+        </td>
+        <td class="text-end">
+          <span t-esc="format_amount(o.global_discount_amount, o.currency_id)"/>
+        </td>
+      </tr>
+      <tr>
+        <td colspan="4"><hr/></td>
+      </tr>
+    </xpath>
+  </template>
+</odoo>

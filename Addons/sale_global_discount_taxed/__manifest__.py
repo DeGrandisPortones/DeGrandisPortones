@@ -1,14 +1,17 @@
 # -*- coding: utf-8 -*-
 {
-    "name": "Sale Global Discount (taxed base)",
-    "version": "18.0.1.1.0",
-    "summary": "Descuento global (%) que reduce la base imponible antes de impuestos en presupuestos",
+    "name": "Sale Global Discount (affects taxes & invoices)",
+    "version": "18.0.1.0.0",
+    "summary": "Descuento global (%) que reduce base imponible, recalcula impuestos y se refleja en facturas y reportes",
     "category": "Sales",
-    "author": "Tu Empresa",
+    "author": "Dflex Argentina SAS",
     "license": "LGPL-3",
-    "depends": ["sale_management"],
+    "depends": ["sale_management", "account"],
     "data": [
         "views/sale_order_views.xml",
+        "views/account_move_views.xml",
+        "reports/sale_report.xml",
+        "reports/account_report.xml",
     ],
     "installable": True,
     "application": False,
