@@ -3,7 +3,7 @@
   <!-- Menú raíz (temporalmente en Administración para evitar conflictos) -->
   <menuitem id="menu_dflex_checks_root"
             name="Cheques Propios"
-            parent="account.menu_finance"
+            parent="account.menu_accounting"
             sequence="90"/>
 
   <!-- Acción y vistas de Chequeras -->
