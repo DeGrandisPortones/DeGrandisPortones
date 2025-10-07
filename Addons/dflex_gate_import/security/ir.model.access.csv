@@ -1,0 +1,3 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_x_gate_spec,x_gate_spec,model_x_gate_spec,base.group_user,1,1,1,1
+access_x_gate_import_batch,x_gate_import_batch,model_x_gate_import_batch,base.group_user,1,1,1,1

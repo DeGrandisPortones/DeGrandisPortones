@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <menuitem id="menu_dflex_root" name="Portones" parent="mrp.menu_mrp_root" sequence="80"
+            groups="dflex_gate_import.group_degrandis_gate_import"/>
+  <menuitem id="menu_dflex_gate" name="Portones (Fichas)" parent="menu_dflex_root"
+            action="action_x_gate_spec_tree" sequence="10"
+            groups="dflex_gate_import.group_degrandis_gate_import"/>
+  <menuitem id="menu_dflex_import" name="Importar Excel" parent="menu_dflex_root"
+            action="action_open_gate_import_wizard" sequence="20"
+            groups="dflex_gate_import.group_degrandis_gate_import"/>
+  <menuitem id="menu_dflex_batches" name="Importaciones" parent="menu_dflex_root"
+            action="action_x_gate_import_batch_tree" sequence="30"
+            groups="dflex_gate_import.group_degrandis_gate_import"/>
+</odoo>
