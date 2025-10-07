@@ -52,15 +52,16 @@
             <field name="state" readonly="1"/>
           </group>
           <group>
+            <!-- Odoo 17/18: usar 'invisible' en lugar de attrs/states -->
             <button name="action_generate_checks"
                     type="object"
                     string="Generar cheques"
                     class="oe_highlight"
-                    attrs="{'invisible': [('state','!=','draft')]}"/>
+                    invisible="state != 'draft'"/>
             <button name="action_close"
                     type="object"
                     string="Cerrar chequera"
-                    attrs="{'invisible': [('state','!=','generated')]}"/>
+                    invisible="state != 'generated'"/>
           </group>
           <notebook>
             <page string="Cheques">
@@ -88,7 +89,7 @@
   <record id="action_dflex_check" model="ir.actions.act_window">
     <field name="name">Cheques</field>
     <field name="res_model">dflex.check</field>
-    <field name="view_mode">list,form</field> <!-- Ojo: sin 'search' -->
+    <field name="view_mode">list,form</field>
     <field name="context">{}</field>
   </record>
 
@@ -121,12 +122,15 @@
     <field name="arch" type="xml">
       <form string="Cheque Propio">
         <header>
+          <!-- Reemplazo de attrs/states por 'invisible' -->
           <button name="action_reset_available" type="object" string="Volver a disponible"
-                  attrs="{'invisible': [('state','in',['available','debited'])]}"/>
-          <button name="action_deliver" type="object" string="Entregar" states="available" class="oe_highlight"/>
-          <button name="action_debit" type="object" string="Debitar" states="delivered" class="oe_highlight"/>
+                  invisible="state in ['available','debited']"/>
+          <button name="action_deliver" type="object" string="Entregar" class="oe_highlight"
+                  invisible="state != 'available'"/>
+          <button name="action_debit" type="object" string="Debitar" class="oe_highlight"
+                  invisible="state != 'delivered'"/>
           <button name="action_cancel" type="object" string="Anular"
-                  attrs="{'invisible': [('state','=','debited')]}"/>
+                  invisible="state == 'debited'"/>
           <field name="state" widget="statusbar"
                  statusbar_visible="available,delivered,debited,cancelled"/>
         </header>
