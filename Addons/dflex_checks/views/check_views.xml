@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+</tree>
+</field>
+</record>
+
+
+<record id="view_dflex_check_form" model="ir.ui.view">
+<field name="name">dflex.check.form</field>
+<field name="model">dflex.check</field>
+<field name="arch" type="xml">
+<form string="Cheque Propio">
+<header>
+<button name="action_reset_available" type="object" string="Volver a disponible" attrs="{'invisible': [('state','in',['available','debited'])]}"/>
+<button name="action_deliver" type="object" string="Entregar" states="available" class="oe_highlight"/>
+<button name="action_debit" type="object" string="Debitar" states="delivered" class="oe_highlight"/>
+<button name="action_cancel" type="object" string="Anular" attrs="{'invisible': [('state','=','debited')]}"/>
+<field name="state" widget="statusbar" statusbar_visible="available,delivered,debited,cancelled"/>
+</header>
+<sheet>
+<group>
+<field name="checkbook_id"/>
+<field name="name"/>
+<field name="number"/>
+<field name="type"/>
+<field name="bank_id"/>
+</group>
+<group>
+<field name="issue_date"/>
+<field name="payment_date"/>
+<field name="amount"/>
+<field name="currency_id"/>
+</group>
+<group string="Proveedor">
+<field name="partner_id"/>
+<field name="cuit_proveedor" readonly="1"/>
+<field name="partner_name" readonly="1"/>
+</group>
+<group>
+<field name="move_id" readonly="1"/>
+<field name="note"/>
+</group>
+</sheet>
+</form>
+</field>
+</record>
+
+
+<record id="view_dflex_check_search" model="ir.ui.view">
+<field name="name">dflex.check.search</field>
+<field name="model">dflex.check</field>
+<field name="arch" type="xml">
+<search string="Buscar Cheques">
+<field name="name"/>
+<field name="partner_id"/>
+<field name="bank_id"/>
+<filter name="available" string="Disponibles" domain="[('state','=','available')]"/>
+<filter name="delivered" string="Entregados" domain="[('state','=','delivered')]"/>
+<filter name="debited" string="Debitados" domain="[('state','=','debited')]"/>
+<filter name="cancelled" string="Anulados" domain="[('state','=','cancelled')]"/>
+<group expand="0" string="Agrupar por">
+<filter name="group_bank" string="Banco" context="{'group_by':'bank_id'}"/>
+<filter name="group_state" string="Estado" context="{'group_by':'state'}"/>
+<filter name="group_book" string="Chequera" context="{'group_by':'checkbook_id'}"/>
+</group>
+</search>
+</field>
+</record>
+</odoo>
