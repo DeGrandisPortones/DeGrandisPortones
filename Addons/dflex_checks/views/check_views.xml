@@ -1,68 +1,182 @@
 <?xml version="1.0" encoding="UTF-8"?>
-</tree>
-</field>
-</record>
+<odoo>
+  <!-- Menú raíz (temporalmente en Administración para evitar conflictos) -->
+  <menuitem id="menu_dflex_checks_root"
+            name="Cheques Propios"
+            parent="base.menu_administration"
+            sequence="90"/>
 
+  <!-- Acción y vistas de Chequeras -->
+  <record id="action_dflex_checkbook" model="ir.actions.act_window">
+    <field name="name">Chequeras</field>
+    <field name="res_model">dflex.checkbook</field>
+    <field name="view_mode">tree,form</field>
+    <field name="context">{}</field>
+  </record>
 
-<record id="view_dflex_check_form" model="ir.ui.view">
-<field name="name">dflex.check.form</field>
-<field name="model">dflex.check</field>
-<field name="arch" type="xml">
-<form string="Cheque Propio">
-<header>
-<button name="action_reset_available" type="object" string="Volver a disponible" attrs="{'invisible': [('state','in',['available','debited'])]}"/>
-<button name="action_deliver" type="object" string="Entregar" states="available" class="oe_highlight"/>
-<button name="action_debit" type="object" string="Debitar" states="delivered" class="oe_highlight"/>
-<button name="action_cancel" type="object" string="Anular" attrs="{'invisible': [('state','=','debited')]}"/>
-<field name="state" widget="statusbar" statusbar_visible="available,delivered,debited,cancelled"/>
-</header>
-<sheet>
-<group>
-<field name="checkbook_id"/>
-<field name="name"/>
-<field name="number"/>
-<field name="type"/>
-<field name="bank_id"/>
-</group>
-<group>
-<field name="issue_date"/>
-<field name="payment_date"/>
-<field name="amount"/>
-<field name="currency_id"/>
-</group>
-<group string="Proveedor">
-<field name="partner_id"/>
-<field name="cuit_proveedor" readonly="1"/>
-<field name="partner_name" readonly="1"/>
-</group>
-<group>
-<field name="move_id" readonly="1"/>
-<field name="note"/>
-</group>
-</sheet>
-</form>
-</field>
-</record>
+  <menuitem id="menu_dflex_checkbook"
+            name="Chequeras"
+            parent="menu_dflex_checks_root"
+            action="action_dflex_checkbook"
+            sequence="10"/>
 
+  <record id="view_dflex_checkbook_tree" model="ir.ui.view">
+    <field name="name">dflex.checkbook.tree</field>
+    <field name="model">dflex.checkbook</field>
+    <field name="arch" type="xml">
+      <tree>
+        <field name="name"/>
+        <field name="bank_id"/>
+        <field name="type"/>
+        <field name="start_number"/>
+        <field name="quantity"/>
+        <field name="last_number"/>
+        <field name="state"/>
+      </tree>
+    </field>
+  </record>
 
-<record id="view_dflex_check_search" model="ir.ui.view">
-<field name="name">dflex.check.search</field>
-<field name="model">dflex.check</field>
-<field name="arch" type="xml">
-<search string="Buscar Cheques">
-<field name="name"/>
-<field name="partner_id"/>
-<field name="bank_id"/>
-<filter name="available" string="Disponibles" domain="[('state','=','available')]"/>
-<filter name="delivered" string="Entregados" domain="[('state','=','delivered')]"/>
-<filter name="debited" string="Debitados" domain="[('state','=','debited')]"/>
-<filter name="cancelled" string="Anulados" domain="[('state','=','cancelled')]"/>
-<group expand="0" string="Agrupar por">
-<filter name="group_bank" string="Banco" context="{'group_by':'bank_id'}"/>
-<filter name="group_state" string="Estado" context="{'group_by':'state'}"/>
-<filter name="group_book" string="Chequera" context="{'group_by':'checkbook_id'}"/>
-</group>
-</search>
-</field>
-</record>
+  <record id="view_dflex_checkbook_form" model="ir.ui.view">
+    <field name="name">dflex.checkbook.form</field>
+    <field name="model">dflex.checkbook</field>
+    <field name="arch" type="xml">
+      <form string="Chequera">
+        <sheet>
+          <group>
+            <field name="name"/>
+            <field name="bank_id"/>
+            <field name="type"/>
+            <field name="start_number"/>
+            <field name="quantity"/>
+            <field name="last_number" readonly="1"/>
+            <field name="state" readonly="1"/>
+          </group>
+          <group>
+            <button name="action_generate_checks"
+                    type="object"
+                    string="Generar cheques"
+                    class="oe_highlight"
+                    attrs="{'invisible': [('state','!=','draft')]}"/>
+            <button name="action_close"
+                    type="object"
+                    string="Cerrar chequera"
+                    attrs="{'invisible': [('state','!=','generated')]}"/>
+          </group>
+          <notebook>
+            <page string="Cheques">
+              <field name="check_ids" context="{'default_bank_id': bank_id, 'default_type': type}">
+                <tree editable="bottom">
+                  <field name="name"/>
+                  <field name="number"/>
+                  <field name="type"/>
+                  <field name="bank_id"/>
+                  <field name="issue_date"/>
+                  <field name="payment_date"/>
+                  <field name="amount"/>
+                  <field name="partner_id"/>
+                  <field name="state"/>
+                </tree>
+              </field>
+            </page>
+          </notebook>
+        </sheet>
+      </form>
+    </field>
+  </record>
+
+  <!-- Acción y vistas de Cheques -->
+  <record id="action_dflex_check" model="ir.actions.act_window">
+    <field name="name">Cheques</field>
+    <field name="res_model">dflex.check</field>
+    <!-- IMPORTANTE: no poner "search" en view_mode -->
+    <field name="view_mode">tree,form</field>
+    <field name="context">{}</field>
+  </record>
+
+  <menuitem id="menu_dflex_check"
+            name="Cheques"
+            parent="menu_dflex_checks_root"
+            action="action_dflex_check"
+            sequence="20"/>
+
+  <record id="view_dflex_check_tree" model="ir.ui.view">
+    <field name="name">dflex.check.tree</field>
+    <field name="model">dflex.check</field>
+    <field name="arch" type="xml">
+      <tree>
+        <field name="name"/>
+        <field name="issue_date"/>
+        <field name="payment_date"/>
+        <field name="amount"/>
+        <field name="bank_id"/>
+        <field name="cuit_proveedor"/>
+        <field name="partner_name"/>
+        <field name="state"/>
+      </tree>
+    </field>
+  </record>
+
+  <record id="view_dflex_check_form" model="ir.ui.view">
+    <field name="name">dflex.check.form</field>
+    <field name="model">dflex.check</field>
+    <field name="arch" type="xml">
+      <form string="Cheque Propio">
+        <header>
+          <button name="action_reset_available" type="object" string="Volver a disponible"
+                  attrs="{'invisible': [('state','in',['available','debited'])]}"/>
+          <button name="action_deliver" type="object" string="Entregar" states="available" class="oe_highlight"/>
+          <button name="action_debit" type="object" string="Debitar" states="delivered" class="oe_highlight"/>
+          <button name="action_cancel" type="object" string="Anular"
+                  attrs="{'invisible': [('state','=','debited')]}"/>
+          <field name="state" widget="statusbar"
+                 statusbar_visible="available,delivered,debited,cancelled"/>
+        </header>
+        <sheet>
+          <group>
+            <field name="checkbook_id"/>
+            <field name="name"/>
+            <field name="number"/>
+            <field name="type"/>
+            <field name="bank_id"/>
+          </group>
+          <group>
+            <field name="issue_date"/>
+            <field name="payment_date"/>
+            <field name="amount"/>
+            <field name="currency_id"/>
+          </group>
+          <group string="Proveedor">
+            <field name="partner_id"/>
+            <field name="cuit_proveedor" readonly="1"/>
+            <field name="partner_name" readonly="1"/>
+          </group>
+          <group>
+            <field name="move_id" readonly="1"/>
+            <field name="note"/>
+          </group>
+        </sheet>
+      </form>
+    </field>
+  </record>
+
+  <record id="view_dflex_check_search" model="ir.ui.view">
+    <field name="name">dflex.check.search</field>
+    <field name="model">dflex.check</field>
+    <field name="arch" type="xml">
+      <search string="Buscar Cheques">
+        <field name="name"/>
+        <field name="partner_id"/>
+        <field name="bank_id"/>
+        <filter name="available" string="Disponibles" domain="[('state','=','available')]"/>
+        <filter name="delivered" string="Entregados" domain="[('state','=','delivered')]"/>
+        <filter name="debited" string="Debitados" domain="[('state','=','debited')]"/>
+        <filter name="cancelled" string="Anulados" domain="[('state','=','cancelled')]"/>
+        <group expand="0" string="Agrupar por">
+          <filter name="group_bank" string="Banco" context="{'group_by':'bank_id'}"/>
+          <filter name="group_state" string="Estado" context="{'group_by':'state'}"/>
+          <filter name="group_book" string="Chequera" context="{'group_by':'checkbook_id'}"/>
+        </group>
+      </search>
+    </field>
+  </record>
 </odoo>
