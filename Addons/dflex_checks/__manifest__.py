@@ -1,18 +1,18 @@
-## __manifest__.py
-
 {
-"name": "Cheques Propios (DFLEX)",
-"summary": "Gestión de chequeras y cheques propios (físicos y eCheq)",
-"version": "18.0.1.0.0", 
-"author": "DFLEX Argentina SAS",
-"website": "https://dflex.com.ar",
-"category": "Accounting/Payments",
-"license": "LGPL-3",
-"depends": ["account", "base"],
-"data": [
-"security/ir.model.access.csv",
-"views/check_views.xml",
-],
-"application": False,
-"installable": True,
+    'name': 'DFlex - Importador de Portones (Excel)',
+    'version': '1.0',
+    'category': 'Manufacturing',
+    'summary': 'Importa portones desde un archivo Excel y genera fichas automáticas',
+    'depends': ['base', 'mrp'],
+    'data': [
+        'security/security.xml',
+        'security/ir.model.access.csv',
+        'views/x_gate_spec_views.xml',
+        'views/x_gate_import_batch_views.xml',
+        'views/gate_import_wizard_views.xml',
+        'views/menuitems.xml',
+    ],
+    'installable': True,
+    'application': True,
+    'license': 'LGPL-3',
 }
