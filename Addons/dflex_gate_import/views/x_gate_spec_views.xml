@@ -4,10 +4,10 @@
     <field name="name">x.gate.spec.tree</field>
     <field name="model">x.gate.spec</field>
     <field name="arch" type="xml">
-      <tree>
+      <list>
         <field name="name"/>
         <field name="import_batch_id"/>
-      </tree>
+      </list>
     </field>
   </record>
 
@@ -37,6 +37,6 @@
   <record id="action_x_gate_spec_tree" model="ir.actions.act_window">
     <field name="name">Portones (Fichas)</field>
     <field name="res_model">x.gate.spec</field>
-    <field name="view_mode">tree,form</field>
+    <field name="view_mode">list,form</field>
   </record>
 </odoo>
