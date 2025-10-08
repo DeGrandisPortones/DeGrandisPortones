@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+  <menuitem id="menu_dflex_root" name="DFLEX"/>
+  <menuitem id="menu_dflex_portones" name="Portones" parent="menu_dflex_root" sequence="10"/>
+  <menuitem id="menu_dflex_porton_items" name="Listado" parent="menu_dflex_portones" action="action_dflex_porton" sequence="10"/>
+  <menuitem id="menu_dflex_import" name="Importaciones" parent="menu_dflex_portones" action="action_dflex_porton_import" sequence="20"/>
+  <menuitem id="menu_dflex_import_wizard" name="Importar desde Excel" parent="menu_dflex_portones" action="action_dflex_porton_import_wizard" sequence="5"/>
+</odoo>

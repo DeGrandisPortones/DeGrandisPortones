@@ -23,6 +23,13 @@ def _slug(s):
         s = 'c_' + s
     return s[:50]
 
+def _label(h1, h2):
+    h1n, h2n = _norm(h1), _norm(h2)
+    if h1n and h2n:
+        # Abreviar la cabecera 1 a 3 letras + ". " como en el ejemplo (Ins. Instalador)
+        return (h1n[:3].capitalize() + '. ' + h2n).strip()
+    return (h1n or h2n)
+
 def _is_xlsx(data):
     return data.startswith(b'PK\x03\x04')
 
@@ -78,12 +85,13 @@ class DflexPortonImportWizard(models.TransientModel):
     def _build_columns(self, headers1, headers2):
         cols = []
         for idx, (h1, h2) in enumerate(zip(headers1, headers2)):
-            combined = ' '.join([_norm(h1), _norm(h2)]).strip()
+            # Omitir relleno: "Columna X"
             if re.match(r'^\s*columna\b', _lower(h1)) or re.match(r'^\s*columna\b', _lower(h2)):
                 continue
-            label = combined or (h1 or h2) or ('Columna %s' % (idx+1))
+            lbl = _label(h1, h2) or ('Columna %s' % (idx+1))
             tech = ('x_%s_%s' % (_slug(h1), _slug(h2))).strip('_')
-            cols.append({'index': idx, 'label': label, 'tech': tech[:63], 'h1': h1, 'h2': h2})
+            cols.append({'index': idx, 'label': lbl, 'tech': tech[:63], 'h1': h1, 'h2': h2})
+        # Evitar duplicados técnicos
         seen = {}
         for c in cols:
             base = c['tech']
