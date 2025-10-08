@@ -8,13 +8,12 @@
         <field name="name"/>
         <field name="import_id"/>
         <field name="source_row"/>
-        <field name="state"/>
       </list>
     </field>
   </record>
 
-  <record id="view_dflex_porton_form" model="ir.ui.view">
-    <field name="name">dflex.porton.form</field>
+  <record id="view_dflex_porton_form_base" model="ir.ui.view">
+    <field name="name">dflex.porton.form.base</field>
     <field name="model">dflex.porton</field>
     <field name="arch" type="xml">
       <form string="Portón">
@@ -23,25 +22,13 @@
             <field name="name"/>
             <field name="import_id"/>
             <field name="source_row"/>
-            <field name="state"/>
           </group>
           <notebook>
-            <page string="Especificaciones (tabla)">
-              <field name="spec_ids">
-                <list editable="bottom">
-                  <field name="key"/>
-                  <field name="value"/>
-                </list>
-              </field>
-            </page>
             <page string="JSON">
               <field name="specs_json" widget="json"/>
             </page>
           </notebook>
         </sheet>
-        <header>
-          <button name="action_view_specs" type="object" string="Ver tabla" class="oe_highlight"/>
-        </header>
       </form>
     </field>
   </record>
@@ -49,7 +36,7 @@
   <record id="action_dflex_porton" model="ir.actions.act_window">
     <field name="name">Portones</field>
     <field name="res_model">dflex.porton</field>
-    <field name="view_mode">list,form,pivot</field>
+    <field name="view_mode">list,form</field>
     <field name="context">{}</field>
   </record>
 </odoo>

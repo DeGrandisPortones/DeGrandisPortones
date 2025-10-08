@@ -1,2 +1,1 @@
-from . import porton
-from . import porton_spec
+from . import porton, spec
