@@ -1,21 +1,17 @@
 # -*- coding: utf-8 -*-
 {
-    "name": "DFlex - Importador de Portones (Excel)",
-    "summary": "Sube un Excel tal como está y crea fichas de portón con todos los valores. (Solo De Grandis Portones)",
-    "version": "18.0.1.2",
-    "author": "DFlex Argentina SAS",
+    "name": "DFlex - Cheques Propios",
+    "summary": "Gestión de chequeras y cheques propios (físicos y eCheq)",
+    "version": "18.0.1.0.0",
+    "author": "DFLEX Argentina SAS",
     "website": "https://dflex.com.ar",
-    "category": "Manufacturing",
+    "category": "Accounting/Payments",
     "license": "LGPL-3",
-    "depends": ["mrp", "base"],
+    "depends": ["account", "base"],
     "data": [
-        "security/security.xml",
         "security/ir.model.access.csv",
-        "views/x_gate_spec_views.xml",
-        "views/x_gate_import_batch_views.xml",
-        "views/gate_import_wizard_views.xml",
-        "views/menuitems.xml"
+        "views/check_views.xml"
     ],
     "installable": True,
-    "application": False,
+    "application": False
 }
