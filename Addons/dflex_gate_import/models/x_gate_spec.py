@@ -10,7 +10,7 @@ class GateSpec(models.Model):
     import_batch_id = fields.Many2one("x.gate.import.batch", string="Lote de importación")
     data_json = fields.Json("Datos (JSON)")
     preview_html = fields.Html("Datos (tabla)", compute="_compute_preview_html", sanitize=False)
-    company_id = fields.Many2one('res.company', string="Compañía", default=lambda self: self.env.company, readonly=False)
+    company_id = fields.Many2one('res.company', string="Compañía", default=lambda self: self.env.company, readonly=True)
 
     @api.depends("data_json")
     def _compute_preview_html(self):

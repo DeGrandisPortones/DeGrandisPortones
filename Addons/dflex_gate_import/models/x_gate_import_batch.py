@@ -3,6 +3,7 @@ from odoo import models, fields
 
 class GateImportBatch(models.Model):
     _name = "x.gate.import.batch"
+    _check_company_auto = True
     _description = "Lote de importación de portones (Excel)"
     _order = "id desc"
 
@@ -13,4 +14,4 @@ class GateImportBatch(models.Model):
     row_count = fields.Integer("Filas importadas")
     note = fields.Text("Notas")
     gate_spec_ids = fields.One2many("x.gate.spec", "import_batch_id", string="Fichas creadas")
-    company_id = fields.Many2one('res.company', string="Compañía", default=lambda self: self.env.company, readonly=True)
+    company_id = fields.Many2one('res.company', default=lambda self: self.env.company, string="Compañía",  readonly=False)
