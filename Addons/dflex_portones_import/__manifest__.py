@@ -11,7 +11,7 @@
         'security/ir.model.access.csv',
         'views/porton_views.xml',
         'views/porton_spec_views.xml',
-        'wizard/import_wizard_views.xml',
+        'views/import_wizard_views.xml',
         'views/porton_menu.xml'
     ],
     'assets': {},
