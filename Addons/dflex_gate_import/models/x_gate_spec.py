@@ -5,22 +5,14 @@ class GateSpec(models.Model):
     _name = "x.gate.spec"
     _description = "Ficha de Portón"
     _order = "id desc"
-    _check_company_auto = True
 
     name = fields.Char("Nombre", required=True, index=True)
     import_batch_id = fields.Many2one("x.gate.import.batch", string="Lote de importación")
     data_json = fields.Json("Datos (JSON)")
     preview_html = fields.Html("Datos (tabla)", compute="_compute_preview_html", sanitize=False)
-    company_id = fields.Many2one('res.company', string='Compañía', default=lambda self: self.env.company, index=True, readonly=False)
+    company_id = fields.Many2one('res.company', string="Compañía", default=lambda self: self.env.company, readonly=False)
 
-    
-    @api.model
-    def create(self, vals):
-        # Ensure company is set to current company if not provided
-        if not vals.get('company_id'):
-            vals['company_id'] = self.env.company.id
-        return super().create(vals)
-@api.depends("data_json")
+    @api.depends("data_json")
     def _compute_preview_html(self):
         for rec in self:
             d = rec.data_json or {}
