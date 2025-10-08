@@ -24,6 +24,11 @@
             <field name="source_row"/>
           </group>
           <notebook>
+            <page string="Datos importados">
+              <group>
+                <label string="(La vista dinámica aún no fue generada)"/>
+              </group>
+            </page>
             <page string="JSON">
               <field name="specs_json" widget="json"/>
             </page>

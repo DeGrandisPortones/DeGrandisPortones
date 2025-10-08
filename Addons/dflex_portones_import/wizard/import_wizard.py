@@ -3,8 +3,8 @@ from odoo.exceptions import UserError
 import base64, io, re, unicodedata
 
 HEADER_NV_CANDIDATES = [
-    'nv', 'numero de venta', 'n° de venta', 'nº de venta',
-    'nro venta', 'nro de venta', 'número de venta'
+    'nv', 'n v', 'numero de venta', 'n° de venta', 'nº de venta',
+    'nro venta', 'nro de venta', 'número de venta', 'n° venta', 'venta n°'
 ]
 
 def _norm(s):
@@ -35,6 +35,16 @@ def _is_xlsx(data):
 def _is_xls(data):
     return data.startswith(b'\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1')
 
+def _ffill(values):
+    out, last = [], ''
+    for v in values:
+        if _norm(v):
+            last = _norm(v)
+            out.append(last)
+        else:
+            out.append(last)
+    return out
+
 class DflexPortonImportWizard(models.TransientModel):
     _name = 'dflex.porton.import.wizard'
     _description = 'Importar portones desde Excel (PRINCIPAL, fila1+fila2 encabezados, datos desde fila3)'
@@ -54,28 +64,42 @@ class DflexPortonImportWizard(models.TransientModel):
             except Exception as e:
                 raise UserError('Falta dependencia openpyxl para .xlsx: %s' % e)
             wb = openpyxl.load_workbook(io.BytesIO(data), data_only=True)
-            if sheet_name not in wb.sheetnames:
+            wanted = None
+            for sn in wb.sheetnames:
+                if _lower(sn) == _lower(sheet_name):
+                    wanted = sn
+                    break
+            if not wanted:
                 raise UserError('No se encontró la hoja "%s".' % sheet_name)
-            ws = wb[sheet_name]
-            headers1 = [ _norm(c.value) for c in next(ws.iter_rows(min_row=1, max_row=1)) ]
-            headers2 = [ _norm(c.value) for c in next(ws.iter_rows(min_row=2, max_row=2)) ]
+            ws = wb[wanted]
+            max_col = ws.max_column or 0
+            headers1 = [ _norm(c.value) for c in next(ws.iter_rows(min_row=1, max_row=1, max_col=max_col)) ]
+            headers2 = [ _norm(c.value) for c in next(ws.iter_rows(min_row=2, max_row=2, max_col=max_col)) ]
+            headers1 = _ffill(headers1)
             rows = []
-            for r in ws.iter_rows(min_row=3, values_only=True):
-                rows.append(list(r))
+            for r in ws.iter_rows(min_row=3, max_col=max_col, values_only=True):
+                rows.append([ v for v in r ])
         elif _is_xls(data) or (filename or '').lower().endswith('.xls'):
             try:
                 import xlrd
             except Exception:
-                raise UserError('Tu archivo es .XLS. Esta instancia no trae xlrd. Abrí el archivo y guardalo como .XLSX y reintentá.')
+                raise UserError('Tu archivo es .XLS y esta instancia no trae xlrd. Abrí el archivo y guardalo como .XLSX y reintentá.')
             book = xlrd.open_workbook(file_contents=data)
-            if sheet_name not in book.sheet_names():
+            wanted = None
+            for sn in book.sheet_names():
+                if _lower(sn) == _lower(sheet_name):
+                    wanted = sn
+                    break
+            if not wanted:
                 raise UserError('No se encontró la hoja "%s".' % sheet_name)
-            sh = book.sheet_by_name(sheet_name)
-            headers1 = [ _norm(sh.cell_value(0, c)) for c in range(sh.ncols) ]
-            headers2 = [ _norm(sh.cell_value(1, c)) for c in range(sh.ncols) ]
+            sh = book.sheet_by_name(wanted)
+            ncols = sh.ncols
+            headers1 = [ _norm(sh.cell_value(0, c)) for c in range(ncols) ]
+            headers2 = [ _norm(sh.cell_value(1, c)) for c in range(ncols) ]
+            headers1 = _ffill(headers1)
             rows = []
             for r in range(2, sh.nrows):
-                rows.append([ sh.cell_value(r, c) for c in range(sh.ncols) ])
+                rows.append([ sh.cell_value(r, c) for c in range(ncols) ])
         else:
             raise UserError('Formato no reconocido. Si es .XLS, convertí a .XLSX.')
 
@@ -83,22 +107,29 @@ class DflexPortonImportWizard(models.TransientModel):
 
     def _build_columns(self, headers1, headers2):
         cols = []
-        for idx, (h1, h2) in enumerate(zip(headers1, headers2)):
+        n = max(len(headers1), len(headers2))
+        for idx in range(n):
+            h1 = headers1[idx] if idx < len(headers1) else ''
+            h2 = headers2[idx] if idx < len(headers2) else ''
             if re.match(r'^\s*columna\b', _lower(h1)) or re.match(r'^\s*columna\b', _lower(h2)):
+                continue
+            if not _norm(h1) and not _norm(h2):
                 continue
             lbl = _label(h1, h2) or ('Columna %s' % (idx+1))
             tech = ('x_%s_%s' % (_slug(h1), _slug(h2))).strip('_')
+            if not tech.startswith('x_'):
+                tech = 'x_' + tech
             cols.append({'index': idx, 'label': lbl, 'tech': tech[:63], 'h1': h1, 'h2': h2})
         seen = {}
         for c in cols:
             base = c['tech']
-            n = 1
-            key = base
-            while key in seen:
-                n += 1
-                key = (base[:60] + '_' + str(n))[:63]
-            c['tech'] = key
-            seen[key] = True
+            k = base
+            i = 1
+            while k in seen:
+                i += 1
+                k = (base[:60] + '_' + str(i))[:63]
+            c['tech'] = k
+            seen[k] = True
         return cols
 
     def _ensure_fields(self, columns):
@@ -107,7 +138,7 @@ class DflexPortonImportWizard(models.TransientModel):
         model = Model.search([('model', '=', 'dflex.porton')], limit=1)
         if not model:
             raise UserError('No se encontró el modelo dflex.porton.')
-        created_or_existing = []
+        out = []
         for col in columns:
             name = col['tech']
             field = Fields.search([('model_id', '=', model.id), ('name', '=', name)], limit=1)
@@ -117,16 +148,15 @@ class DflexPortonImportWizard(models.TransientModel):
                     'model_id': model.id,
                     'ttype': 'char',
                     'field_description': col['label'],
-                    'size': 512,
                     'store': True,
                 })
-            created_or_existing.append({'name': name, 'label': col['label']})
-        return created_or_existing
+            out.append({'name': name, 'label': col['label']})
+        return out
 
     def _upsert_dynamic_form_view(self, fields_meta):
         View = self.env['ir.ui.view'].sudo()
         lines = ['                  <field name="%s" string="%s"/>' % (f['name'], f['label']) for f in fields_meta]
-        field_xml = "\n".join(lines)
+        field_xml = "\n".join(lines) or '                  <label string="(sin columnas detectadas)"/>'
         arch = """
         <form string="Portón">
           <sheet>
@@ -149,15 +179,17 @@ class DflexPortonImportWizard(models.TransientModel):
         </form>
         """.format(field_xml)
         rec = View.search([('model', '=', 'dflex.porton'), ('name', '=', 'dflex.porton.form.auto')], limit=1)
+        vals = {'arch_db': arch, 'type': 'form', 'priority': 1}
         if rec:
-            rec.write({'arch_db': arch, 'type': 'form', 'priority': 90})
+            rec.write(vals)
         else:
-            View.create({'name': 'dflex.porton.form.auto', 'model': 'dflex.porton', 'arch_db': arch, 'type': 'form', 'priority': 90})
+            View.create({'name': 'dflex.porton.form.auto', 'model': 'dflex.porton', **vals})
 
     def _find_nv_column(self, columns):
-        for cand in HEADER_NV_CANDIDATES:
-            for c in columns:
-                if cand in _lower(c['label']) or cand in _lower(c['h1']) or cand in _lower(c['h2']):
+        for c in columns:
+            text = ' '.join([_lower(c['label']), _lower(c['h1']), _lower(c['h2'])])
+            for cand in HEADER_NV_CANDIDATES:
+                if cand in text:
                     return c
         return None
 
@@ -166,7 +198,7 @@ class DflexPortonImportWizard(models.TransientModel):
         h1, h2, data_rows = self._read_excel(self.file, self.filename or 'import.xlsx')
         columns = self._build_columns(h1, h2)
         if not columns:
-            raise UserError('No se detectaron columnas válidas en PRINCIPAL.')
+            raise UserError('No se detectaron columnas válidas en PRINCIPAL (revisá fila 1 y 2).')
         meta = self._ensure_fields(columns)
         idx2tech = { c['index']: c['tech'] for c in columns }
         nv_col = self._find_nv_column(columns)
@@ -183,8 +215,7 @@ class DflexPortonImportWizard(models.TransientModel):
         Spec = self.env['dflex.porton.spec']
         created_ids = []
         for r_idx, row in enumerate(data_rows, start=3):
-            values = {}
-            specs = {}
+            values, specs = {}, {}
             for i, cell in enumerate(row):
                 if i in idx2tech:
                     v = '' if cell is None else str(cell)
@@ -203,13 +234,8 @@ class DflexPortonImportWizard(models.TransientModel):
                 'specs_json': specs,
                 **values,
             })
-            pairs = []
-            for c in columns:
-                tech = c['tech']
-                if tech in values:
-                    pairs.append({'porton_id': rec.id, 'key': c['label'], 'value': values[tech]})
-            if pairs:
-                Spec.create(pairs)
+            if specs:
+                Spec.create([{'porton_id': rec.id, 'key': k, 'value': v} for k, v in specs.items()])
             created_ids.append(rec.id)
 
         batch.state = 'done'
