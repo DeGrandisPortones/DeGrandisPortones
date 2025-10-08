@@ -1,29 +1,24 @@
 from odoo import api, fields, models, _
-import logging
-_logger = logging.getLogger(__name__)
-
 class DflexPortonImport(models.Model):
     _name = 'dflex.porton.import'
     _description = 'Lote de importación de portones'
     _order = 'create_date desc'
-
-    name = fields.Char(string='Nombre', required=True, default=lambda self: _('Importación %s') % fields.Date.today())
-    file_name = fields.Char('Archivo')
-    total_rows = fields.Integer('Filas')
-    note = fields.Text('Notas')
-    porton_ids = fields.One2many('dflex.porton', 'import_id', string='Portones')
+    name = fields.Char(required=True, default=lambda self: _('Importación %s') % fields.Date.today())
+    file_name = fields.Char()
+    total_rows = fields.Integer()
+    note = fields.Text()
+    porton_ids = fields.One2many('dflex.porton', 'import_id')
     state = fields.Selection([('draft','Borrador'),('done','Importado')], default='draft')
 
 class DflexPorton(models.Model):
     _name = 'dflex.porton'
     _description = 'Portón (fila importada)'
     _order = 'id desc'
-
-    name = fields.Char('Identificador', index=True, required=True)
-    import_id = fields.Many2one('dflex.porton.import', string='Lote de importación', ondelete='cascade')
-    source_row = fields.Integer('Fila origen')
-    specs_json = fields.Json('Especificaciones (JSON)')
-    spec_ids = fields.One2many('dflex.porton.spec', 'porton_id', string='Especificaciones')
+    name = fields.Char(index=True, required=True)
+    import_id = fields.Many2one('dflex.porton.import', ondelete='cascade')
+    source_row = fields.Integer()
+    specs_json = fields.Json()
+    spec_ids = fields.One2many('dflex.porton.spec', 'porton_id')
     state = fields.Selection([('draft','Borrador'),('imported','Importado')], default='draft')
 
     def action_view_specs(self):
@@ -34,7 +29,7 @@ class DflexPorton(models.Model):
             'res_model': 'dflex.porton.spec',
             'view_mode': 'list,form',
             'domain': [('porton_id', '=', self.id)],
-            'context': dict(self.env.context, default_porton_id=self.id),
+            'context': {'default_porton_id': self.id},
         }
 
     @api.model
@@ -49,10 +44,7 @@ class DflexPorton(models.Model):
                 name = str(specs.get(name_column))
             else:
                 first_keys = [k for k in specs.keys() if str(specs.get(k)).strip()]
-                if first_keys:
-                    name = f"{first_keys[0]}: {specs[first_keys[0]]}"
-                else:
-                    name = _('Portón fila %s') % idx
+                name = f"{first_keys[0]}: {specs[first_keys[0]]}" if first_keys else _('Portón fila %s') % idx
             rec = Porton.create({
                 'name': name,
                 'import_id': batch.id,
@@ -60,10 +52,6 @@ class DflexPorton(models.Model):
                 'specs_json': specs,
                 'state': 'imported',
             })
-            Spec.create([{
-                'porton_id': rec.id,
-                'key': str(k),
-                'value': str(v) if v is not None else '',
-            } for k, v in specs.items()])
+            Spec.create([{'porton_id': rec.id, 'key': str(k), 'value': str(v) if v is not None else ''} for k, v in specs.items()])
             created += rec
         return created

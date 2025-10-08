@@ -12,7 +12,6 @@
       </list>
     </field>
   </record>
-
   <record id="view_dflex_porton_form" model="ir.ui.view">
     <field name="name">dflex.porton.form</field>
     <field name="model">dflex.porton</field>
@@ -45,7 +44,6 @@
       </form>
     </field>
   </record>
-
   <record id="action_dflex_porton" model="ir.actions.act_window">
     <field name="name">Portones</field>
     <field name="res_model">dflex.porton</field>
