@@ -1,8 +1,10 @@
 from odoo import api, fields, models, _
+
 class DflexPortonImport(models.Model):
     _name = 'dflex.porton.import'
     _description = 'Lote de importación de portones'
     _order = 'create_date desc'
+
     name = fields.Char(required=True, default=lambda self: _('Importación %s') % fields.Date.today())
     file_name = fields.Char()
     total_rows = fields.Integer()
@@ -14,12 +16,13 @@ class DflexPorton(models.Model):
     _name = 'dflex.porton'
     _description = 'Portón (fila importada)'
     _order = 'id desc'
-    name = fields.Char(index=True, required=True)
-    import_id = fields.Many2one('dflex.porton.import', ondelete='cascade')
-    source_row = fields.Integer()
-    specs_json = fields.Json()
-    spec_ids = fields.One2many('dflex.porton.spec', 'porton_id')
-    state = fields.Selection([('draft','Borrador'),('imported','Importado')], default='draft')
+
+    name = fields.Char(index=True, required=True, string='Identificador (NV)')
+    import_id = fields.Many2one('dflex.porton.import', ondelete='cascade', string='Importación')
+    source_row = fields.Integer(string='Fila origen')
+    specs_json = fields.Json(string='Especificaciones (JSON)')
+    spec_ids = fields.One2many('dflex.porton.spec', 'porton_id', string='Especificaciones (K/V)')
+    state = fields.Selection([('draft','Borrador'),('imported','Importado')], default='imported')
 
     def action_view_specs(self):
         self.ensure_one()
@@ -39,10 +42,12 @@ class DflexPorton(models.Model):
         created = self.env['dflex.porton']
         for idx, row in enumerate(rows, start=2):
             specs = {k: (v if v not in [False, None] else '') for k, v in row.items()}
+            # determine name
             name = None
             if name_column and specs.get(name_column):
                 name = str(specs.get(name_column))
             else:
+                # fallback: first non-empty column
                 first_keys = [k for k in specs.keys() if str(specs.get(k)).strip()]
                 name = f"{first_keys[0]}: {specs[first_keys[0]]}" if first_keys else _('Portón fila %s') % idx
             rec = Porton.create({

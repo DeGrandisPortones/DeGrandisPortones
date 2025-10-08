@@ -11,6 +11,7 @@
       </list>
     </field>
   </record>
+
   <record id="view_dflex_porton_spec_pivot" model="ir.ui.view">
     <field name="name">dflex.porton.spec.pivot</field>
     <field name="model">dflex.porton.spec</field>
@@ -22,6 +23,7 @@
       </pivot>
     </field>
   </record>
+
   <record id="action_dflex_porton_spec" model="ir.actions.act_window">
     <field name="name">Especificaciones</field>
     <field name="res_model">dflex.porton.spec</field>

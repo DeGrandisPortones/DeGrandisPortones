@@ -1,7 +1,7 @@
 {
     'name': 'DFLEX Portones - Importador',
-    'version': '18.0.1.0.4',
-    'summary': 'Importa portones desde Excel/XLS para tabular especificaciones (hoja PRINCIPAL).',
+    'version': '18.0.1.0.5',
+    'summary': 'Importa portones desde Excel/XLS (hoja PRINCIPAL) y tabula especificaciones.',
     'author': 'Esteban Scalerandi + ChatGPT',
     'website': 'https://dflex.com.ar',
     'category': 'Manufacturing/Manufacturing',
