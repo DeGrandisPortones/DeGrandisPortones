@@ -4,12 +4,12 @@
     <field name="name">dflex.porton.tree</field>
     <field name="model">dflex.porton</field>
     <field name="arch" type="xml">
-      <tree string="Portones">
+      <list string="Portones">
         <field name="name"/>
         <field name="import_id"/>
         <field name="source_row"/>
         <field name="state"/>
-      </tree>
+      </list>
     </field>
   </record>
 
@@ -28,10 +28,10 @@
           <notebook>
             <page string="Especificaciones (tabla)">
               <field name="spec_ids" context="{{'default_porton_id': active_id}}">
-                <tree editable="bottom">
+                <list editable="bottom">
                   <field name="key"/>
                   <field name="value"/>
-                </tree>
+                </list>
               </field>
             </page>
             <page string="JSON">
@@ -49,7 +49,7 @@
   <record id="action_dflex_porton" model="ir.actions.act_window">
     <field name="name">Portones</field>
     <field name="res_model">dflex.porton</field>
-    <field name="view_mode">tree,form,pivot</field>
+    <field name="view_mode">list,form,pivot</field>
     <field name="context">{{}}
     </field>
   </record>
