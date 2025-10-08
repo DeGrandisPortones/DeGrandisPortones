@@ -26,7 +26,6 @@ def _slug(s):
 def _label(h1, h2):
     h1n, h2n = _norm(h1), _norm(h2)
     if h1n and h2n:
-        # Abreviar la cabecera 1 a 3 letras + ". " como en el ejemplo (Ins. Instalador)
         return (h1n[:3].capitalize() + '. ' + h2n).strip()
     return (h1n or h2n)
 
@@ -85,13 +84,11 @@ class DflexPortonImportWizard(models.TransientModel):
     def _build_columns(self, headers1, headers2):
         cols = []
         for idx, (h1, h2) in enumerate(zip(headers1, headers2)):
-            # Omitir relleno: "Columna X"
             if re.match(r'^\s*columna\b', _lower(h1)) or re.match(r'^\s*columna\b', _lower(h2)):
                 continue
             lbl = _label(h1, h2) or ('Columna %s' % (idx+1))
             tech = ('x_%s_%s' % (_slug(h1), _slug(h2))).strip('_')
             cols.append({'index': idx, 'label': lbl, 'tech': tech[:63], 'h1': h1, 'h2': h2})
-        # Evitar duplicados técnicos
         seen = {}
         for c in cols:
             base = c['tech']
@@ -216,6 +213,6 @@ class DflexPortonImportWizard(models.TransientModel):
 
         batch.state = 'done'
         self._upsert_dynamic_form_view([{'name': f['name'], 'label': f['label']} for f in meta])
-        action = self.env.ref('dflex_portones_import_dyn.action_dflex_porton').read()[0]
+        action = self.env.ref('dflex_portones_import.action_dflex_porton').read()[0]
         action['domain'] = [('id', 'in', created_ids)]
         return action
