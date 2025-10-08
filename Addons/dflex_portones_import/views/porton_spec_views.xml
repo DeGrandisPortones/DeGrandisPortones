@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
-  <record id="view_dflex_porton_spec_tree" model="ir.ui.view">
-    <field name="name">dflex.porton.spec.tree</field>
+  <record id="view_dflex_porton_spec_list" model="ir.ui.view">
+    <field name="name">dflex.porton.spec.list</field>
     <field name="model">dflex.porton.spec</field>
     <field name="arch" type="xml">
       <list string="Especificaciones">

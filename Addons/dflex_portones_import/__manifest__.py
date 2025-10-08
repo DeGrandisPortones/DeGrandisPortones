@@ -1,7 +1,7 @@
 {
     'name': 'DFLEX Portones - Importador',
-    'version': '18.0.1.0.1',
-    'summary': 'Importa portones desde Excel/XLS para tabular especificaciones.',
+    'version': '18.0.1.0.2',
+    'summary': 'Importa portones desde Excel/XLS para tabular especificaciones (hoja PRINCIPAL).',
     'author': 'Esteban Scalerandi + ChatGPT',
     'website': 'https://dflex.com.ar',
     'category': 'Manufacturing/Manufacturing',
@@ -9,9 +9,9 @@
     'depends': ['base'],
     'data': [
         'security/ir.model.access.csv',
-        'views/porton_views.xml',          # define action first
-        'views/porton_spec_views.xml',     # define related views
-        'views/porton_menu.xml',           # then reference actions in menus
+        'views/porton_views.xml',
+        'views/porton_spec_views.xml',
+        'views/porton_menu.xml',
         'wizard/import_wizard_views.xml',
     ],
     'assets': {},

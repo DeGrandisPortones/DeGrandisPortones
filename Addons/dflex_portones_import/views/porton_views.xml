@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
-  <record id="view_dflex_porton_tree" model="ir.ui.view">
-    <field name="name">dflex.porton.tree</field>
+  <record id="view_dflex_porton_list" model="ir.ui.view">
+    <field name="name">dflex.porton.list</field>
     <field name="model">dflex.porton</field>
     <field name="arch" type="xml">
       <list string="Portones">
@@ -27,7 +27,7 @@
           </group>
           <notebook>
             <page string="Especificaciones (tabla)">
-              <field name="spec_ids" context="{'default_porton_id': active_id}">
+              <field name="spec_ids">
                 <list editable="bottom">
                   <field name="key"/>
                   <field name="value"/>

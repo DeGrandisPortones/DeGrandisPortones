@@ -20,15 +20,10 @@ class DflexPortonImportWizard(models.TransientModel):
     name_column = fields.Char('Columna para nombre (opcional)', help='Si se omite, se usa NV/Numero de venta automáticamente si existe.')
 
     def _detect_header_row(self, ws, max_scan=25):
-        # Scan the first rows to find one that contains a header-like row with NV/Numero de venta
         for idx, row in enumerate(ws.iter_rows(min_row=1, max_row=max_scan, values_only=True), start=1):
             texts = [_lower(v) for v in row if v not in (None, '')]
-            if not texts:
-                continue
-            # If any cell contains candidate tokens, accept as header row
-            if any(any(c in t for c in HEADER_CANDIDATES) for t in texts):
+            if texts and any(any(c in t for c in HEADER_CANDIDATES) for t in texts):
                 return idx
-        # Fallback: first row with >=5 non-empty cells
         for idx, row in enumerate(ws.iter_rows(min_row=1, max_row=max_scan, values_only=True), start=1):
             non_empty = [v for v in row if _normalize(v)]
             if len(non_empty) >= 5:
@@ -43,7 +38,6 @@ class DflexPortonImportWizard(models.TransientModel):
         rows = []
         headers = []
         sheet_name = 'PRINCIPAL'
-        # XLS
         if (filename or '').lower().endswith('.xls'):
             try:
                 import xlrd
@@ -53,7 +47,6 @@ class DflexPortonImportWizard(models.TransientModel):
             if sheet_name not in book.sheet_names():
                 raise UserError(_('No se encontró la hoja "%s" en el archivo.') % sheet_name)
             sheet = book.sheet_by_name(sheet_name)
-            # naive: assume first row headers
             headers = [str(sheet.cell_value(0, c)).strip() for c in range(sheet.ncols)]
             start_row = 1
             for r in range(start_row, sheet.nrows):
@@ -74,10 +67,8 @@ class DflexPortonImportWizard(models.TransientModel):
                 raise UserError(_('No se encontró la hoja "%s" en el archivo.') % sheet_name)
             ws = wb[sheet_name]
             header_row = self._detect_header_row(ws)
-            # Build headers from that row
             header_cells = next(ws.iter_rows(min_row=header_row, max_row=header_row))
             headers = [str(cell.value).strip() if cell.value is not None else '' for cell in header_cells]
-            # Read data from next row onwards
             for r in ws.iter_rows(min_row=header_row+1, values_only=True):
                 row = {}
                 for h, v in zip(headers, list(r)):
@@ -91,16 +82,13 @@ class DflexPortonImportWizard(models.TransientModel):
     def action_import(self):
         self.ensure_one()
         headers, rows = self._read_excel(self.file, self.filename or 'import.xlsx')
-        # Auto-select name column if not provided
         name_col = self.name_column or None
         if not name_col:
-            # try exact match
             lowered = { _lower(h): h for h in headers }
             for cand in HEADER_CANDIDATES:
                 if cand in lowered:
                     name_col = lowered[cand]
                     break
-            # try partial contains
             if not name_col:
                 for k, original in lowered.items():
                     if any(c in k for c in HEADER_CANDIDATES):
@@ -116,5 +104,5 @@ class DflexPortonImportWizard(models.TransientModel):
         batch.state = 'done'
         action = self.env.ref('dflex_portones_import.action_dflex_porton').read()[0]
         action['domain'] = [('import_id', '=', batch.id)]
-        action['context'] = dict(self.env.context, search_default_import_id=batch.id)
+        action['context'] = {}
         return action

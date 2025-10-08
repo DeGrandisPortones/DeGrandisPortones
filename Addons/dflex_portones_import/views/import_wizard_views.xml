@@ -4,11 +4,11 @@
     <field name="name">dflex.porton.import.wizard</field>
     <field name="model">dflex.porton.import.wizard</field>
     <field name="arch" type="xml">
-      <form string="Importar Portones">
+      <form string="Importar Portones (PRINCIPAL)">
         <group>
           <field name="file" filename="filename"/>
           <field name="filename" readonly="1"/>
-          <field name="name_column" placeholder="Por ejemplo: CODIGO"/>
+          <field name="name_column" placeholder="Ej.: NV o Número de venta (opcional)"/>
         </group>
         <footer>
           <button string="Cancelar" class="btn-secondary" special="cancel"/>
@@ -25,16 +25,16 @@
     <field name="target">new</field>
   </record>
 
-  <record id="view_dflex_porton_import_tree" model="ir.ui.view">
-    <field name="name">dflex.porton.import.tree</field>
+  <record id="view_dflex_porton_import_list" model="ir.ui.view">
+    <field name="name">dflex.porton.import.list</field>
     <field name="model">dflex.porton.import</field>
     <field name="arch" type="xml">
-      <tree>
+      <list>
         <field name="name"/>
         <field name="file_name"/>
         <field name="total_rows"/>
         <field name="state"/>
-      </tree>
+      </list>
     </field>
   </record>
 
@@ -56,11 +56,11 @@
           <notebook>
             <page string="Portones">
               <field name="porton_ids">
-                <tree>
+                <list>
                   <field name="name"/>
                   <field name="source_row"/>
                   <field name="state"/>
-                </tree>
+                </list>
               </field>
             </page>
           </notebook>
@@ -72,6 +72,6 @@
   <record id="action_dflex_porton_import" model="ir.actions.act_window">
     <field name="name">Importaciones</field>
     <field name="res_model">dflex.porton.import</field>
-    <field name="view_mode">tree,form</field>
+    <field name="view_mode">list,form</field>
   </record>
 </odoo>
