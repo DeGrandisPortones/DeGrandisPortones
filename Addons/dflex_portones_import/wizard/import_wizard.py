@@ -4,7 +4,7 @@ import base64, io, re, unicodedata
 
 HEADER_NV_CANDIDATES = [
     'nv', 'n v', 'numero de venta', 'n° de venta', 'nº de venta',
-    'nro venta', 'nro de venta', 'número de venta', 'n° venta', 'venta n°'
+    'nro venta', 'nro de venta', 'número de venta', 'n° venta', 'venta n°', 'nota de venta'
 ]
 
 def _norm(s):
@@ -156,7 +156,7 @@ class DflexPortonImportWizard(models.TransientModel):
     def _upsert_dynamic_form_view(self, fields_meta):
         View = self.env['ir.ui.view'].sudo()
         lines = ['                  <field name="%s" string="%s"/>' % (f['name'], f['label']) for f in fields_meta]
-        field_xml = "\n".join(lines) or '                  <label string="(sin columnas detectadas)"/>'
+        field_xml = "\n".join(lines) or '                  <separator string="(sin columnas detectadas)"/>'
         arch = """
         <form string="Portón">
           <sheet>
