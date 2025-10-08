@@ -1,6 +1,6 @@
 {
     'name': 'DFLEX Portones - Importador',
-    'version': '18.0.3.0.0',
+    'version': '18.0.3.0.1',
     'summary': "Importa sólo 'PRINCIPAL'; fila1+fila2=encabezados; datos desde fila3; omite 'Columna X'; crea campos x_.",
     'author': 'Esteban Scalerandi + ChatGPT',
     'website': 'https://dflex.com.ar',

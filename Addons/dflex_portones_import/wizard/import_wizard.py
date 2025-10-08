@@ -19,7 +19,7 @@ def _slug(s):
     s = re.sub(r'[^a-zA-Z0-9]+', '_', s).strip('_').lower()
     if not s:
         s = 'col'
-    if s[0].isdigit():
+    if s and s[0].isdigit():
         s = 'c_' + s
     return s[:50]
 
@@ -125,28 +125,29 @@ class DflexPortonImportWizard(models.TransientModel):
 
     def _upsert_dynamic_form_view(self, fields_meta):
         View = self.env['ir.ui.view'].sudo()
-        field_xml = "\\n".join(['                  <field name=\"%s\" string=\"%s\"/>' % (f['name'], f['label']) for f in fields_meta])
-        arch = f\"\"\"
-        <form string=\"Portón\">
+        lines = ['                  <field name="%s" string="%s"/>' % (f['name'], f['label']) for f in fields_meta]
+        field_xml = "\n".join(lines)
+        arch = """
+        <form string="Portón">
           <sheet>
             <group>
-              <field name=\"name\"/>
-              <field name=\"import_id\"/>
-              <field name=\"source_row\"/>
+              <field name="name"/>
+              <field name="import_id"/>
+              <field name="source_row"/>
             </group>
             <notebook>
-              <page string=\"Datos importados\">
-                <group col=\"4\">
-{field_xml}
+              <page string="Datos importados">
+                <group col="4">
+{}
                 </group>
               </page>
-              <page string=\"JSON\">
-                <field name=\"specs_json\" widget=\"json\"/>
+              <page string="JSON">
+                <field name="specs_json" widget="json"/>
               </page>
             </notebook>
           </sheet>
         </form>
-        \"\"\"
+        """.format(field_xml)
         rec = View.search([('model', '=', 'dflex.porton'), ('name', '=', 'dflex.porton.form.auto')], limit=1)
         if rec:
             rec.write({'arch_db': arch, 'type': 'form', 'priority': 90})
