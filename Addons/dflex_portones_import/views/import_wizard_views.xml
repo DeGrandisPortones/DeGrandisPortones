@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+  <record id="view_dflex_porton_import_wizard" model="ir.ui.view">
+    <field name="name">dflex.porton.import.wizard</field>
+    <field name="model">dflex.porton.import.wizard</field>
+    <field name="arch" type="xml">
+      <form string="Importar Portones">
+        <group>
+          <field name="file" filename="filename"/>
+          <field name="filename" readonly="1"/>
+          <field name="name_column" placeholder="Por ejemplo: CODIGO"/>
+        </group>
+        <footer>
+          <button string="Cancelar" class="btn-secondary" special="cancel"/>
+          <button string="Importar" type="object" name="action_import" class="btn-primary"/>
+        </footer>
+      </form>
+    </field>
+  </record>
+
+  <record id="action_dflex_porton_import_wizard" model="ir.actions.act_window">
+    <field name="name">Importar desde Excel</field>
+    <field name="res_model">dflex.porton.import.wizard</field>
+    <field name="view_mode">form</field>
+    <field name="target">new</field>
+  </record>
+
+  <record id="view_dflex_porton_import_tree" model="ir.ui.view">
+    <field name="name">dflex.porton.import.tree</field>
+    <field name="model">dflex.porton.import</field>
+    <field name="arch" type="xml">
+      <tree>
+        <field name="name"/>
+        <field name="file_name"/>
+        <field name="total_rows"/>
+        <field name="state"/>
+      </tree>
+    </field>
+  </record>
+
+  <record id="view_dflex_porton_import_form" model="ir.ui.view">
+    <field name="name">dflex.porton.import.form</field>
+    <field name="model">dflex.porton.import</field>
+    <field name="arch" type="xml">
+      <form string="Importación">
+        <sheet>
+          <group>
+            <field name="name"/>
+            <field name="file_name"/>
+            <field name="total_rows"/>
+            <field name="state"/>
+          </group>
+          <group>
+            <field name="note"/>
+          </group>
+          <notebook>
+            <page string="Portones">
+              <field name="porton_ids">
+                <tree>
+                  <field name="name"/>
+                  <field name="source_row"/>
+                  <field name="state"/>
+                </tree>
+              </field>
+            </page>
+          </notebook>
+        </sheet>
+      </form>
+    </field>
+  </record>
+
+  <record id="action_dflex_porton_import" model="ir.actions.act_window">
+    <field name="name">Importaciones</field>
+    <field name="res_model">dflex.porton.import</field>
+    <field name="view_mode">tree,form</field>
+  </record>
+</odoo>

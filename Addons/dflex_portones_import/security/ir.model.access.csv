@@ -1,0 +1,5 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_dflex_porton,access_dflex_porton,model_dflex_porton,,1,1,1,1
+access_dflex_porton_spec,access_dflex_porton_spec,model_dflex_porton_spec,,1,1,1,1
+access_dflex_porton_import,access_dflex_porton_import,model_dflex_porton_import,,1,1,1,1
+access_dflex_porton_import_wizard,access_dflex_porton_import_wizard,model_dflex_porton_import_wizard,,1,1,1,1
