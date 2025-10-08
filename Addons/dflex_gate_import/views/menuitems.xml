@@ -4,7 +4,6 @@
   <menuitem id="menu_dflex_root"
             name="Portones"
             parent="mrp.menu_mrp_root"
-            action="action_x_gate_spec_tree"
             sequence="80"/>
   <!-- Submenus -->
   <menuitem id="menu_dflex_gate"
