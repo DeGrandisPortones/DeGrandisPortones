@@ -24,4 +24,4 @@ Módulo para Odoo que permite:
 - Multi-compañía soportado.
 - Unicidad: mismo **número + banco + compañía**.
 - El CUIT/Nombre del proveedor se toma del partner (campos `vat` y `name`).
-- Si hace falta vincular con pagos contables, se puede ampliar con hooks en `account.payment`.
+- Si hace falta vincular con pagos contables, se puede ampliar con hooks en `account.payment`..
