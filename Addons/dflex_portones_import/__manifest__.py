@@ -14,6 +14,6 @@
         "views/wizard_views.xml",
         "views/menu.xml"
     ],
-    "installable": true,
-    "application": false
+    "installable": True,
+    "application": False
 }
