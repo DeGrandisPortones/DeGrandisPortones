@@ -18,7 +18,7 @@
   </record>
 
   <record id="action_dflex_porton_import_wizard" model="ir.actions.act_window">
-    <field name="name">Importar desde Excel</field>
+    <field name="name">Importar desde Excel/CSV</field>
     <field name="res_model">dflex.porton.import.wizard</field>
     <field name="view_mode">form</field>
     <field name="target">new</field>

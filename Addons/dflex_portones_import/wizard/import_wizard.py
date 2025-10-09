@@ -1,6 +1,6 @@
 from odoo import api, fields, models
 from odoo.exceptions import UserError
-import base64, io, re, unicodedata
+import base64, io, re, unicodedata, csv
 
 HEADER_NV_CANDIDATES = [
     'nv', 'n v', 'numero de venta', 'n° de venta', 'nº de venta',
@@ -47,9 +47,9 @@ def _ffill(values):
 
 class DflexPortonImportWizard(models.TransientModel):
     _name = 'dflex.porton.import.wizard'
-    _description = 'Importar portones desde Excel (PRINCIPAL, fila1+fila2 encabezados, datos desde fila3)'
+    _description = 'Importar portones desde Excel/CSV (PRINCIPAL, fila1+fila2 encabezados, datos desde fila3)'
 
-    file = fields.Binary(required=True, string='Archivo XLS/XLSX')
+    file = fields.Binary(required=True, string='Archivo XLS/XLSX/CSV')
     filename = fields.Char(string='Nombre de archivo')
 
     def _read_excel(self, content, filename):
@@ -57,8 +57,22 @@ class DflexPortonImportWizard(models.TransientModel):
         if not data:
             raise UserError('El archivo está vacío.')
         sheet_name = 'PRINCIPAL'
+        fname = (filename or '').lower()
 
-        if _is_xlsx(data) or (filename or '').lower().endswith('.xlsx'):
+        # --- CSV directo ---
+        if fname.endswith('.csv'):
+            text = data.decode('utf-8', errors='replace')
+            rows = list(csv.reader(io.StringIO(text)))
+            if len(rows) < 3:
+                raise UserError('CSV inválido: se esperan 2 filas de encabezado y datos desde la 3.')
+            headers1 = [ _norm(x) for x in rows[0] ]
+            headers2 = [ _norm(x) for x in rows[1] ]
+            headers1 = _ffill(headers1)
+            data_rows = rows[2:]
+            return headers1, headers2, data_rows
+
+        # --- XLSX ---
+        if _is_xlsx(data) or fname.endswith('.xlsx'):
             try:
                 import openpyxl
             except Exception as e:
@@ -79,11 +93,14 @@ class DflexPortonImportWizard(models.TransientModel):
             rows = []
             for r in ws.iter_rows(min_row=3, max_col=max_col, values_only=True):
                 rows.append([ v for v in r ])
-        elif _is_xls(data) or (filename or '').lower().endswith('.xls'):
+            return headers1, headers2, rows
+
+        # --- XLS ---
+        if _is_xls(data) or fname.endswith('.xls'):
             try:
                 import xlrd
             except Exception:
-                raise UserError('Tu archivo es .XLS y esta instancia no trae xlrd. Abrí el archivo y guardalo como .XLSX y reintentá.')
+                raise UserError('Tu archivo es .XLS y esta instancia no trae xlrd. Abrí el archivo y guardalo como .XLSX o subí CSV.')
             book = xlrd.open_workbook(file_contents=data)
             wanted = None
             for sn in book.sheet_names():
@@ -100,10 +117,9 @@ class DflexPortonImportWizard(models.TransientModel):
             rows = []
             for r in range(2, sh.nrows):
                 rows.append([ sh.cell_value(r, c) for c in range(ncols) ])
-        else:
-            raise UserError('Formato no reconocido. Si es .XLS, convertí a .XLSX.')
+            return headers1, headers2, rows
 
-        return headers1, headers2, rows
+        raise UserError('Formato no reconocido. Subí XLSX/XLS o CSV.')
 
     def _build_columns(self, headers1, headers2):
         cols = []
@@ -207,7 +223,7 @@ class DflexPortonImportWizard(models.TransientModel):
             'name': self.filename or 'Importación',
             'file_name': self.filename,
             'total_rows': len(data_rows),
-            'note': 'Hoja: PRINCIPAL | Columnas: %s' % ', '.join([c['label'] for c in columns]),
+            'note': 'Hoja/Archivo: PRINCIPAL | Columnas: %s' % ', '.join([c['label'] for c in columns]),
             'state': 'draft',
         })
 
@@ -216,6 +232,7 @@ class DflexPortonImportWizard(models.TransientModel):
         created_ids = []
         for r_idx, row in enumerate(data_rows, start=3):
             values, specs = {}, {}
+            # Soporta row como lista de strings (CSV) o lista de celdas (XLSX/XLS)
             for i, cell in enumerate(row):
                 if i in idx2tech:
                     v = '' if cell is None else str(cell)
