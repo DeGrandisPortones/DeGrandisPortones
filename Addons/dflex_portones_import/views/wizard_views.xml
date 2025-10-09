@@ -8,7 +8,7 @@
         <group>
           <field name="file" filename="filename"/>
           <field name="filename" readonly="1"/>
-          <label class="o_form_label" string="Formato: CSV con 1 sola fila de encabezado; datos desde la fila 2. Separador , o ;."/>
+          <label for="file" string="Formato: CSV con 1 sola fila de encabezado; datos desde la fila 2. Separador , o ;."/>
         </group>
         <footer>
           <button string="Cancelar" class="btn-secondary" special="cancel"/>
