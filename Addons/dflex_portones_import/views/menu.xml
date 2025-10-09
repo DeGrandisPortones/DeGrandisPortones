@@ -1,8 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
-  <menuitem id="menu_dflex_root" name="DFLEX"/>
-  <menuitem id="menu_dflex_portones" name="Portones" parent="menu_dflex_root" sequence="10"/>
-  <menuitem id="menu_dflex_porton_items" name="Listado" parent="menu_dflex_portones" action="action_dflex_porton" sequence="10"/>
-  <menuitem id="menu_dflex_import" name="Importaciones" parent="menu_dflex_portones" action="action_dflex_porton_import" sequence="20"/>
-  <menuitem id="menu_dflex_import_wizard" name="Importar desde CSV" parent="menu_dflex_portones" action="action_dflex_porton_import_wizard" sequence="5"/>
+  <!-- Menú raíz Portones (si ya lo tenés, no lo dupliques) -->
+  <menuitem id="menu_dflex_portones" name="Portones" sequence="10"/>
+
+  <!-- Listado de portones (si ya lo tenés) -->
+  <menuitem id="menu_dflex_porton_items" name="Listado"
+            parent="menu_dflex_portones" action="action_dflex_porton" sequence="10"/>
+
+  <!-- Importaciones (esta línea es la que te fallaba por no existir la action) -->
+  <menuitem id="menu_dflex_import" name="Importaciones"
+            parent="menu_dflex_portones" action="action_dflex_porton_import" sequence="20"/>
 </odoo>
