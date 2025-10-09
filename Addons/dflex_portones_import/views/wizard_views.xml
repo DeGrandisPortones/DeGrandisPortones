@@ -1,7 +1,6 @@
+
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
-
-  <!-- Vista del wizard -->
   <record id="view_dflex_porton_import_wizard" model="ir.ui.view">
     <field name="name">dflex.porton.import.wizard</field>
     <field name="model">dflex.porton.import.wizard</field>
@@ -20,13 +19,10 @@
     </field>
   </record>
 
-  <!-- ACCIÓN DEL WIZARD (ESTA ES LA QUE FALTA) -->
   <record id="action_dflex_porton_import" model="ir.actions.act_window">
     <field name="name">Importar desde CSV</field>
-    <field name="type">ir.actions.act_window</field>
     <field name="res_model">dflex.porton.import.wizard</field>
     <field name="view_mode">form</field>
     <field name="target">new</field>
   </record>
-
 </odoo>

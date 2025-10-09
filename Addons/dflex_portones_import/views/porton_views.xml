@@ -1,19 +1,27 @@
+
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
-  <record id="view_dflex_porton_list" model="ir.ui.view">
-    <field name="name">dflex.porton.list</field>
+  <record id="action_dflex_porton" model="ir.actions.act_window">
+    <field name="name">Portones</field>
+    <field name="res_model">dflex.porton</field>
+    <field name="view_mode">tree,form</field>
+  </record>
+
+  <record id="view_dflex_porton_tree" model="ir.ui.view">
+    <field name="name">dflex.porton.tree</field>
     <field name="model">dflex.porton</field>
     <field name="arch" type="xml">
-      <list string="Portones">
+      <tree>
         <field name="name"/>
-        <field name="import_id"/>
-        <field name="source_row"/>
-      </list>
+        <field name="x_col_estado"/>
+        <field name="x_col_fecha_entrega_estimada"/>
+        <field name="x_col_dias_restantes"/>
+      </tree>
     </field>
   </record>
 
-  <record id="view_dflex_porton_form_base" model="ir.ui.view">
-    <field name="name">dflex.porton.form.base</field>
+  <record id="view_dflex_porton_form" model="ir.ui.view">
+    <field name="name">dflex.porton.form</field>
     <field name="model">dflex.porton</field>
     <field name="arch" type="xml">
       <form string="Portón">
@@ -24,6 +32,128 @@
             <field name="source_row"/>
           </group>
           <notebook>
+            <page string="Datos importados">
+              <group col="4">
+                <field name="x_col_nota_de_venta"/>
+                <field name="x_col_cliente_3000"/>
+                <field name="x_col_direccion_cliente"/>
+                <field name="x_col_distribuidor"/>
+                <field name="x_col_fecha_de_pedido"/>
+                <field name="x_col_fecha_de_entrega"/>
+                <field name="x_col_fecha_entrega_estimada"/>
+                <field name="x_col_dias_restantes"/>
+                <field name="x_col_dias_transcurrido"/>
+                <field name="x_col_estado"/>
+                <field name="x_revestimiento_fabricante"/>
+                <field name="x_revestimiento_tipo"/>
+                <field name="x_revestimiento_lucera"/>
+                <field name="x_revestimiento_color_de_simil_aluminio"/>
+                <field name="x_revestimiento_liston"/>
+                <field name="x_revestimiento_partida"/>
+                <field name="x_revestimiento_inicio_produccion"/>
+                <field name="x_parantes_cantidad"/>
+                <field name="x_parantes_distribucion"/>
+                <field name="x_parantes_color_de_sistema"/>
+                <field name="x_puerta_condicion"/>
+                <field name="x_puerta_posicion"/>
+                <field name="x_puerta_descripcion"/>
+                <field name="x_puerta_v"/>
+                <field name="x_motor_condicion"/>
+                <field name="x_motor_doble"/>
+                <field name="x_motor_columna4"/>
+                <field name="x_pasador_condicion"/>
+                <field name="x_puerta_armado_puerta"/>
+                <field name="x_puerta_columna7"/>
+                <field name="x_instalacion_instalador"/>
+                <field name="x_instalacion_empotra_duras"/>
+                <field name="x_instalacion_posicion"/>
+                <field name="x_instalacion_columna9"/>
+                <field name="x_parantes_n_pieza"/>
+                <field name="x_parantes_descripcion"/>
+                <field name="x_parantes_columna10"/>
+                <field name="x_piernas_tipo"/>
+                <field name="x_piernas_altura"/>
+                <field name="x_piernas_espesor_revest"/>
+                <field name="x_dintel_tipo"/>
+                <field name="x_dintel_ancho"/>
+                <field name="x_dintel_columna13"/>
+                <field name="x_datos_brazos"/>
+                <field name="x_datos_hueco_chico"/>
+                <field name="x_datos_hueco_grande"/>
+                <field name="x_datos_columna14"/>
+                <field name="x_rebaje_si_no"/>
+                <field name="x_rebaje_descuento"/>
+                <field name="x_rebaje_altura"/>
+                <field name="x_rebaje_columna16"/>
+                <field name="x_rebaje_lateral_e_inferior_si_no2"/>
+                <field name="x_rebaje_lateral_e_inferior_descuento_2"/>
+                <field name="x_rebaje_lateral_e_inferior_observaciones"/>
+                <field name="x_motores_que_faltan_col"/>
+                <field name="x_motores_que_faltan_col_2"/>
+                <field name="x_motores_que_faltan_col_3"/>
+                <field name="x_motores_que_faltan_largo_del_braso"/>
+                <field name="x_motores_que_faltan_ancho_tot_de_hoja"/>
+                <field name="x_motores_que_faltan_puerta"/>
+                <field name="x_motores_que_faltan_cant_de_lama"/>
+                <field name="x_motores_que_faltan_panos_la_puerta"/>
+                <field name="x_motores_que_faltan_largo_de_las_lamas"/>
+                <field name="x_motores_que_faltan_cantidad_de_chapas"/>
+                <field name="x_motores_que_faltan_largo_de_parantes"/>
+                <field name="x_motores_que_faltan_cantidad_de_parantes"/>
+                <field name="x_motores_que_faltan_largo_de_tapajuntas"/>
+                <field name="x_motores_que_faltan_cantidad_de_tapajuntas"/>
+                <field name="x_motores_que_faltan_largo_de_bordes_i_s"/>
+                <field name="x_motores_que_faltan_cant_de_bordes_i_s"/>
+                <field name="x_movim_col"/>
+                <field name="x_pernos_col"/>
+                <field name="x_pernos_distribuidores"/>
+                <field name="x_pernos_col_2"/>
+                <field name="x_pernos_col_3"/>
+                <field name="x_pernos_si_fuera_aluminio"/>
+                <field name="x_pernos_col_4"/>
+                <field name="x_pernos_col_5"/>
+                <field name="x_pernos_col_6"/>
+                <field name="x_pernos_col_7"/>
+                <field name="x_pernos_col_8"/>
+                <field name="x_pernos_col_9"/>
+                <field name="x_pernos_col_10"/>
+                <field name="x_pernos_col_11"/>
+                <field name="x_pernos_estado"/>
+                <field name="x_pernos_color"/>
+                <field name="x_pernos_ancho"/>
+                <field name="x_pernos_alto"/>
+                <field name="x_pernos_lucera"/>
+                <field name="x_pernos_puerta"/>
+                <field name="x_pernos_col_12"/>
+                <field name="x_pernos_chapas"/>
+                <field name="x_pernos_parantes_comunes"/>
+                <field name="x_parantes_anchos_cantidad"/>
+                <field name="x_parantes_anchos_medida"/>
+                <field name="x_parantes_anchos_col"/>
+                <field name="x_parantes_anchos_col_2"/>
+                <field name="x_parantes_anchos_col_3"/>
+                <field name="x_parantes_anchos_col_4"/>
+                <field name="x_parantes_anchos_col_5"/>
+                <field name="x_parantes_anchos_col_6"/>
+                <field name="x_parantes_anchos_col_7"/>
+                <field name="x_parantes_anchos_col_8"/>
+                <field name="x_parantes_anchos_col_9"/>
+                <field name="x_parantes_anchos_col_10"/>
+                <field name="x_parantes_anchos_col_11"/>
+                <field name="x_parantes_anchos_col_12"/>
+                <field name="x_parantes_anchos_col_13"/>
+                <field name="x_parantes_anchos_col_14"/>
+                <field name="x_parantes_anchos_col_15"/>
+                <field name="x_parantes_anchos_col_16"/>
+                <field name="x_parantes_anchos_col_17"/>
+                <field name="x_chapa_ancha"/>
+                <field name="x_chapa_comun"/>
+                <field name="x_chapa_angosta"/>
+                <field name="x_chapa_col"/>
+                <field name="x_chapa_col_2"/>
+                <field name="x_chapa_plazo_entrega"/>
+              </group>
+            </page>
             <page string="JSON">
               <field name="specs_json" widget="json"/>
             </page>
@@ -31,12 +161,5 @@
         </sheet>
       </form>
     </field>
-  </record>
-
-  <record id="action_dflex_porton" model="ir.actions.act_window">
-    <field name="name">Portones</field>
-    <field name="res_model">dflex.porton</field>
-    <field name="view_mode">list,form</field>
-    <field name="context">{}</field>
   </record>
 </odoo>
