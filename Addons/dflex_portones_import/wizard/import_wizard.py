@@ -53,7 +53,7 @@ class DflexPortonImportWizard(models.TransientModel):
         rows = list(reader)
         if len(rows) < 2:
             raise UserError('CSV inválido: necesita 1 fila de encabezado y datos desde la 2.')
-        headers = [ _norm(x) for x in rows[0] ]
+        headers = [_norm(x) for x in rows[0]]
         data_rows = rows[1:]
         return headers, data_rows
 
@@ -122,7 +122,7 @@ class DflexPortonImportWizard(models.TransientModel):
             <notebook>
               <page string="Datos importados">
                 <group col="4">
-{}
+%s
                 </group>
               </page>
               <page string="JSON">
@@ -131,7 +131,7 @@ class DflexPortonImportWizard(models.TransientModel):
             </notebook>
           </sheet>
         </form>
-        """.format(field_xml)
+        """ % (field_xml)
         rec = View.search([('model', '=', 'dflex.porton'), ('name', '=', 'dflex.porton.form.auto')], limit=1)
         vals = {'arch_db': arch, 'type': 'form', 'priority': 1}
         if rec:
@@ -154,14 +154,13 @@ class DflexPortonImportWizard(models.TransientModel):
 
     def action_import(self):
         self.ensure_one()
-        if not self.filename or not self.filename.lower().endswith('.csv'):
-            raise UserError('Este importador acepta únicamente CSV.')
+        # Validar por contenido (no por extensión)
         headers, data_rows = self._read_csv(self.file, self.filename or 'import.csv')
         columns = self._build_columns(headers)
         if not columns:
             raise UserError('No se detectaron columnas válidas.')
         meta = self._ensure_fields(columns)
-        idx2tech = { c['index']: c['tech'] for c in columns }
+        idx2tech = {c['index']: c['tech'] for c in columns}
         id_index = self._find_identifier_index(headers)
 
         batch = self.env['dflex.porton.import'].create({
