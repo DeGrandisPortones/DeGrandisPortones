@@ -1,3 +1,4 @@
+# wizard/import_wizard.py
 from odoo import api, fields, models
 from odoo.exceptions import UserError
 import base64, io, re, unicodedata, csv
@@ -37,6 +38,7 @@ class DflexPortonImportWizard(models.TransientModel):
     file = fields.Binary(required=True, string='Archivo CSV')
     filename = fields.Char(string='Nombre de archivo')
 
+    # ---------- Lectura CSV (1 sola cabecera) ----------
     def _read_csv(self, content, filename):
         data = base64.b64decode(content or b'')
         if not data:
@@ -45,23 +47,27 @@ class DflexPortonImportWizard(models.TransientModel):
             text = data.decode('utf-8')
         except Exception:
             text = data.decode('latin-1', errors='replace')
+
         if not _looks_like_csv(text):
             raise UserError('El archivo no parece un CSV válido.')
+
         first = text.splitlines()[0] if text else ''
         delimiter = ';' if first.count(';') > first.count(',') else ','
         reader = csv.reader(io.StringIO(text), delimiter=delimiter)
         rows = list(reader)
         if len(rows) < 2:
             raise UserError('CSV inválido: necesita 1 fila de encabezado y datos desde la 2.')
+
         headers = [_norm(x) for x in rows[0]]
         data_rows = rows[1:]
         return headers, data_rows
 
+    # ---------- Mapeo de columnas a campos técnicos ----------
     def _build_columns(self, headers):
         cols = []
         for idx, h in enumerate(headers):
             h1 = _norm(h)
-            # Omitir columnas "Columna X" y también 'name'
+            # Omitir "name" (lo usamos como NV si existe) y columnas "Columna ..."
             if _lower(h1) == 'name':
                 continue
             if re.match(r'^\s*columna\b', _lower(h1)):
@@ -73,6 +79,7 @@ class DflexPortonImportWizard(models.TransientModel):
             if not tech.startswith('x_'):
                 tech = 'x_' + tech
             cols.append({'index': idx, 'label': lbl, 'tech': tech[:63], 'h1': h1})
+
         # Evitar duplicados técnicos
         seen = {}
         for c in cols:
@@ -86,12 +93,14 @@ class DflexPortonImportWizard(models.TransientModel):
             seen[k] = True
         return cols
 
+    # ---------- Crear campos dinámicos en dflex.porton si faltan ----------
     def _ensure_fields(self, columns):
         Model = self.env['ir.model'].sudo()
         Fields = self.env['ir.model.fields'].sudo()
         model = Model.search([('model', '=', 'dflex.porton')], limit=1)
         if not model:
             raise UserError('No se encontró el modelo dflex.porton.')
+
         out = []
         for col in columns:
             name = col['tech']
@@ -107,10 +116,33 @@ class DflexPortonImportWizard(models.TransientModel):
             out.append({'name': name, 'label': col['label']})
         return out
 
-    def _upsert_dynamic_form_view(self, fields_meta):
+    # ---------- Generar/actualizar vista dinámica segura ----------
+    def _upsert_dynamic_form_view(self, fields_meta=None):
+        """Crear/actualizar la vista dinámica SOLO con campos que existen."""
         View = self.env['ir.ui.view'].sudo()
-        lines = ['                  <field name="%s" string="%s"/>' % (f['name'], f['label']) for f in fields_meta]
+        Fields = self.env['ir.model.fields'].sudo()
+
+        # Si no me pasan fields_meta, leo del modelo lo que existe
+        if not fields_meta:
+            dyn_fields = Fields.search([
+                ('model', '=', 'dflex.porton'),
+                ('name', 'like', 'x_%'),
+                ('ttype', '!=', False),
+            ], order='field_description, name')
+            fields_meta = [{'name': f.name, 'label': f.field_description or f.name} for f in dyn_fields]
+
+        # Construir SOLO los que existen para evitar "field is undefined"
+        lines = []
+        for f in fields_meta:
+            exists = Fields.search_count([
+                ('model', '=', 'dflex.porton'),
+                ('name', '=', f['name'])
+            ]) > 0
+            if exists:
+                lines.append('                  <field name="%s" string="%s"/>' % (f['name'], f['label']))
+
         field_xml = "\n".join(lines) or '                  <separator string="(sin columnas detectadas)"/>'
+
         arch = """
         <form string="Portón">
           <sheet>
@@ -132,13 +164,16 @@ class DflexPortonImportWizard(models.TransientModel):
           </sheet>
         </form>
         """ % (field_xml)
-        rec = View.search([('model', '=', 'dflex.porton'), ('name', '=', 'dflex.porton.form.auto')], limit=1)
+
+        rec = View.search([('model', '=', 'dflex.porton'),
+                           ('name', '=', 'dflex.porton.form.auto')], limit=1)
         vals = {'arch_db': arch, 'type': 'form', 'priority': 1}
         if rec:
             rec.write(vals)
         else:
             View.create({'name': 'dflex.porton.form.auto', 'model': 'dflex.porton', **vals})
 
+    # ---------- Ubicar columna identificador (NV) ----------
     def _find_identifier_index(self, headers):
         # 1º preferir 'name'
         for idx, h in enumerate(headers):
@@ -152,17 +187,23 @@ class DflexPortonImportWizard(models.TransientModel):
                     return idx
         return None
 
+    # ---------- Acción principal ----------
     def action_import(self):
         self.ensure_one()
-        # Validar por contenido (no por extensión)
+
+        # Leer CSV
         headers, data_rows = self._read_csv(self.file, self.filename or 'import.csv')
+
+        # Preparar columnas y asegurar campos
         columns = self._build_columns(headers)
         if not columns:
             raise UserError('No se detectaron columnas válidas.')
-        meta = self._ensure_fields(columns)
+        self._ensure_fields(columns)
+
         idx2tech = {c['index']: c['tech'] for c in columns}
         id_index = self._find_identifier_index(headers)
 
+        # Crear lote de importación
         batch = self.env['dflex.porton.import'].create({
             'name': self.filename or 'Importación',
             'file_name': self.filename,
@@ -174,6 +215,8 @@ class DflexPortonImportWizard(models.TransientModel):
         Porton = self.env['dflex.porton']
         Spec = self.env['dflex.porton.spec']
         created_ids = []
+
+        # Cargar registros
         for r_idx, row in enumerate(data_rows, start=2):
             values, specs = {}, {}
             for i, cell in enumerate(row):
@@ -181,11 +224,13 @@ class DflexPortonImportWizard(models.TransientModel):
                     v = '' if cell is None else str(cell)
                     values[idx2tech[i]] = v
                     specs[idx2tech[i]] = v
+
             name_val = None
             if id_index is not None and id_index < len(row):
                 name_val = _norm(row[id_index])
             if not name_val:
                 name_val = 'Sin NV (fila %s)' % r_idx
+
             rec = Porton.create({
                 'name': name_val,
                 'import_id': batch.id,
@@ -198,7 +243,11 @@ class DflexPortonImportWizard(models.TransientModel):
             created_ids.append(rec.id)
 
         batch.state = 'done'
-        self._upsert_dynamic_form_view([{'name': f['name'], 'label': f['label']} for f in meta])
+
+        # Regenerar vista dinámica leyendo del modelo (sin pasar lista)
+        self._upsert_dynamic_form_view()
+
+        # Volver a la vista lista con los creados
         action = self.env.ref('dflex_portones_import.action_dflex_porton').read()[0]
         action['domain'] = [('id', 'in', created_ids)]
         return action
