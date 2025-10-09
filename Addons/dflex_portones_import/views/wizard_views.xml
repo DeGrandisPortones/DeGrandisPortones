@@ -4,10 +4,11 @@
     <field name="name">dflex.porton.import.wizard</field>
     <field name="model">dflex.porton.import.wizard</field>
     <field name="arch" type="xml">
-      <form string="Importar Portones (PRINCIPAL)">
+      <form string="Importar Portones (CSV, 1 encabezado)">
         <group>
           <field name="file" filename="filename"/>
           <field name="filename" readonly="1"/>
+          <label class="o_form_label" string="Formato: CSV con 1 sola fila de encabezado; datos desde la fila 2. Separador , o ;."/>
         </group>
         <footer>
           <button string="Cancelar" class="btn-secondary" special="cancel"/>
@@ -18,7 +19,7 @@
   </record>
 
   <record id="action_dflex_porton_import_wizard" model="ir.actions.act_window">
-    <field name="name">Importar desde Excel/CSV</field>
+    <field name="name">Importar desde CSV</field>
     <field name="res_model">dflex.porton.import.wizard</field>
     <field name="view_mode">form</field>
     <field name="target">new</field>
