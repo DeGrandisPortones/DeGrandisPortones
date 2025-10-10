@@ -1,4 +1,4 @@
+
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_dflex_porton,access_dflex_porton,model_dflex_porton,base.group_user,1,1,1,1
-access_dflex_porton_import,access_dflex_porton_import,model_dflex_porton_import,base.group_user,1,1,1,1
-access_dflex_porton_import_wizard,access_dflex_porton_import_wizard,model_dflex_porton_import_wizard,base.group_user,1,0,0,0
+access_dflex_porton_import_wizard_user,access_dflex_porton_import_wizard_user,dflex_portones_import.model_dflex_porton_import_wizard,base.group_user,1,1,1,1
+access_dflex_porton_import_wizard_admin,access_dflex_porton_import_wizard_admin,dflex_portones_import.model_dflex_porton_import_wizard,base.group_system,1,1,1,1

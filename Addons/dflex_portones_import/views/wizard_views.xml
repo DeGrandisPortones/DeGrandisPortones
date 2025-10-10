@@ -2,27 +2,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
   <record id="view_dflex_porton_import_wizard" model="ir.ui.view">
-    <field name="name">dflex.porton.import.wizard</field>
+    <field name="name">dflex.porton.import.wizard.form</field>
     <field name="model">dflex.porton.import.wizard</field>
     <field name="arch" type="xml">
-      <form string="Importar Portones (CSV, 1 encabezado)">
-        <group>
-          <field name="file" filename="filename"/>
-          <field name="filename" readonly="1"/>
-          <label for="file" string="Formato: CSV con 1 sola fila de encabezado; datos desde la fila 2. Separador , o ;."/>
-        </group>
-        <footer>
-          <button string="Cancelar" class="btn-secondary" special="cancel"/>
-          <button string="Importar" type="object" name="action_import" class="btn-primary"/>
-        </footer>
+      <form string="Importar Portones desde CSV">
+        <sheet>
+          <group>
+            <field name="file" filename="filename"/>
+            <field name="filename" readonly="1"/>
+            <label for="file" string="Formato: CSV con 1 encabezado; datos desde fila 2. Separador , o ;."/>
+          </group>
+          <footer>
+            <button string="Importar" type="object" name="action_import" class="btn-primary"/>
+            <button string="Cancelar" special="cancel" class="btn-secondary"/>
+          </footer>
+        </sheet>
       </form>
     </field>
-  </record>
-
-  <record id="action_dflex_porton_import" model="ir.actions.act_window">
-    <field name="name">Importar desde CSV</field>
-    <field name="res_model">dflex.porton.import.wizard</field>
-    <field name="view_mode">form</field>
-    <field name="target">new</field>
   </record>
 </odoo>
