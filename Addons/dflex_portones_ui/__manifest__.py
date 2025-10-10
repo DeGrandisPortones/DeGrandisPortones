@@ -10,6 +10,7 @@
     "data": [
         "views/porton_views.xml",
         "views/launcher_views.xml",
+        "views/unhide_root.xml",
         "views/menu.xml"
     ],
     "application": False,
