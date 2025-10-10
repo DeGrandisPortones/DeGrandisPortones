@@ -1,28 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
 
-  <!-- MENÚ RAÍZ (debe existir antes de los hijos) -->
+  <!-- Menú raíz -->
   <menuitem id="menu_dflex_portones_root" name="Portones" sequence="10"/>
 
-  <!-- ACCIÓN DE VENTANA -->
+  <!-- Acción -->
   <record id="action_dflex_porton" model="ir.actions.act_window">
     <field name="name">Portones</field>
     <field name="res_model">dflex.porton</field>
-    <field name="view_mode">tree,form</field>
+    <field name="view_mode">list,form</field>
   </record>
 
-  <!-- VISTA LISTA -->
-  <record id="view_dflex_porton_tree" model="ir.ui.view">
-    <field name="name">dflex.porton.tree</field>
+  <!-- Vista LISTA (antes era tree) -->
+  <record id="view_dflex_porton_list" model="ir.ui.view">
+    <field name="name">dflex.porton.list</field>
     <field name="model">dflex.porton</field>
     <field name="arch" type="xml">
-      <tree>
+      <list>
         <field name="name"/>
-      </tree>
+      </list>
     </field>
   </record>
 
-  <!-- VISTA FORM (mínima para que cargue seguro) -->
+  <!-- Vista FORM mínima -->
   <record id="view_dflex_porton_form" model="ir.ui.view">
     <field name="name">dflex.porton.form</field>
     <field name="model">dflex.porton</field>
@@ -37,7 +37,7 @@
     </field>
   </record>
 
-  <!-- MENÚ LISTA apuntando a la acción -->
+  <!-- Menú que lanza la acción -->
   <menuitem id="menu_dflex_portones_list"
             name="Portones"
             parent="menu_dflex_portones_root"
