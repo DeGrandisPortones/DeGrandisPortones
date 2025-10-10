@@ -1,6 +1,6 @@
-
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
+  <!-- Wizard view -->
   <record id="view_dflex_porton_import_wizard" model="ir.ui.view">
     <field name="name">dflex.porton.import.wizard.form</field>
     <field name="model">dflex.porton.import.wizard</field>
@@ -10,14 +10,37 @@
           <group>
             <field name="file" filename="filename"/>
             <field name="filename" readonly="1"/>
-            <label for="file" string="Formato: CSV con 1 encabezado; datos desde fila 2. Separador , o ;."/>
+            <label class="o_form_label" for="file" string="Formato: CSV con 1 sola fila de encabezado; datos desde la fila 2. Separador , o ;."/>
           </group>
           <footer>
             <button string="Importar" type="object" name="action_import" class="btn-primary"/>
-            <button string="Cancelar" special="cancel" class="btn-secondary"/>
+            <button string="Cancelar" class="btn-secondary" special="cancel"/>
           </footer>
         </sheet>
       </form>
+    </field>
+  </record>
+
+  <!-- Action to open the wizard (no menu, you can search it) -->
+  <record id="action_dflex_porton_import_wizard" model="ir.actions.act_window">
+    <field name="name">Importar Portones</field>
+    <field name="res_model">dflex.porton.import.wizard</field>
+    <field name="view_mode">form</field>
+    <field name="target">new</field>
+  </record>
+
+  <!-- Simple list view (not strictly required but handy) -->
+  <record id="view_dflex_porton_list_min" model="ir.ui.view">
+    <field name="name">dflex.porton.list.min</field>
+    <field name="model">dflex.porton</field>
+    <field name="arch" type="xml">
+      <list string="Portones">
+        <field name="name"/>
+        <field name="x_nota_de_Venta"/>
+        <field name="x_nombre_del_cliente"/>
+        <field name="x_direccion_del_cliente"/>
+        <field name="x_distribuidor"/>
+      </list>
     </field>
   </record>
 </odoo>

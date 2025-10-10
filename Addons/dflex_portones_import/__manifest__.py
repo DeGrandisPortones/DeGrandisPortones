@@ -1,15 +1,1 @@
-
-{
-    "name": "DFlex Portones Import",
-    "version": "18.0.1.0",
-    "summary": "Importador CSV para Portones (1 encabezado)",
-    "author": "De Grandis Portones",
-    "license": "LGPL-3",
-    "depends": ["base"],
-    "data": [
-        "security/ir.model.access.csv",
-        "views/porton_views.xml",
-        "views/wizard_views.xml"
-    ],
-    "installable": True,
-}
+{'name': 'DFlex Portones - Importación CSV', 'version': '18.0.0.7', 'category': 'Tools', 'summary': 'Importa Portones desde CSV (1 fila de encabezados) mapeando a campos existentes', 'depends': ['base'], 'data': ['security/ir.model.access.csv', 'views/wizard_views.xml'], 'assets': {}, 'installable': True, 'application': False, 'license': 'LGPL-3'}
