@@ -1,7 +1,12 @@
-
-<?xml version="1.0" encoding="UTF-8"?>
 <odoo>
-  <menuitem id="menu_dflex_portones" name="Portones" sequence="10"/>
-  <menuitem id="menu_dflex_porton_items" name="Listado" parent="menu_dflex_portones" action="action_dflex_porton" sequence="10"/>
-  <menuitem id="menu_dflex_import" name="Importaciones" parent="menu_dflex_portones" action="action_dflex_porton_import" sequence="20"/>
+  <!-- Raíz propia (opcional) -->
+  <menuitem id="menu_dflex_root" name="DFlex" sequence="60"/>
+
+  <!-- Menú que abre el wizard -->
+  <menuitem
+      id="menu_dflex_importar_portones"
+      name="Importar Portones"
+      parent="menu_dflex_root"                <!-- o parent="base.menu_custom" si no quieres raíz propia -->
+      action="dflex_portones_import.action_dflex_porton_import"
+      sequence="10"/>
 </odoo>

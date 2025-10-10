@@ -9,6 +9,8 @@
     "data": [
         "security/ir.model.access.csv",
         "views/wizard_views.xml"
+        "views/menu.xml"
+        "views/porton_views.xml"
     ],
     "installable": True,
     "application": False
