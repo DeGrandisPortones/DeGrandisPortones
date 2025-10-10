@@ -1,2 +1,2 @@
-
-from . import import_wizard
+# -*- coding: utf-8 -*-
+from . import porton_import_wizard

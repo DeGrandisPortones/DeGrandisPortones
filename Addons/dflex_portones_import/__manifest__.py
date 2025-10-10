@@ -1,16 +1,17 @@
+# -*- coding: utf-8 -*-
 {
-    "name": "DFlex Portones – Importación CSV",
-    "version": "18.0.0.7",
-    "summary": "Importa portones desde CSV (1 fila de encabezados) al modelo x_dflex.porton",
+    "name": "DFlex - Importación de Portones",
+    "version": "1.0.0",
     "category": "Tools",
-    "author": "DFlex",
+    "summary": "Importa portones desde CSV al modelo x_dflex.porton",
+    "author": "Dflex Argentina SAS",
     "license": "LGPL-3",
     "depends": ["base"],
     "data": [
         "security/ir.model.access.csv",
-        "views/wizard_views.xml"
-        "views/menu.xml"
+        "views/wizard_views.xml",
+        "views/menu.xml",
     ],
+    "application": False,
     "installable": True,
-    "application": False
 }

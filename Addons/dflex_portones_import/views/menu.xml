@@ -1,12 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
 <odoo>
-  <!-- Raíz propia (opcional) -->
-  <menuitem id="menu_dflex_root" name="DFlex" sequence="60"/>
-
-  <!-- Menú que abre el wizard -->
-  <menuitem
-      id="menu_dflex_importar_portones"
-      name="Importar Portones"
-      parent="menu_dflex_root"                <!-- o parent="base.menu_custom" si no quieres raíz propia -->
-      action="dflex_portones_import.action_dflex_porton_import"
-      sequence="10"/>
+  <menuitem id="menu_dflex_portones_root" name="Portones" sequence="10"/>
+  <record id="action_x_dflex_porton_list" model="ir.actions.act_window">
+    <field name="name">Portones</field>
+    <field name="res_model">x_dflex.porton</field>
+    <field name="view_mode">list,form</field>
+  </record>
+  <menuitem id="menu_x_dflex_porton_list"
+            name="Listado"
+            parent="menu_dflex_portones_root"
+            action="action_x_dflex_porton_list"
+            sequence="10"/>
+  <menuitem id="menu_x_dflex_porton_import"
+            name="Importar desde CSV"
+            parent="menu_dflex_portones_root"
+            action="action_porton_import_wizard"
+            sequence="20"/>
 </odoo>
