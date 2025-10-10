@@ -10,7 +10,7 @@
 
   <record id="view_dflex_porton_list" model="ir.ui.view">
     <field name="name">dflex.porton.list</field>
-    <field name="model">dflex.porton</field>
+    <field name="model">x_dflex.porton</field>
     <field name="arch" type="xml">
       <list>
         <field name="name"/>
