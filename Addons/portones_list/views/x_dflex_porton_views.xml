@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- LISTA: SOLO LECTURA -->
+    <record id="view_x_dflex_porton_list" model="ir.ui.view">
+        <field name="name">x_dflex.porton.list</field>
+        <field name="model">x_dflex.porton</field>
+        <field name="arch" type="xml">
+            <list string="Portones" create="False" edit="False" delete="False">
+                <!-- Base -->
+                <field name="display_name" string="Display Name"/>
+                <field name="create_date"  string="Creado"/>
+                <field name="write_date"   string="Actualizado"/>
+                <field name="create_uid"   string="Created by"/>
+                <field name="write_uid"    string="Last Updated by"/>
+
+                <!-- Personalizados de la captura -->
+                <field name="x_direccion_del_cliente" string="Dirección del cliente"/>
+                <field name="x_distribuidor"          string="Distribuidor"/>
+                <field name="x_name"                  string="Nombre"/>
+                <field name="x_nombre_del_cliente"    string="Nombre del cliente"/>
+                <field name="x_nota_de_Venta"         string="Nota de Venta"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- FORM (solo para ver; también readonly) -->
+    <record id="view_x_dflex_porton_form" model="ir.ui.view">
+        <field name="name">x_dflex.porton.form</field>
+        <field name="model">x_dflex.porton</field>
+        <field name="arch" type="xml">
+            <form string="Portón" create="False" edit="False" delete="False">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="display_name" readonly="True"/>
+                            <field name="x_name" readonly="True"/>
+                            <field name="x_nombre_del_cliente" readonly="True"/>
+                            <field name="x_distribuidor" readonly="True"/>
+                        </group>
+                        <group>
+                            <field name="x_direccion_del_cliente" readonly="True"/>
+                            <field name="x_nota_de_Venta" readonly="True"/>
+                            <field name="create_uid" readonly="True"/>
+                            <field name="write_uid" readonly="True"/>
+                            <field name="create_date" readonly="True"/>
+                            <field name="write_date" readonly="True"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- SEARCH -->
+    <record id="view_x_dflex_porton_search" model="ir.ui.view">
+        <field name="name">x_dflex.porton.search</field>
+        <field name="model">x_dflex.porton</field>
+        <field name="arch" type="xml">
+            <search string="Buscar Portones">
+                <field name="display_name"/>
+                <field name="x_nombre_del_cliente"/>
+                <field name="x_distribuidor"/>
+                <filter name="recent" string="Últimos 7 días"
+                        domain="[('create_date','&gt;=', (context_today() - relativedelta(days=7)).strftime('%%Y-%%m-%%d'))]"/>
+            </search>
+        </field>
+    </record>
+
+    <!-- ACCIÓN + MENÚ -->
+    <record id="action_x_dflex_porton" model="ir.actions.act_window">
+        <field name="name">Portones</field>
+        <field name="res_model">x_dflex.porton</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No hay registros aún.</p>
+        </field>
+    </record>
+
+    <menuitem id="menu_portones_root"  name="Portones" sequence="10"/>
+    <menuitem id="menu_portones_list"  name="Registros" parent="menu_portones_root"
+              action="action_x_dflex_porton" sequence="10"/>
+</odoo>

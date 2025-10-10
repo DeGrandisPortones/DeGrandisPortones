@@ -1,0 +1,2 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_porton_user,x_dflex.porton user,model_x_dflex_porton,base.group_user,1,1,1,1
