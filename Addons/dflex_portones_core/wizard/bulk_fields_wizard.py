@@ -20,6 +20,7 @@ def _slug(label):
 
 class DflexBulkFieldsWizard(models.TransientModel):
     _name = 'dflex.bulk.fields.wizard'
+    model_name = fields.Char(string='Modelo (técnico)', default='dflex.porton')
     _description = 'Crear campos en dflex.porton desde encabezados CSV'
 
     header_line = fields.Text(

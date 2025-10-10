@@ -2,7 +2,7 @@
 <odoo>
   <menuitem id="menu_dflex_portones_root" name="Portones" sequence="10"/>
   <menuitem id="menu_dflex_portones_config" name="Configuración"
-            parent="menu_dflex_portones_root" sequence="90"/>
+            parent="base.menu_technical" sequence="90"/>
 
   <record id="action_dflex_bulk_fields" model="ir.actions.act_window">
     <field name="name">Crear campos (CSV)</field>
