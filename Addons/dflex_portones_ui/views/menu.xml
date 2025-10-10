@@ -1,19 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-  <!-- Conectar el menú raíz existente al lanzador -->
-  <record id="dflex_portones_import.menu_dflex_portones_root" model="ir.ui.menu">
-    <field name="action" ref="action_x_dflex_porton_launcher"/>
-  </record>
-
-  <!-- Mantener accesos directos también -->
+  <!-- Submenú para ver la lista de portones -->
   <menuitem id="menu_x_dflex_porton_list_ui"
-            name="Listado (UI)"
+            name="Ver Lista de Portones"
             parent="dflex_portones_import.menu_dflex_portones_root"
             action="action_x_dflex_porton_ui"
-            sequence="15"/>
-  <menuitem id="menu_x_dflex_porton_import_ui"
-            name="Importar desde CSV"
-            parent="dflex_portones_import.menu_dflex_portones_root"
-            action="dflex_portones_import.action_porton_import_wizard"
-            sequence="20"/>
+            sequence="10"/>
 </odoo>
