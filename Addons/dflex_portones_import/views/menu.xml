@@ -12,7 +12,7 @@
             action="action_x_dflex_porton_list"
             sequence="10"/>
   <menuitem id="menu_x_dflex_porton_import"
-            name="Importaciones"
+            name="Importar desde CSV"
             parent="menu_dflex_portones_root"
             action="action_porton_import_wizard"
             sequence="20"/>
