@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <!-- LIST VIEW (usar <list> en Odoo 18) -->
+  <record id="view_x_dflex_porton_list" model="ir.ui.view">
+    <field name="name">x_dflex.porton.list</field>
+    <field name="model">x_dflex.porton</field>
+    <field name="arch" type="xml">
+      <list string="Portones" create="0" edit="1">
+        <field name="x_name" string="Nombre"/>
+        <field name="x_nombre_del_cliente" string="Cliente"/>
+        <field name="x_distribuidor" string="Distribuidor"/>
+        <field name="x_direccion_del_cliente" string="Dirección del cliente"/>
+        <field name="x_nota_de_Venta" string="Nota de Venta"/>
+        <field name="create_date" string="Creado" optional="show"/>
+      </list>
+    </field>
+  </record>
+
+  <!-- FORM VIEW mínima para abrir desde la lista -->
+  <record id="view_x_dflex_porton_form" model="ir.ui.view">
+    <field name="name">x_dflex.porton.form</field>
+    <field name="model">x_dflex.porton</field>
+    <field name="arch" type="xml">
+      <form string="Portón">
+        <sheet>
+          <group>
+            <field name="x_name" string="Nombre"/>
+            <field name="x_nombre_del_cliente" string="Cliente"/>
+            <field name="x_distribuidor" string="Distribuidor"/>
+            <field name="x_direccion_del_cliente" string="Dirección del cliente"/>
+            <field name="x_nota_de_Venta" string="Nota de Venta"/>
+          </group>
+        </sheet>
+      </form>
+    </field>
+  </record>
+
+  <!-- KANBAN simple -->
+  <record id="view_x_dflex_porton_kanban" model="ir.ui.view">
+    <field name="name">x_dflex.porton.kanban</field>
+    <field name="model">x_dflex.porton</field>
+    <field name="arch" type="xml">
+      <kanban default_group_by="x_distribuidor">
+        <templates>
+          <t t-name="kanban-box">
+            <div class="oe_kanban_global_click o_kanban_record">
+              <div class="o_kanban_primary_left">
+                <strong><field name="x_name"/></strong>
+                <div><span>Cliente: </span><field name="x_nombre_del_cliente"/></div>
+                <div><span>Distribuidor: </span><field name="x_distribuidor"/></div>
+                <div><span>Nota de Venta: </span><field name="x_nota_de_Venta"/></div>
+              </div>
+            </div>
+          </t>
+        </templates>
+      </kanban>
+    </field>
+  </record>
+
+  <!-- SEARCH VIEW con filtros y agrupaciones -->
+  <record id="view_x_dflex_porton_search" model="ir.ui.view">
+    <field name="name">x_dflex.porton.search</field>
+    <field name="model">x_dflex.porton</field>
+    <field name="arch" type="xml">
+      <search string="Buscar Portones">
+        <field name="x_name" string="Nombre"/>
+        <field name="x_nombre_del_cliente" string="Cliente"/>
+        <field name="x_distribuidor" string="Distribuidor"/>
+        <field name="x_nota_de_Venta" string="Nota de Venta"/>
+        <filter string="Por Distribuidor" name="grp_distribuidor" context="{'group_by': 'x_distribuidor'}"/>
+        <filter string="Por Cliente" name="grp_cliente" context="{'group_by': 'x_nombre_del_cliente'}"/>
+        <filter string="Últimos 30 días" name="last_30" domain="[('create_date','&gt;=', (context_today() - datetime.timedelta(days=30)).strftime('%%Y-%%m-%%d 00:00:00'))]"/>
+      </search>
+    </field>
+  </record>
+
+  <!-- ACCIÓN: abre la vista con múltiples modos -->
+  <record id="action_x_dflex_porton_ui" model="ir.actions.act_window">
+    <field name="name">Portones</field>
+    <field name="res_model">x_dflex.porton</field>
+    <field name="view_mode">list,kanban,form,graph,pivot</field>
+    <field name="search_view_id" ref="view_x_dflex_porton_search"/>
+  </record>
+</odoo>
