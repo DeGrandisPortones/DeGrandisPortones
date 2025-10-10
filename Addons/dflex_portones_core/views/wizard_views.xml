@@ -4,19 +4,39 @@
     <field name="name">dflex.bulk.fields.wizard.form</field>
     <field name="model">dflex.bulk.fields.wizard</field>
     <field name="arch" type="xml">
-      <form string="Crear campos desde encabezados CSV">
-        <group>
-          <label for="header_line" class="o_form_label"/>
-          <field name="header_line" placeholder="Encabezado1, Encabezado2, ..."/>
-          <field name="delimiter"/>
-          <label class="o_form_label"
-                 string="Pegá la PRIMERA FILA de tu CSV (sólo encabezados). Omito 'name' y 'Columna X'."/>
-        </group>
+      <form string="Crear campos masivos">
+        <sheet>
+          <group>
+            <field name="model_name" readonly="1"/>
+            <field name="header_line" placeholder="Encabezado1, Encabezado2, ..."/>
+            <field name="delimiter"/>
+            <!-- Texto informativo: usar span con clase, no <label> -->
+            <span class="o_form_label">
+              Pegá la PRIMERA FILA de tu CSV (sólo encabezados). Omito “name” y cualquier “Columna X”.
+            </span>
+          </group>
+        </sheet>
         <footer>
-          <button string="Crear campos" type="object" name="action_create_fields" class="btn-primary"/>
+          <button name="action_create_fields" string="Crear campos" type="object" class="btn-primary"/>
           <button string="Cancelar" class="btn-secondary" special="cancel"/>
         </footer>
       </form>
     </field>
   </record>
+
+  <!-- (Opcional) Acción del wizard y menú si ya los tenés. Si no, dejalo tal cual. -->
+  <record id="action_dflex_bulk_fields_wizard" model="ir.actions.act_window">
+    <field name="name">Crear campos (CSV)</field>
+    <field name="res_model">dflex.bulk.fields.wizard</field>
+    <field name="view_mode">form</field>
+    <field name="target">new</field>
+    <!-- el valor por defecto del modelo a tocar -->
+    <field name="context">{'default_model_name': 'dflex.porton'}</field>
+  </record>
+
+  <menuitem id="menu_dflex_bulk_fields_wizard"
+            name="Crear campos (CSV)"
+            parent="menu_dflex_portones_root"
+            action="action_dflex_bulk_fields_wizard"
+            sequence="90"/>
 </odoo>
