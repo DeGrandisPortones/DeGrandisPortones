@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+  <record id="action_dflex_porton" model="ir.actions.act_window">
+    <field name="name">Portones</field>
+    <field name="res_model">dflex.porton</field>
+    <field name="view_mode">tree,form</field>
+  </record>
+
+  <menuitem id="menu_dflex_portones_list" name="Portones"
+            parent="menu_dflex_portones_root" action="action_dflex_porton" sequence="20"/>
+
+  <record id="view_dflex_porton_tree" model="ir.ui.view">
+    <field name="name">dflex.porton.tree</field>
+    <field name="model">dflex.porton</field>
+    <field name="arch" type="xml">
+      <tree>
+        <field name="name"/>
+        <field name="source_row"/>
+      </tree>
+    </field>
+  </record>
+
+  <record id="view_dflex_porton_form_base" model="ir.ui.view">
+    <field name="name">dflex.porton.form.base</field>
+    <field name="model">dflex.porton</field>
+    <field name="arch" type="xml">
+      <form string="Portón">
+        <sheet>
+          <group>
+            <field name="name"/>
+            <field name="import_id"/>
+            <field name="source_row"/>
+          </group>
+          <notebook>
+            <page string="Datos importados">
+              <group>
+                <label class="o_form_label" string="(Creá campos desde Configuración → Crear campos CSV)"/>
+              </group>
+            </page>
+            <page string="JSON">
+              <field name="specs_json" widget="json"/>
+            </page>
+          </notebook>
+        </sheet>
+      </form>
+    </field>
+  </record>
+</odoo>

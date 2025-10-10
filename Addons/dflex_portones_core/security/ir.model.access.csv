@@ -1,2 +1,4 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_dflex_porton_user,access.dflex.porton.user,model_dflex_porton,base.group_user,1,1,1,1
+access_dflex_porton_user,access.dflex.porton.user,dflex_portones_core.model_dflex_porton,base.group_user,1,1,1,1
+access_dflex_porton_manager,access.dflex.porton.manager,dflex_portones_core.model_dflex_porton,base.group_system,1,1,1,1
+access_dflex_bulk_fields_wizard,access.dflex.bulk.fields.wizard,dflex_portones_core.model_dflex_bulk_fields_wizard,base.group_system,1,1,1,1
