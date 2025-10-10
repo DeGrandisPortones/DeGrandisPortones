@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<odoo>
-  <!-- Submenú para ver la lista de portones -->
-  <menuitem id="menu_x_dflex_porton_list_ui"
-            name="Ver Lista de Portones"
-            parent="dflex_portones_import.menu_dflex_portones_root"
-            action="action_x_dflex_porton_ui"
-            sequence="10"/>
-</odoo>
