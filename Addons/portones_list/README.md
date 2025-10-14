@@ -1,1 +1,1 @@
-Visualización del listado de portones
+Visualización del listado de portones.
