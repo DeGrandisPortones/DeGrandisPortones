@@ -43,7 +43,7 @@ class PortonImportWizard(models.TransientModel):
             # Mapeo CSV -> Modelo
             "x_name": pick("name", "NAME", "Name"),
             "x_nombre_del_cliente": pick("Cliente", "CLIENTE"),
-            "x_nota_de_Venta": pick("Nota de Venta", "Nota de venta", "NOTA DE VENTA"),
+            "x_nota_de_venta": pick("Nota de Venta", "Nota de venta", "NOTA DE VENTA"),
             "x_distribuidor": pick("DISTRIBUIDOR", "Distribuidor"),
             "x_direccion_del_cliente": pick("DIRECCION CLIENTE", "Dirección Cliente", "Direccion Cliente"),
         }

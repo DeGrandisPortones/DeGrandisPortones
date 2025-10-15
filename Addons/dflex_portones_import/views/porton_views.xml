@@ -14,7 +14,7 @@
     <field name="arch" type="xml">
       <list>
         <field name="name"/>
-        <field name="x_nota_de_Venta"/>
+        <field name="x_nota_de_venta"/>
         <field name="x_nombre_del_cliente"/>
         <field name="x_direccion_del_cliente"/>
         <field name="x_distribuidor"/>
@@ -32,7 +32,7 @@
             <field name="name"/>
           </group>
           <group string="Datos">
-            <field name="x_nota_de_Venta"/>
+            <field name="x_nota_de_venta"/>
             <field name="x_nombre_del_cliente"/>
             <field name="x_direccion_del_cliente"/>
             <field name="x_distribuidor"/>

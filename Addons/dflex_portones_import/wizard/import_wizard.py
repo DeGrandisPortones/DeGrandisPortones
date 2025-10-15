@@ -8,7 +8,7 @@ import base64, io, csv, unicodedata, re
 # Clave: encabezado normalizado (minúsculas, sin tildes, espacios compactados)
 # Valor: nombre técnico EXACTO en x_dflex.porton (ajústalo a lo que creaste en Studio)
 HEADER_MAP = {
-    "nota de venta": "x_nota_de_Venta",
+    "nota de venta": "x_nota_de_venta",
     "cliente +3000": "x_nombre_del_cliente",
     "direccion cliente": "x_direccion_del_cliente",
     "distribuidor": "x_distribuidor",
@@ -94,7 +94,7 @@ class DflexPortonImportWizard(models.TransientModel):
                     val = "" if cell is None else str(cell)
                     vals[field_name] = val
                     # Tomamos "name" del N° de venta si existe
-                    if field_name in ("x_nota_de_Venta", "name"):
+                    if field_name in ("x_nota_de_venta", "name"):
                         name_fallback = val
             if "name" not in vals:
                 vals["name"] = name_fallback or f"Fila {r_idx}"

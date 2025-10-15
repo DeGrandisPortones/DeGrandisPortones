@@ -13,7 +13,7 @@
                 <field name="x_nombre_del_cliente"    string="Nombre del cliente"/>
                 <field name="x_distribuidor"          string="Distribuidor"/>
                 <field name="x_direccion_del_cliente" string="Dirección del cliente"/>
-                <field name="x_nota_de_Venta"         string="Nota de Venta"/>
+                <field name="x_nota_de_venta"         string="Nota de Venta"/>
 
                 <!-- Info de sistema (SOLO LECTURA) -->
                 <field name="display_name" string="Display Name" readonly="1"/>
@@ -40,7 +40,7 @@
                         </group>
                         <group>
                             <field name="x_direccion_del_cliente"/>
-                            <field name="x_nota_de_Venta"/>
+                            <field name="x_nota_de_venta"/>
                             <field name="display_name" readonly="1"/>
                             <field name="create_uid"   readonly="1"/>
                             <field name="write_uid"    readonly="1"/>
@@ -63,7 +63,7 @@
                 <field name="x_nombre_del_cliente"/>
                 <field name="x_distribuidor"/>
                 <field name="x_direccion_del_cliente"/>
-                <field name="x_nota_de_Venta"/>
+                <field name="x_nota_de_venta"/>
                 <filter name="recent" string="Últimos 7 días"
                         domain="[('create_date','&gt;=', (context_today() - relativedelta(days=7)).strftime('%%Y-%%m-%%d'))]"/>
             </search>
