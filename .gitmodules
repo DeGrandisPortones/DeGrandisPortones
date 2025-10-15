@@ -1,0 +1,4 @@
+[submodule "Addons/custom_addons/meli_oerp"]
+	path = Addons/custom_addons/meli_oerp
+	url = https://github.com/ctmil/meli_oerp.git
+	branch = 18.0
