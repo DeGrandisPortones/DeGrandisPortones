@@ -1,0 +1,5 @@
+pdf2image
+git+https://github.com/ctmil/python-sdk-2025.git
+unidecode
+pdf2image>=1.16
+Pillow

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+  <record id="view_dflex_porton_spec_list" model="ir.ui.view">
+    <field name="name">dflex.porton.spec.list</field>
+    <field name="model">dflex.porton.spec</field>
+    <field name="arch" type="xml">
+      <list string="Especificaciones">
+        <field name="porton_id"/>
+        <field name="key"/>
+        <field name="value"/>
+      </list>
+    </field>
+  </record>
+
+  <record id="action_dflex_porton_spec" model="ir.actions.act_window">
+    <field name="name">Especificaciones</field>
+    <field name="res_model">dflex.porton.spec</field>
+    <field name="view_mode">list</field>
+  </record>
+</odoo>
