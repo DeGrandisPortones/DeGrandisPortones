@@ -1,86 +1,124 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- LISTA (editable inline) -->
-    <record id="view_x_dflex_porton_list" model="ir.ui.view">
-        <field name="name">x_dflex.porton.list</field>
-        <field name="model">x_dflex.porton</field>
-        <field name="arch" type="xml">
-            <list string="Portones"
-                  create="True" edit="True" delete="True"
-                  editable="bottom">
-                <!-- Campos EDITABLES -->
-                <field name="x_name"                  string="Nombre"/>
-                <field name="x_nombre_del_cliente"    string="Nombre del cliente"/>
-                <field name="x_distribuidor"          string="Distribuidor"/>
-                <field name="x_direccion_del_cliente" string="Dirección del cliente"/>
-                <field name="x_nota_de_venta"         string="Nota de Venta"/>
+  <!-- Vista de lista editable -->
+  <record id="view_x_dflex_porton_list" model="ir.ui.view">
+    <field name="name">x_dflex.porton.list</field>
+    <field name="model">x_dflex.porton</field>
+    <field name="arch" type="xml">
+      <list string="Portones" editable="bottom" create="1" edit="1" delete="1">
+        <field name="x_name" string="Nombre"/>
+        <field name="x_nota_de_venta" string="Nota de Venta"/>
+        <field name="x_nombre_del_cliente" string="Nombre del cliente"/>
+        <field name="x_direccion_del_cliente" string="Dirección"/>
+        <field name="x_distribuidor" string="Distribuidor"/>
+        <field name="x_estado" string="Estado"/>
+        <field name="x_fecha_de_pedido" string="Fecha de pedido"/>
+        <field name="x_fecha_de_entrega" string="Fecha de entrega"/>
+        <field name="x_fecha_de_entrega_estimada" string="Entrega estimada"/>
+        <field name="x_fecha_de_inicio_produccion" string="Inicio producción"/>
+        <field name="x_dias_transcurridos" string="Días transcurridos"/>
+        <field name="x_dias_restantes" string="Días restantes"/>
+        <field name="x_color_del_revestimiento" string="Color del revestimiento"/>
+        <field name="x_color_sistema" string="Color del sistema"/>
+        <field name="x_listones" string="Listones"/>
+        <field name="x_lucera" string="Lucera"/>
+        <field name="x_puerta" string="Puerta"/>
+        <field name="x_parantes_cantidad" string="Cant. parantes"/>
+        <field name="x_parantes_internos_cantidad" string="Cant. parantes internos"/>
+        <field name="x_parantes_distribucion" string="Distribución parantes"/>
+        <field name="x_parantes_descripcion" string="Desc. parantes"/>
+        <field name="x_dintel_tipo" string="Tipo dintel"/>
+        <field name="x_dintel_ancho" string="Ancho dintel"/>
+        <field name="x_largo_brazo" string="Brazos"/>
+        <field name="x_hueco_chico" string="Hueco chico"/>
+        <field name="x_hueco_grande" string="Hueco grande"/>
+        <field name="x_piernas_altura" string="Altura piernas"/>
+        <field name="x_piernas_tipo" string="Tipo piernas"/>
+        <field name="x_instalacion" string="Instalador"/>
+        <field name="x_instalacion_empotraduras" string="Empotraduras"/>
+        <field name="x_pasador_condicion" string="Pasador"/>
+        <field name="x_motor_condicion" string="Motor condición"/>
+        <field name="x_motor_posicion" string="Motor posición"/>
+        <field name="x_partida" string="Partida"/>
+        <field name="x_observaciones" string="Observaciones"/>
+      </list>
+    </field>
+  </record>
 
-                <!-- Info de sistema (SOLO LECTURA) -->
-                <field name="display_name" string="Display Name" readonly="1"/>
-                <field name="create_date"  string="Creado"       readonly="1"/>
-                <field name="write_date"   string="Actualizado"  readonly="1"/>
-                <field name="create_uid"   string="Created by"   readonly="1"/>
-                <field name="write_uid"    string="Last Updated by" readonly="1"/>
-            </list>
-        </field>
-    </record>
+  <!-- Vista formulario simple (para ver todo) -->
+  <record id="view_x_dflex_porton_form" model="ir.ui.view">
+    <field name="name">x_dflex.porton.form</field>
+    <field name="model">x_dflex.porton</field>
+    <field name="arch" type="xml">
+      <form string="Portón">
+        <sheet>
+          <group>
+            <group>
+              <field name="x_name"/>
+              <field name="x_nota_de_venta"/>
+              <field name="x_distribuidor"/>
+              <field name="x_nombre_del_cliente"/>
+              <field name="x_direccion_del_cliente"/>
+              <field name="x_estado"/>
+            </group>
+            <group>
+              <field name="x_fecha_de_pedido"/>
+              <field name="x_fecha_de_entrega"/>
+              <field name="x_fecha_de_entrega_estimada"/>
+              <field name="x_fecha_de_inicio_produccion"/>
+              <field name="x_dias_transcurridos"/>
+              <field name="x_dias_restantes"/>
+            </group>
+          </group>
 
-    <!-- FORM (editable) -->
-    <record id="view_x_dflex_porton_form" model="ir.ui.view">
-        <field name="name">x_dflex.porton.form</field>
-        <field name="model">x_dflex.porton</field>
-        <field name="arch" type="xml">
-            <form string="Portón" create="True" edit="True" delete="True">
-                <sheet>
-                    <group>
-                        <group>
-                            <field name="x_name"/>
-                            <field name="x_nombre_del_cliente"/>
-                            <field name="x_distribuidor"/>
-                        </group>
-                        <group>
-                            <field name="x_direccion_del_cliente"/>
-                            <field name="x_nota_de_venta"/>
-                            <field name="display_name" readonly="1"/>
-                            <field name="create_uid"   readonly="1"/>
-                            <field name="write_uid"    readonly="1"/>
-                            <field name="create_date"  readonly="1"/>
-                            <field name="write_date"   readonly="1"/>
-                        </group>
-                    </group>
-                </sheet>
-            </form>
-        </field>
-    </record>
+          <notebook>
+            <page string="Medidas">
+              <group>
+                <field name="x_hueco_chico"/>
+                <field name="x_hueco_grande"/>
+                <field name="x_dintel_tipo"/>
+                <field name="x_dintel_ancho"/>
+                <field name="x_largo_brazo"/>
+                <field name="x_piernas_altura"/>
+                <field name="x_piernas_tipo"/>
+              </group>
+            </page>
+            <page string="Componentes">
+              <group>
+                <field name="x_listones"/>
+                <field name="x_lucera"/>
+                <field name="x_puerta"/>
+                <field name="x_pasador_condicion"/>
+                <field name="x_instalacion"/>
+                <field name="x_instalacion_empotraduras"/>
+                <field name="x_motor_condicion"/>
+                <field name="x_motor_posicion"/>
+                <field name="x_parantes_cantidad"/>
+                <field name="x_parantes_internos_cantidad"/>
+                <field name="x_parantes_distribucion"/>
+                <field name="x_parantes_descripcion"/>
+              </group>
+            </page>
+            <page string="Colores y observaciones">
+              <group>
+                <field name="x_color_del_revestimiento"/>
+                <field name="x_color_sistema"/>
+                <field name="x_partida"/>
+                <field name="x_observaciones"/>
+              </group>
+            </page>
+          </notebook>
+        </sheet>
+      </form>
+    </field>
+  </record>
 
-    <!-- SEARCH -->
-    <record id="view_x_dflex_porton_search" model="ir.ui.view">
-        <field name="name">x_dflex.porton.search</field>
-        <field name="model">x_dflex.porton</field>
-        <field name="arch" type="xml">
-            <search string="Buscar Portones">
-                <field name="x_name"/>
-                <field name="x_nombre_del_cliente"/>
-                <field name="x_distribuidor"/>
-                <field name="x_direccion_del_cliente"/>
-                <field name="x_nota_de_venta"/>
-                <filter name="recent" string="Últimos 7 días"
-                        domain="[('create_date','&gt;=', (context_today() - relativedelta(days=7)).strftime('%%Y-%%m-%%d'))]"/>
-            </search>
-        </field>
-    </record>
+  <record id="action_x_dflex_porton" model="ir.actions.act_window">
+    <field name="name">Portones</field>
+    <field name="res_model">x_dflex.porton</field>
+    <field name="view_mode">list,form</field>
+  </record>
 
-    <!-- ACCIÓN + MENÚ -->
-    <record id="action_x_dflex_porton" model="ir.actions.act_window">
-        <field name="name">Portones</field>
-        <field name="res_model">x_dflex.porton</field>
-        <field name="view_mode">list,form</field>
-        <field name="help" type="html">
-            <p class="o_view_nocontent_smiling_face">No hay registros aún.</p>
-        </field>
-    </record>
-
-    <menuitem id="menu_portones_root"  name="Portones" sequence="10"/>
-    <menuitem id="menu_portones_list"  name="Registros" parent="menu_portones_root"
-              action="action_x_dflex_porton" sequence="10"/>
+  <menuitem id="menu_portones_root" name="Portones" sequence="10"/>
+  <menuitem id="menu_portones_list" name="Registros" parent="menu_portones_root" action="action_x_dflex_porton" sequence="10"/>
 </odoo>
