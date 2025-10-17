@@ -12,17 +12,16 @@ def _norm(s):
     if not s:
         return ""
     s = str(s).strip()
-    s = "".join({"Á":"A","É":"E","Í":"I","Ó":"O","Ú":"U","Ü":"U","Ñ":"N"}.get(c, c) for c in s)
+    repl = {
+        "Á":"A","É":"E","Í":"I","Ó":"O","Ú":"U","Ü":"U","Ñ":"N",
+        "Ã¡":"a","Ã©":"e","Ã­":"i","Ã³":"o","Ãº":"u","Ã±":"n","Â°":"o",
+        "â€¦":"", "…":""
+    }
+    for k,v in repl.items():
+        s = s.replace(k, v)
     s = s.lower()
     s = re.sub(r"[^a-z0-9]+", " ", s).strip()
     return re.sub(r"\s+", " ", s)
-
-def _to_bool(v):
-    if v is None:
-        return False
-    s = str(v).strip().lower()
-    s = {"sí":"si"}.get(s, s)
-    return s in {"1","true","t","y","yes","si","s","x","verdadero"}
 
 def _to_int(v):
     try:
@@ -43,9 +42,7 @@ def _to_date(v):
             pass
     return False
 
-# Encabezado CSV (normalizado) -> campo tecnico en x_dflex.porton
 CSV_TO_FIELD = {
-    # Identificación
     "name": "x_name",
     "nota de venta": "x_nota_de_venta",
     "cliente": "x_nombre_del_cliente",
@@ -54,54 +51,63 @@ CSV_TO_FIELD = {
     "estado": "x_estado",
     "partida": "x_partida",
 
-    # Fechas
     "fecha de pedido": "x_fecha_de_pedido",
     "fecha de entrega": "x_fecha_de_entrega",
     "fecha entrega estimada": "x_fecha_de_entrega_estimada",
-    "fecha de inicio de produccion": "x_fecha_de_inicio_produccion",
-    "fecha de inicio produccion": "x_fecha_de_inicio_produccion",
+    "fecha inicio produccion": "x_fecha_de_inicio_produccion",
 
-    # Números
-    "dias transcurrido": "x_dias_transcurridos",
-    "dias transcurridos": "x_dias_transcurridos",
     "dias restantes": "x_dias_restantes",
+    "dias transcurrido": "x_dias_transcurridos",
     "dintel ancho": "x_dintel_ancho",
     "hueco chico": "x_hueco_chico",
     "hueco grande": "x_hueco_grande",
-    "pierna altura": "x_piernas_altura",
     "brazos": "x_largo_brazo",
-    "parantes cantidad": "x_parantes_cantidad",
-    "parantes internos cantidad": "x_parantes_internos_cantidad",
+    "pierna altura": "x_piernas_altura",
+    "parantes n pieza": "x_parantes_cantidad",
+    "parantes cantidad": "x_parantes_internos_cantidad",
 
-    # Textos / selecciones
-    "rev fabricante": "x_color_del_revestimiento",
-    "rev tipo": "x_color_sistema",
-    "dintel tipo": "x_dintel_tipo",
-    "listones": "x_listones",
-    "instalador": "x_instalacion",
-    "par distribucion": "x_parantes_distribucion",
-    "par descripcion": "x_parantes_descripcion",
-    "pierna tipo": "x_piernas_tipo",
-    "observaciones": "x_observaciones",
-
-    # Booleanos / otros
+    "rev fabricante": "x_revestimiento_fabricante",
+    "rev tipo": "x_revestimiento_tipo",
+    "color de simil aluminio": "x_color_del_revestimiento",
+    "color de sistema": "x_color_sistema",
+    "liston": "x_listones",
     "lucera": "x_lucera",
-    "puerta": "x_puerta",
-    "empotraduras": "x_instalacion_empotraduras",
-    "pasador condicion": "x_pasador_condicion",
+    "puerta condicion": "x_puerta_condicion",
+    "puerta posicion": "x_puerta_posicion",
+    "puerta descripcion": "x_puerta_descripcion",
+    "condicion": "x_motor_condicion",
+    "motor ubicacion": "x_motor_posicion",
+    "pasador condicion": "x_pasador",
+    "armado puerta": "x_armado",
+    "instalador": "x_instalacion",
+    "empotra duras": "x_instalacion_empotraduras",
+    "empotraduras posicion": "x_empotraduras_posicion",
+    "parantes descripcion": "x_parantes_descripcion",
+    "parantes distribucion": "x_parantes_distribucion",
+    "pierna tipo": "x_piernas_tipo",
+    "espesor revest": "x_revestimiento_espesor",
+    "dintel tipo": "x_dintel_tipo",
+    "rebaje": "x_rebaje",
+    "rebaje descuento": "x_rebaje_descuento",
+    "rebaje altura": "x_rebaje_altura",
+    "rebaje lateral e inferior": "x_rebaje_lateral_inferior",
+    "descuento rebaje lateral e inferior": "x_rebaje_lateral_inferior_descuento",
+}
 
-    # Motor
-    "motor condicion": "x_motor_condicion",
-    "motor posicion": "x_motor_posicion",
-    "motor doble": "x_motor_posicion",  # alias
+CSV_ALIASES = {
+    "motor ubicaci n": "motor ubicacion",
+    "parantes n pieza": "parantes n pieza",
+    "dintel tipo": "dintel tipo",
+}
+
+FALLBACK_FIELD = {
+    "x_fecha_de_entrega_estimada": "x_fecha_entrega_estimada",
 }
 
 TYPE_CONVERTER = {
-    "boolean": _to_bool,
     "integer": _to_int,
-    "float": _to_int,  # si definiste float, se castea a int sin decimales
+    "float": _to_int,
     "date": _to_date,
-    # "char"/"text"/"selection": por defecto -> string
 }
 
 class PortonImportWizard(models.TransientModel):
@@ -115,7 +121,6 @@ class PortonImportWizard(models.TransientModel):
         help="Si existe un portón con el mismo 'x_nota_de_venta' o 'x_name', se actualiza."
     )
 
-    # Helpers
     def _model_fields_and_types(self):
         fields_get = self.env["x_dflex.porton"].fields_get()
         return {k: v.get("type") for k, v in fields_get.items()}
@@ -127,7 +132,7 @@ class PortonImportWizard(models.TransientModel):
         conv = TYPE_CONVERTER.get(ftype)
         if conv:
             return conv(value)
-        return value  # char/text/selection/etc.
+        return value
 
     def _find_existing(self, Model, vals):
         dom = []
@@ -142,7 +147,6 @@ class PortonImportWizard(models.TransientModel):
         if not self.file:
             raise UserError(_("Cargá un CSV."))
 
-        # Leer CSV (UTF-8, delimitador coma)
         try:
             content = base64.b64decode(self.file)
             text = content.decode("utf-8", errors="ignore")
@@ -153,36 +157,38 @@ class PortonImportWizard(models.TransientModel):
         if not reader.fieldnames:
             raise UserError(_("El CSV no tiene encabezados."))
 
-        # Normalizar encabezados
-        norm_map = {}
-        for h in reader.fieldnames:
-            nh = _norm(h)
+        norm_to_field = {}
+        for raw in reader.fieldnames:
+            nh = _norm(raw)
+            nh = CSV_ALIASES.get(nh, nh)
             if nh in CSV_TO_FIELD:
-                norm_map[nh] = CSV_TO_FIELD[nh]
+                norm_to_field[nh] = CSV_TO_FIELD[nh]
 
         Model = self.env["x_dflex.porton"]
         field_types = self._model_fields_and_types()
+        field_set = set(field_types.keys())
 
         created = updated = missing_key = 0
         for idx, row in enumerate(reader, start=2):
             vals = {}
             for raw_h, raw_v in row.items():
-                target = norm_map.get(_norm(raw_h))
+                nh = _norm(raw_h)
+                nh = CSV_ALIASES.get(nh, nh)
+                target = norm_to_field.get(nh)
                 if not target:
                     continue
-                # no escribir si el campo no existe en el modelo
-                if target not in field_types:
+                if target not in field_set and target in FALLBACK_FIELD and FALLBACK_FIELD[target] in field_set:
+                    target = FALLBACK_FIELD[target]
+                if target not in field_set:
                     continue
                 vals[target] = self._convert_auto(target, raw_v, field_types)
 
             if not vals:
                 continue
 
-            # Asegurar x_name si viene "name" sin mapear
             if "x_name" not in vals and row.get("name"):
                 vals["x_name"] = row["name"]
 
-            # Crear/Actualizar
             existing = self._find_existing(Model, vals)
             if not vals.get("x_name"):
                 missing_key += 1
@@ -192,13 +198,10 @@ class PortonImportWizard(models.TransientModel):
                 existing.write(vals)
                 updated += 1
             elif existing:
-                # si existe y no se pidió actualizar, crea duplicado con sufijo
                 vals["x_name"] = f"{vals['x_name']} (imp {idx})"
-                Model.create(vals)
-                created += 1
+                Model.create(vals); created += 1
             else:
-                Model.create(vals)
-                created += 1
+                Model.create(vals); created += 1
 
         msg = _("Importación finalizada. Creados: %(c)s, Actualizados: %(u)s, Filas sin 'name': %(m)s") % {
             "c": created, "u": updated, "m": missing_key
