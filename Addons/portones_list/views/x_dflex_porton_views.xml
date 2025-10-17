@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-  <!-- Vista de lista editable -->
   <record id="view_x_dflex_porton_list" model="ir.ui.view">
     <field name="name">x_dflex.porton.list</field>
     <field name="model">x_dflex.porton</field>
@@ -15,37 +14,10 @@
         <field name="x_fecha_de_pedido" string="Fecha de pedido"/>
         <field name="x_fecha_de_entrega" string="Fecha de entrega"/>
         <field name="x_fecha_de_entrega_estimada" string="Entrega estimada"/>
-        <field name="x_fecha_de_inicio_produccion" string="Inicio producción"/>
-        <field name="x_dias_transcurridos" string="Días transcurridos"/>
-        <field name="x_dias_restantes" string="Días restantes"/>
-        <field name="x_color_del_revestimiento" string="Color del revestimiento"/>
-        <field name="x_color_sistema" string="Color del sistema"/>
-        <field name="x_listones" string="Listones"/>
-        <field name="x_lucera" string="Lucera"/>
-        <field name="x_puerta" string="Puerta"/>
-        <field name="x_parantes_cantidad" string="Cant. parantes"/>
-        <field name="x_parantes_internos_cantidad" string="Cant. parantes internos"/>
-        <field name="x_parantes_distribucion" string="Distribución parantes"/>
-        <field name="x_parantes_descripcion" string="Desc. parantes"/>
-        <field name="x_dintel_tipo" string="Tipo dintel"/>
-        <field name="x_dintel_ancho" string="Ancho dintel"/>
-        <field name="x_largo_brazo" string="Brazos"/>
-        <field name="x_hueco_chico" string="Hueco chico"/>
-        <field name="x_hueco_grande" string="Hueco grande"/>
-        <field name="x_piernas_altura" string="Altura piernas"/>
-        <field name="x_piernas_tipo" string="Tipo piernas"/>
-        <field name="x_instalacion" string="Instalador"/>
-        <field name="x_instalacion_empotraduras" string="Empotraduras"/>
-        <field name="x_pasador_condicion" string="Pasador"/>
-        <field name="x_motor_condicion" string="Motor condición"/>
-        <field name="x_motor_posicion" string="Motor posición"/>
-        <field name="x_partida" string="Partida"/>
-        <field name="x_observaciones" string="Observaciones"/>
       </list>
     </field>
   </record>
 
-  <!-- Vista formulario simple (para ver todo) -->
   <record id="view_x_dflex_porton_form" model="ir.ui.view">
     <field name="name">x_dflex.porton.form</field>
     <field name="model">x_dflex.porton</field>
@@ -65,49 +37,8 @@
               <field name="x_fecha_de_pedido"/>
               <field name="x_fecha_de_entrega"/>
               <field name="x_fecha_de_entrega_estimada"/>
-              <field name="x_fecha_de_inicio_produccion"/>
-              <field name="x_dias_transcurridos"/>
-              <field name="x_dias_restantes"/>
             </group>
           </group>
-
-          <notebook>
-            <page string="Medidas">
-              <group>
-                <field name="x_hueco_chico"/>
-                <field name="x_hueco_grande"/>
-                <field name="x_dintel_tipo"/>
-                <field name="x_dintel_ancho"/>
-                <field name="x_largo_brazo"/>
-                <field name="x_piernas_altura"/>
-                <field name="x_piernas_tipo"/>
-              </group>
-            </page>
-            <page string="Componentes">
-              <group>
-                <field name="x_listones"/>
-                <field name="x_lucera"/>
-                <field name="x_puerta"/>
-                <field name="x_pasador_condicion"/>
-                <field name="x_instalacion"/>
-                <field name="x_instalacion_empotraduras"/>
-                <field name="x_motor_condicion"/>
-                <field name="x_motor_posicion"/>
-                <field name="x_parantes_cantidad"/>
-                <field name="x_parantes_internos_cantidad"/>
-                <field name="x_parantes_distribucion"/>
-                <field name="x_parantes_descripcion"/>
-              </group>
-            </page>
-            <page string="Colores y observaciones">
-              <group>
-                <field name="x_color_del_revestimiento"/>
-                <field name="x_color_sistema"/>
-                <field name="x_partida"/>
-                <field name="x_observaciones"/>
-              </group>
-            </page>
-          </notebook>
         </sheet>
       </form>
     </field>

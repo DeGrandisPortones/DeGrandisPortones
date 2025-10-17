@@ -9,8 +9,8 @@
           <field name="file" filename="filename"/>
           <field name="filename" readonly="1"/>
           <field name="update_if_exists"/>
-          <field name="delimiter"/>
-          <field name="encoding"/>
+          
+          
         </group>
         <footer>
           <button name="action_import" type="object" class="btn-primary" string="Importar"/>
