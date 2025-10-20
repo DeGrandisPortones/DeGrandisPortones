@@ -2,6 +2,7 @@
 import base64
 import csv
 import io
+import re
 from datetime import datetime
 
 from odoo import api, fields, models, _
@@ -38,6 +39,18 @@ def _to_date(v):
     if not v:
         return False
     s = str(v).strip()
+    m = re.match(r'^(\d{2,4}[/-]\d{1,2}[/-]\d{1,4})', s)
+    if m:
+        s_only = m.group(1)
+    else:
+        s_only = s
+    for fmt in ('%Y-%m-%d','%d/%m/%Y','%d-%m-%Y','%m/%d/%Y','%Y/%m/%d'):
+        try:
+            return datetime.strptime(s_only, fmt).date().isoformat()
+        except Exception:
+            pass
+    return False
+    s = str(v).strip()
     for fmt in ('%Y-%m-%d','%d/%m/%Y','%d-%m-%Y','%m/%d/%Y'):
         try:
             return datetime.strptime(s, fmt).date().isoformat()
@@ -49,7 +62,7 @@ def _to_datetime(v):
     if not v:
         return False
     s = str(v).strip()
-    for fmt in ('%Y-%m-%d %H:%M:%S','%Y-%m-%dT%H:%M:%S','%d/%m/%Y %H:%M:%S'):
+    for fmt in ('%Y-%m-%d %H:%M:%S','%Y-%m-%dT%H:%M:%S','%d/%m/%Y %H:%M:%S','%Y-%m-%d %H:%M','%d/%m/%Y %H:%M'):
         try:
             return datetime.strptime(s, fmt).strftime('%Y-%m-%d %H:%M:%S')
         except Exception:
@@ -104,7 +117,6 @@ class PortonImportWizard(models.TransientModel):
 
         try:
             content = base64.b64decode(self.file)
-            # utf-8-sig para tolerar BOM
             text = content.decode('utf-8-sig', errors='ignore')
         except Exception as e:
             raise UserError(_('No se pudo leer el CSV: %s') % e)
@@ -129,7 +141,6 @@ class PortonImportWizard(models.TransientModel):
                     continue
                 vals[key] = self._convert(key, val, types_map)
 
-            # Si no vino x_name, pero vino 'name' y el modelo tiene x_name
             if 'x_name' not in vals and 'name' in row and 'x_name' in allowed and row.get('name'):
                 vals['x_name'] = row['name']
 
