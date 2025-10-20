@@ -8,20 +8,22 @@ from datetime import datetime
 from odoo import api, fields, models, _
 from odoo.exceptions import UserError
 
-def _norm(s):
+def _norm(s: str) -> str:
     if not s:
         return ""
     s = str(s).strip()
+    # Normalizar acentos y caracteres raros de CSV exportado
     repl = {
         "Á":"A","É":"E","Í":"I","Ó":"O","Ú":"U","Ü":"U","Ñ":"N",
-        "Ã¡":"a","Ã©":"e","Ã­":"i","Ã³":"o","Ãº":"u","Ã±":"n","Â°":"o",
-        "â€¦":"", "…":""
+        "á":"a","é":"e","í":"i","ó":"o","ú":"u","ü":"u","ñ":"n",
+        "Â°":"o", "…":"", "â€¦":"",
     }
     for k,v in repl.items():
-        s = s.replace(k, v)
+        s = s.replace(k,v)
     s = s.lower()
     s = re.sub(r"[^a-z0-9]+", " ", s).strip()
-    return re.sub(r"\s+", " ", s)
+    s = re.sub(r"\s+", " ", s)
+    return s
 
 def _to_int(v):
     try:
@@ -42,72 +44,138 @@ def _to_date(v):
             pass
     return False
 
-CSV_TO_FIELD = {
-    "name": "x_name",
-    "nota de venta": "x_nota_de_venta",
-    "cliente": "x_nombre_del_cliente",
-    "direccion cliente": "x_direccion_del_cliente",
-    "distribuidor": "x_distribuidor",
-    "estado": "x_estado",
-    "partida": "x_partida",
+# 1) CSV header (normalizado) -> clave canónica
+CSV_TO_CANONICAL = {
+    "name": "name",
+    "nota de venta": "nv",
+    "cliente": "cliente",
+    "direccion cliente": "direccion",
+    "distribuidor": "distribuidor",
+    "estado": "estado",
+    "partida": "partida",
 
-    "fecha de pedido": "x_fecha_de_pedido",
-    "fecha de entrega": "x_fecha_de_entrega",
-    "fecha entrega estimada": "x_fecha_de_entrega_estimada",
-    "fecha inicio produccion": "x_fecha_de_inicio_produccion",
+    "fecha de pedido": "fecha_pedido",
+    "fecha de entrega": "fecha_entrega",
+    "fecha entrega estimada": "fecha_entrega_estimada",
+    "fecha inicio produccion": "fecha_inicio_prod",
 
-    "dias restantes": "x_dias_restantes",
-    "dias transcurrido": "x_dias_transcurridos",
-    "dintel ancho": "x_dintel_ancho",
-    "hueco chico": "x_hueco_chico",
-    "hueco grande": "x_hueco_grande",
-    "brazos": "x_largo_brazo",
-    "pierna altura": "x_piernas_altura",
-    "parantes n pieza": "x_parantes_cantidad",
-    "parantes cantidad": "x_parantes_internos_cantidad",
+    "dias restantes": "dias_restantes",
+    "dias transcurrido": "dias_transcurridos",
 
-    "rev fabricante": "x_revestimiento_fabricante",
-    "rev tipo": "x_revestimiento_tipo",
-    "color de simil aluminio": "x_color_del_revestimiento",
-    "color de sistema": "x_color_sistema",
-    "liston": "x_listones",
-    "lucera": "x_lucera",
-    "puerta condicion": "x_puerta_condicion",
-    "puerta posicion": "x_puerta_posicion",
-    "puerta descripcion": "x_puerta_descripcion",
-    "condicion": "x_motor_condicion",
-    "motor ubicacion": "x_motor_posicion",
-    "pasador condicion": "x_pasador",
-    "armado puerta": "x_armado",
-    "instalador": "x_instalacion",
-    "empotra duras": "x_instalacion_empotraduras",
-    "empotraduras posicion": "x_empotraduras_posicion",
-    "parantes descripcion": "x_parantes_descripcion",
-    "parantes distribucion": "x_parantes_distribucion",
-    "pierna tipo": "x_piernas_tipo",
-    "espesor revest": "x_revestimiento_espesor",
-    "dintel tipo": "x_dintel_tipo",
-    "rebaje": "x_rebaje",
-    "rebaje descuento": "x_rebaje_descuento",
-    "rebaje altura": "x_rebaje_altura",
-    "rebaje lateral e inferior": "x_rebaje_lateral_inferior",
-    "descuento rebaje lateral e inferior": "x_rebaje_lateral_inferior_descuento",
+    "color de simil aluminio": "color_revest",
+    "rev fabricante": "revest_fabricante",
+    "rev tipo": "revest_tipo",
+    "color de sistema": "color_sistema",
+
+    "liston": "listones",
+    "lucera": "lucera",
+    "puerta condicion": "puerta_condicion",
+    "puerta posicion": "puerta_posicion",
+    "puerta descripcion": "puerta_descripcion",
+    "armado puerta": "armado_puerta",
+    "puerta": "puerta",
+    "pasador condicion": "pasador",
+
+    "instalador": "instalador",
+    "empotra duras": "empotraduras",
+    "empotraduras posicion": "empotraduras_posicion",
+
+    "parantes n pieza": "parantes_pieza",
+    "parantes cantidad": "parantes_cant_int",
+    "parantes distribucion": "parantes_distrib",
+    "parantes descripcion": "parantes_desc",
+
+    "pierna tipo": "piernas_tipo",
+    "pierna altura": "piernas_altura",
+
+    "dintel tipo": "dintel_tipo",
+    "dintel ancho": "dintel_ancho",
+
+    "motor ubicacion": "motor_posicion",
+    "condicion": "motor_condicion",
+
+    "hueco chico": "hueco_chico",
+    "hueco grande": "hueco_grande",
+    "brazos": "brazos",
+
+    "espesor revest": "revest_espesor",
+
+    "rebaje": "rebaje",
+    "rebaje descuento": "rebaje_descuento",
+    "rebaje altura": "rebaje_altura",
+    "rebaje lateral e inferior": "rebaje_lat_inf",
+    "descuento rebaje lateral e inferior": "rebaje_lat_inf_desc",
 }
 
-CSV_ALIASES = {
-    "motor ubicaci n": "motor ubicacion",
-    "parantes n pieza": "parantes n pieza",
-    "dintel tipo": "dintel tipo",
-}
+# 2) clave canónica -> lista de nombres de campo candidatos (el primero que exista se usa)
+CANONICAL_TO_FIELDS = {
+    "name": ["x_name"],
+    "nv": ["x_nota_de_venta", "x_nv", "x_nro_nota_venta"],
+    "cliente": ["x_nombre_del_cliente", "x_cliente"],
+    "direccion": ["x_direccion_del_cliente", "x_direccion"],
+    "distribuidor": ["x_distribuidor"],
+    "estado": ["x_estado"],
+    "partida": ["x_partida"],
 
-FALLBACK_FIELD = {
-    "x_fecha_de_entrega_estimada": "x_fecha_entrega_estimada",
+    "fecha_pedido": ["x_fecha_de_pedido","x_fecha_pedido"],
+    "fecha_entrega": ["x_fecha_de_entrega","x_fecha_entrega"],
+    "fecha_entrega_estimada": ["x_fecha_de_entrega_estimada","x_fecha_entrega_estimada"],
+    "fecha_inicio_prod": ["x_fecha_de_inicio_produccion","x_fecha_inicio_produccion"],
+
+    "dias_restantes": ["x_dias_restantes"],
+    "dias_transcurridos": ["x_dias_transcurridos"],
+
+    "color_revest": ["x_color_del_revestimiento"],
+    "revest_fabricante": ["x_revestimiento_fabricante"],
+    "revest_tipo": ["x_revestimiento_tipo"],
+    "color_sistema": ["x_color_sistema"],
+
+    "listones": ["x_listones"],
+    "lucera": ["x_lucera"],
+    "puerta_condicion": ["x_puerta_condicion","x_puerta"],
+    "puerta_posicion": ["x_puerta_posicion","x_puerta_position","x_puerta_pos"],
+    "puerta_descripcion": ["x_puerta_descripcion","x_puerta_desc"],
+    "armado_puerta": ["x_armado","x_armado_puerta"],
+    "puerta": ["x_puerta","x_puerta_condicion"],  # por si lo tenés así
+
+    "pasador": ["x_pasador","x_pasador_condicion"],
+
+    "instalador": ["x_instalacion"],
+    "empotraduras": ["x_instalacion_empotraduras"],
+    "empotraduras_posicion": ["x_empotraduras_posicion","x_empotradura_posicion"],
+
+    "parantes_pieza": ["x_parantes_cantidad"],
+    "parantes_cant_int": ["x_parantes_internos_cantidad"],
+    "parantes_distrib": ["x_parantes_distribucion"],
+    "parantes_desc": ["x_parantes_descripcion"],
+
+    "piernas_tipo": ["x_piernas_tipo"],
+    "piernas_altura": ["x_piernas_altura"],
+
+    "dintel_tipo": ["x_dintel_tipo"],
+    "dintel_ancho": ["x_dintel_ancho"],
+
+    "motor_posicion": ["x_motor_posicion","x_motor_ubicacion"],
+    "motor_condicion": ["x_motor_condicion"],
+
+    "hueco_chico": ["x_hueco_chico"],
+    "hueco_grande": ["x_hueco_grande"],
+    "brazos": ["x_largo_brazo"],
+
+    "revest_espesor": ["x_revestimiento_espesor"],
+
+    "rebaje": ["x_rebaje"],
+    "rebaje_descuento": ["x_rebaje_descuento"],
+    "rebaje_altura": ["x_rebaje_altura"],
+    "rebaje_lat_inf": ["x_rebaje_lateral_inferior"],
+    "rebaje_lat_inf_desc": ["x_rebaje_lateral_inferior_descuento"],
 }
 
 TYPE_CONVERTER = {
+    "date": _to_date,
     "integer": _to_int,
     "float": _to_int,
-    "date": _to_date,
+    # char/text/selection: sin conversión
 }
 
 class PortonImportWizard(models.TransientModel):
@@ -124,6 +192,12 @@ class PortonImportWizard(models.TransientModel):
     def _model_fields_and_types(self):
         fields_get = self.env["x_dflex.porton"].fields_get()
         return {k: v.get("type") for k, v in fields_get.items()}
+
+    def _pick_existing_field(self, canonical_key, field_types):
+        for fname in CANONICAL_TO_FIELDS.get(canonical_key, []):
+            if fname in field_types:
+                return fname
+        return None
 
     def _convert_auto(self, field_name, value, types_map):
         if value in (None, ""):
@@ -157,29 +231,26 @@ class PortonImportWizard(models.TransientModel):
         if not reader.fieldnames:
             raise UserError(_("El CSV no tiene encabezados."))
 
-        norm_to_field = {}
-        for raw in reader.fieldnames:
-            nh = _norm(raw)
-            nh = CSV_ALIASES.get(nh, nh)
-            if nh in CSV_TO_FIELD:
-                norm_to_field[nh] = CSV_TO_FIELD[nh]
+        # Construir mapa de encabezado -> clave canónica
+        hdr_to_canon = {}
+        for h in reader.fieldnames:
+            nh = _norm(h)
+            # alias para errores de tipeo comunes
+            if nh == "destribucion": nh = "distribucion"
+            hdr_to_canon[nh] = CSV_TO_CANONICAL.get(nh)
 
         Model = self.env["x_dflex.porton"]
         field_types = self._model_fields_and_types()
-        field_set = set(field_types.keys())
 
         created = updated = missing_key = 0
         for idx, row in enumerate(reader, start=2):
             vals = {}
             for raw_h, raw_v in row.items():
-                nh = _norm(raw_h)
-                nh = CSV_ALIASES.get(nh, nh)
-                target = norm_to_field.get(nh)
-                if not target:
+                canon = hdr_to_canon.get(_norm(raw_h))
+                if not canon:
                     continue
-                if target not in field_set and target in FALLBACK_FIELD and FALLBACK_FIELD[target] in field_set:
-                    target = FALLBACK_FIELD[target]
-                if target not in field_set:
+                target = self._pick_existing_field(canon, field_types)
+                if not target:
                     continue
                 vals[target] = self._convert_auto(target, raw_v, field_types)
 
@@ -195,8 +266,7 @@ class PortonImportWizard(models.TransientModel):
                 continue
 
             if existing and self.update_if_exists:
-                existing.write(vals)
-                updated += 1
+                existing.write(vals); updated += 1
             elif existing:
                 vals["x_name"] = f"{vals['x_name']} (imp {idx})"
                 Model.create(vals); created += 1
