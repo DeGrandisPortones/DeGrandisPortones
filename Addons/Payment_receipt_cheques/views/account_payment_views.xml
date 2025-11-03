@@ -1,5 +1,5 @@
 <odoo>
-  <!-- List view for account.payment.check.line (Odoo 18 uses 'list', not 'tree') -->
+  <!-- List view for account.payment.check.line -->
   <record id="view_payment_check_line_list" model="ir.ui.view">
     <field name="name">account.payment.check.line.list</field>
     <field name="model">account.payment.check.line</field>
@@ -39,20 +39,22 @@
     </field>
   </record>
 
-  <!-- Inherit payment form and add Cheques tab -->
+  <!-- Inherit payment form and add our own notebook under //sheet -->
   <record id="view_account_payment_form_checks" model="ir.ui.view">
     <field name="name">account.payment.form.checks</field>
     <field name="model">account.payment</field>
     <field name="inherit_id" ref="account.view_account_payment_form"/>
     <field name="arch" type="xml">
-      <xpath expr="//sheet/notebook" position="inside">
-        <page string="Cheques">
-          <field name="check_line_ids"
-                 mode="list,form"
-                 context="{'default_payment_id': active_id,
-                           'list_view_ref': 'payment_receipt_cheques.view_payment_check_line_list',
-                           'form_view_ref': 'payment_receipt_cheques.view_payment_check_line_form'}"/>
-        </page>
+      <xpath expr="//sheet" position="inside">
+        <notebook>
+          <page string="Cheques">
+            <field name="check_line_ids"
+                   mode="list,form"
+                   context="{'default_payment_id': active_id,
+                             'list_view_ref': 'payment_receipt_cheques.view_payment_check_line_list',
+                             'form_view_ref': 'payment_receipt_cheques.view_payment_check_line_form'}"/>
+          </page>
+        </notebook>
       </xpath>
     </field>
   </record>
