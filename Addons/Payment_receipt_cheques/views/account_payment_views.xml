@@ -1,42 +1,59 @@
 <odoo>
-  <record id="view_account_payment_form_checks" model="ir.ui.view">
-    <field name="name">account.payment.form.checks</field>
-    <field name="model">account.payment</field>
-    <field name="inherit_id" ref="account.view_account_payment_form"/>
-    <field name="arch" type="xml">
-      <!-- Insertamos un nuevo notebook con la pestaña Cheques -->
-      <xpath expr="//sheet" position="inside">
-        <notebook>
-          <page string="Cheques">
-            <field name="check_line_ids" context="{'default_payment_id': active_id}">
-              <tree editable="bottom">
-                <field name="number"/>
-                <field name="bank_id"/>
-                <field name="issuer"/>
-                <field name="issuer_vat"/>
-                <field name="issue_date"/>
-                <field name="payment_date"/>
-                <field name="due_date"/>
-                <field name="amount"/>
-              </tree>
-              <form>
-                <group>
-                  <field name="number"/>
-                  <field name="bank_id"/>
-                  <field name="issuer"/>
-                  <field name="issuer_vat"/>
-                </group>
-                <group>
-                  <field name="issue_date"/>
-                  <field name="payment_date"/>
-                  <field name="due_date"/>
-                  <field name="amount"/>
-                </group>
-              </form>
-            </field>
-          </page>
-        </notebook>
-      </xpath>
-    </field>
-  </record>
-</odoo>
+      <!-- Tree view for account.payment.check.line -->
+      <record id="view_payment_check_line_tree" model="ir.ui.view">
+        <field name="name">account.payment.check.line.tree</field>
+        <field name="model">account.payment.check.line</field>
+        <field name="arch" type="xml">
+          <tree editable="bottom">
+            <field name="number"/>
+            <field name="bank_id"/>
+            <field name="issuer"/>
+            <field name="issuer_vat"/>
+            <field name="issue_date"/>
+            <field name="payment_date"/>
+            <field name="due_date"/>
+            <field name="amount"/>
+          </tree>
+        </field>
+      </record>
+
+      <!-- Form view for account.payment.check.line -->
+      <record id="view_payment_check_line_form" model="ir.ui.view">
+        <field name="name">account.payment.check.line.form</field>
+        <field name="model">account.payment.check.line</field>
+        <field name="arch" type="xml">
+          <form string="Cheque">
+            <group>
+              <field name="number"/>
+              <field name="bank_id"/>
+              <field name="issuer"/>
+              <field name="issuer_vat"/>
+            </group>
+            <group>
+              <field name="issue_date"/>
+              <field name="payment_date"/>
+              <field name="due_date"/>
+              <field name="amount"/>
+            </group>
+          </form>
+        </field>
+      </record>
+
+      <!-- Inherit payment form and add Cheques tab -->
+      <record id="view_account_payment_form_checks" model="ir.ui.view">
+        <field name="name">account.payment.form.checks</field>
+        <field name="model">account.payment</field>
+        <field name="inherit_id" ref="account.view_account_payment_form"/>
+        <field name="arch" type="xml">
+          <xpath expr="//sheet/notebook" position="inside">
+            <page string="Cheques">
+              <field name="check_line_ids"
+                     mode="tree,form"
+                     context="{'default_payment_id': active_id,
+                               'tree_view_ref': 'payment_receipt_cheques.view_payment_check_line_tree',
+                               'form_view_ref': 'payment_receipt_cheques.view_payment_check_line_form'}"/>
+            </page>
+          </xpath>
+        </field>
+      </record>
+    </odoo>
