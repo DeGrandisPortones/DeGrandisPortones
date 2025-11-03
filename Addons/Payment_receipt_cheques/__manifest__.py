@@ -10,7 +10,7 @@
         "reports/report_payment_receipt_checks.xml"
     ],
     "license": "LGPL-3",
-    "installable": true,
-    "application": false,
+    "installable": True,
+    "application": False,
     "author": "Esteban + ChatGPT"
 }
