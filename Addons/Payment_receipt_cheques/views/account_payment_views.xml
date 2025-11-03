@@ -50,8 +50,7 @@
           <page string="Cheques">
             <field name="check_line_ids"
                    mode="list,form"
-                   context="{'default_payment_id': active_id,
-                             'list_view_ref': 'payment_receipt_cheques.view_payment_check_line_list',
+                   context="{'list_view_ref': 'payment_receipt_cheques.view_payment_check_line_list',
                              'form_view_ref': 'payment_receipt_cheques.view_payment_check_line_form'}"/>
           </page>
         </notebook>
