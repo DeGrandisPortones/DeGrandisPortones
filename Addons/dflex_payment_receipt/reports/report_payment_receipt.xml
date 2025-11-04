@@ -1,5 +1,5 @@
 <odoo>
-  <template id="report_payment_receipt_document_modern" inherit_id="account.report_payment_receipt_document">
+  <template id="dflex_report_payment_receipt_document" inherit_id="account.report_payment_receipt_document">
     <xpath expr="//t[@t-call='web.external_layout' or @t-call='web.external_layout_clean']" position="replace">
       <t t-call="web.external_layout">
         <t t-set="o" t-value="o"/>
@@ -52,7 +52,7 @@
             </div>
             <div class="r-small r-muted" style="text-align:right;">
               <t t-if="o.company_id.logo">
-                <img t-att-src="'data:image/png;base64,%s' % (o.company_id.logo)" style="max-height:52px;"/><br/>
+                <img t-att-src="image_data_uri(o.company_id.logo)" style="max-height:52px;"/><br/>
               </t>
               <t t-esc="o.company_id.name"/><br/>
               <t t-esc="o.company_id.street or ''"/><t t-if="o.company_id.street2">, <t t-esc="o.company_id.street2"/></t><br/>
@@ -76,7 +76,7 @@
                 </tr>
               </thead>
               <tbody>
-                <!-- E-cheques (if module present) -->
+                <!-- E-cheques (si existen en el pago) -->
                 <t t-if="'check_line_ids' in o._fields and o.check_line_ids">
                   <tr t-foreach="o.check_line_ids" t-as="c">
                     <td>
@@ -90,7 +90,7 @@
                   </tr>
                 </t>
 
-                <!-- Transferencia bancaria (datos del diario de Vert) -->
+                <!-- Transferencia bancaria (datos del diario bancario receptor de Vert) -->
                 <t t-if="o.journal_id and o.journal_id.type == 'bank'">
                   <tr>
                     <td>
@@ -107,7 +107,7 @@
                   </tr>
                 </t>
 
-                <!-- Fallback para otros medios -->
+                <!-- Otros medios -->
                 <t t-if="not (('check_line_ids' in o._fields and o.check_line_ids) or (o.journal_id and o.journal_id.type == 'bank'))">
                   <tr>
                     <td><t t-esc="(o.payment_method_line_id and o.payment_method_line_id.name) or 'Pago'"/></td>
@@ -132,14 +132,14 @@
           </div>
 
           <!-- Observaciones -->
-          <div class="r-section" t-if="o.ref or o.narration or o.communication">
+          <div class="r-section" t-if="o.ref or ('narration' in o._fields and o.narration) or ('communication' in o._fields and o.communication)">
             <div class="head">OBSERVACIONES</div>
             <div class="r-pre" style="padding:10px;">
-              <t t-esc="o.narration or o.communication or o.ref"/>
+              <t t-esc="('narration' in o._fields and o.narration) or ('communication' in o._fields and o.communication) or o.ref"/>
             </div>
           </div>
 
-          <!-- Imputaciones (solo si el campo existe) -->
+          <!-- Imputaciones (facturas relacionadas) -->
           <div class="r-section" t-if="'reconciled_invoice_ids' in o._fields and o.reconciled_invoice_ids">
             <div class="head">IMPUTACIONES</div>
             <table>
