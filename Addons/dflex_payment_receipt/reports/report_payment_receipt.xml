@@ -12,12 +12,15 @@
         <t t-set="is_getnet" t-value="'getnet' in jn"/>
         <t t-set="is_mp" t-value="'mercadopago' in jn or 'mercado' in jn"/>
         <t t-set="is_checks_journal" t-value="'cheque' in jn or 'checks' in jn or 'terceros' in jn"/>
-        <!-- soportamos varias fuentes posibles de lineas de cheque: modulo viejo, Studio, otros -->
+        <!-- Soportamos múltiples campos para líneas de cheques -->
         <t t-set="check_lines"
            t-value="
              ('check_line_ids' in o._fields and o.check_line_ids) or
              ('x_check_line_ids' in o._fields and o.x_check_line_ids) or
+             ('check_ids' in o._fields and o.check_ids) or
+             ('payment_check_ids' in o._fields and o.payment_check_ids) or
              ('payment_check_line_ids' in o._fields and o.payment_check_line_ids) or
+             ('third_party_check_ids' in o._fields and o.third_party_check_ids) or
              False
            "/>
         <t t-set="has_checks" t-value="bool(check_lines)"/>
@@ -44,7 +47,7 @@
         </style>
 
         <div class="page r-wrap">
-          <!-- Header (solo título y datos del cliente; el external_layout imprime los datos de la empresa) -->
+          <!-- Header -->
           <div class="r-header">
             <div>
               <div class="r-title">ORDEN DE COBRANZA</div>
@@ -83,28 +86,48 @@
                 </tr>
               </thead>
               <tbody>
-                <!-- Cheques de terceros: si hay líneas o si el diario es de cheques -->
+                <!-- Cheques de terceros: detallar si hay líneas -->
                 <t t-if="has_checks">
-                  <tr t-foreach="check_lines" t-as="c">
-                    <td>
-                      <t>Cheque de terceros</t>
-                      <t t-if="('number' in c._fields and c.number)"> Nº <t t-esc="c.number"/></t>
-                      <t t-if="('bank_id' in c._fields and c.bank_id)"> - <t t-esc="c.bank_id.name"/></t>
-                      <t t-if="('due_date' in c._fields and c.due_date)"> - Vto <t t-esc="c.due_date.strftime('%d/%m/%Y')"/></t>
-                      <t t-if="('owner_vat' in c._fields and c.owner_vat)"> - CUIT <t t-esc="c.owner_vat"/></t>
-                      <t t-if="('owner_name' in c._fields and c.owner_name)"> - <t t-esc="c.owner_name"/></t>
-                    </td>
-                    <td class="r-right">
-                      <span t-esc="('amount' in c._fields and c.amount) and c.amount or 0.0" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
+                  <tr>
+                    <td colspan="2" style="padding:0;">
+                      <table style="width:100%; border-collapse:collapse;">
+                        <thead>
+                          <tr>
+                            <th style="padding:6px 10px;">Número</th>
+                            <th style="padding:6px 10px;">Banco</th>
+                            <th style="padding:6px 10px;">CUIT del emisor</th>
+                            <th style="padding:6px 10px;">Razón social</th>
+                            <th style="padding:6px 10px;">Vencimiento</th>
+                            <th class="r-right" style="padding:6px 10px;">Importe</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr t-foreach="check_lines" t-as="c">
+                            <td><t t-esc="('number' in c._fields and c.number) or ('name' in c._fields and c.name) or ''"/></td>
+                            <td>
+                              <t t-if="('bank_id' in c._fields and c.bank_id)"><t t-esc="c.bank_id.name"/></t>
+                              <t t-elif="('bank' in c._fields and c.bank)"><t t-esc="c.bank"/></t>
+                            </td>
+                            <td><t t-esc="('owner_vat' in c._fields and c.owner_vat) or ('owner_cuit' in c._fields and c.owner_cuit) or ''"/></td>
+                            <td><t t-esc="('owner_name' in c._fields and c.owner_name) or ''"/></td>
+                            <td>
+                              <t t-if="('due_date' in c._fields and c.due_date)"><t t-esc="c.due_date.strftime('%d/%m/%Y')"/></t>
+                              <t t-elif="('payment_date' in c._fields and c.payment_date)"><t t-esc="c.payment_date.strftime('%d/%m/%Y')"/></t>
+                              <t t-elif="('issue_date' in c._fields and c.issue_date)"><t t-esc="c.issue_date.strftime('%d/%m/%Y')"/></t>
+                            </td>
+                            <td class="r-right">
+                              <span t-esc="('amount' in c._fields and c.amount) or ('payment_amount' in c._fields and c.payment_amount) or 0.0" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
                     </td>
                   </tr>
                 </t>
                 <t t-if="(not has_checks) and is_checks_journal">
                   <tr>
                     <td>Cheques de terceros</td>
-                    <td class="r-right">
-                      <span t-esc="o.amount" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
-                    </td>
+                    <td class="r-right"><span t-esc="o.amount" t-options='{\"widget\": \"monetary\", \"display_currency\": o.currency_id}'/></td>
                   </tr>
                 </t>
 
