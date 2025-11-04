@@ -3,6 +3,9 @@
     <xpath expr="//t[@t-call='web.external_layout' or @t-call='web.external_layout_clean']" position="replace">
       <t t-call="web.external_layout">
         <t t-set="o" t-value="o"/>
+        <!-- precompute safe values -->
+        <t t-set="has_payment_reference" t-value="'payment_reference' in o._fields and o.payment_reference"/>
+        <t t-set="obs" t-value="(('narration' in o._fields and o.narration) or ('communication' in o._fields and o.communication) or (has_payment_reference and o.payment_reference) or '')"/>
         <style>
           .r-wrap { padding: 2px 0; }
           .r-header { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
@@ -20,7 +23,7 @@
           .r-foot { margin-top:18px; display:flex; gap:16px; }
           .r-foot .sig { flex:1; text-align:center; }
           .r-foot .sig .line { border-top:1px solid #9ca3af; margin:20px 20px 6px; }
-          .r-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+          .r-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; }
         </style>
 
         <div class="page r-wrap">
@@ -95,7 +98,7 @@
                   <tr>
                     <td>
                       <t>TRANSFERENCIA BANCARIA</t>
-                      <t t-if="o.ref or o.payment_reference"> N°: <t t-esc="o.ref or o.payment_reference"/></t>
+                      <t t-if="has_payment_reference"> N°: <t t-esc="o.payment_reference"/></t>
                       <t t-if="o.journal_id.bank_id"> | <t t-esc="o.journal_id.bank_id.name"/></t>
                       <t t-if="o.journal_id.bank_account_id">
                          - <t t-esc="o.journal_id.bank_account_id.acc_number"/>
@@ -132,10 +135,10 @@
           </div>
 
           <!-- Observaciones -->
-          <div class="r-section" t-if="o.ref or ('narration' in o._fields and o.narration) or ('communication' in o._fields and o.communication)">
+          <div class="r-section" t-if="obs">
             <div class="head">OBSERVACIONES</div>
             <div class="r-pre" style="padding:10px;">
-              <t t-esc="('narration' in o._fields and o.narration) or ('communication' in o._fields and o.communication) or o.ref"/>
+              <t t-esc="obs"/>
             </div>
           </div>
 
