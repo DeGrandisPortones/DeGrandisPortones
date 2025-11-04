@@ -1,7 +1,8 @@
 <odoo>
   <template id="report_delivery_document_remito_custom" inherit_id="stock.report_delivery_document">
     <xpath expr="//t[@t-call='web.external_layout' or @t-call='web.external_layout_clean']" position="replace">
-      <t t-call="web.external_layout_clean">
+      <!-- Use external_layout (always present) instead of external_layout_clean -->
+      <t t-call="web.external_layout">
         <t t-set="o" t-value="o"/>
         <style>
           .remito-green { color:#1e7d3a; }
