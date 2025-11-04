@@ -1,7 +1,6 @@
 <odoo>
   <template id="report_delivery_document_remito_custom" inherit_id="stock.report_delivery_document">
     <xpath expr="//t[@t-call='web.external_layout' or @t-call='web.external_layout_clean']" position="replace">
-      <!-- Use external_layout (always present) instead of external_layout_clean -->
       <t t-call="web.external_layout">
         <t t-set="o" t-value="o"/>
         <style>
@@ -15,6 +14,7 @@
           .remito-small { font-size:11px; }
           .remito-title { font-weight:700; font-size:18px; text-align:center; }
           .signature-line { border-top:1px solid #1e7d3a; width:80%; margin:24px auto 4px; }
+          .preline { white-space: pre-line; } /* preserve \n as line breaks */
         </style>
 
         <div class="page">
@@ -79,7 +79,10 @@
             </tr>
             <tr>
               <th>Aclaraciones</th>
-              <td><t t-esc="o.note or o.origin or ''"/></td>
+              <td>
+                <div class="preline" t-if="o.note"><t t-esc="o.note"/></div>
+                <t t-if="not o.note"><t t-esc="o.origin or ''"/></t>
+              </td>
             </tr>
           </table>
 
