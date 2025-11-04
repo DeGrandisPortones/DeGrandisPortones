@@ -1,6 +1,7 @@
 <odoo>
   <template id="dflex_report_payment_receipt_document" inherit_id="account.report_payment_receipt_document">
     <xpath expr="//t[@t-call='web.external_layout' or @t-call='web.external_layout_clean']" position="replace">
+      <!-- Seguimos usando el external_layout estándar para no duplicar header y footer -->
       <t t-call="web.external_layout">
         <t t-set="o" t-value="o"/>
         <!-- precompute safe values -->
@@ -27,7 +28,7 @@
         </style>
 
         <div class="page r-wrap">
-          <!-- Header -->
+          <!-- Header (sin bloque de empresa; eso ya lo imprime web.external_layout) -->
           <div class="r-header">
             <div>
               <div class="r-title">ORDEN DE COBRANZA</div>
@@ -52,19 +53,6 @@
                   </td>
                 </tr>
               </table>
-            </div>
-            <div class="r-small r-muted" style="text-align:right;">
-              <t t-if="o.company_id.logo">
-                <img t-att-src="image_data_uri(o.company_id.logo)" style="max-height:52px;"/><br/>
-              </t>
-              <t t-esc="o.company_id.name"/><br/>
-              <t t-esc="o.company_id.street or ''"/><t t-if="o.company_id.street2">, <t t-esc="o.company_id.street2"/></t><br/>
-              <t t-esc="o.company_id.city or ''"/><t t-if="o.company_id.state_id">, <t t-esc="o.company_id.state_id.name"/></t>
-              <t t-if="o.company_id.zip"> <t t-esc="o.company_id.zip"/></t><br/>
-              CUIT: <t t-esc="o.company_id.vat or ''"/><br/>
-              <t t-if="o.company_id.email"><t t-esc="o.company_id.email"/></t><br/>
-              <t t-if="o.company_id.website"><t t-esc="o.company_id.website"/></t><br/>
-              <t t-if="o.company_id.phone">Contacto: <t t-esc="o.company_id.phone"/></t>
             </div>
           </div>
 
