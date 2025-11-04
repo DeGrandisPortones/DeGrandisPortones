@@ -4,7 +4,7 @@
     <xpath expr="//t[@t-call='web.external_layout' or @t-call='web.external_layout_clean']" position="replace">
       <t t-call="web.external_layout">
         <t t-set="o" t-value="o"/>
-        <!-- --------- PRESETS --------- -->
+        
         <t t-set="has_payment_reference" t-value="'payment_reference' in o._fields and o.payment_reference"/>
         <t t-set="obs" t-value="(('narration' in o._fields and o.narration) or ('communication' in o._fields and o.communication) or (has_payment_reference and o.payment_reference) or '')"/>
         <t t-set="is_bank" t-value="o.journal_id and o.journal_id.type == 'bank'"/>
