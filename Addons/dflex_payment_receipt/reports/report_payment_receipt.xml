@@ -4,7 +4,7 @@
     <xpath expr="//t[@t-call='web.external_layout' or @t-call='web.external_layout_clean']" position="replace">
       <t t-call="web.external_layout">
         <t t-set="o" t-value="o"/>
-        <!-- precompute safe values -->
+        <!-- Precompute safe values -->
         <t t-set="has_payment_reference" t-value="'payment_reference' in o._fields and o.payment_reference"/>
         <t t-set="obs" t-value="(('narration' in o._fields and o.narration) or ('communication' in o._fields and o.communication) or (has_payment_reference and o.payment_reference) or '')"/>
         <t t-set="is_bank" t-value="o.journal_id and o.journal_id.type == 'bank'"/>
@@ -14,21 +14,17 @@
         <t t-set="is_mp" t-value="'mercadopago' in jn or 'mercado' in jn"/>
         <t t-set="is_checks_journal" t-value="'cheque' in jn or 'checks' in jn or 'terceros' in jn"/>
 
-        <!-- Detección estática de campos conocidos -->
+        <!-- Cheque lines (static list only, compatible con ADHOC) -->
         <t t-set="check_lines"
            t-value="
-             ('check_line_ids' in o._fields and o.check_line_ids) or
-             ('x_check_line_ids' in o._fields and o.x_check_line_ids) or
+             ('third_party_check_ids' in o._fields and o.third_party_check_ids) or
+             ('received_check_ids' in o._fields and o.received_check_ids) or
              ('check_ids' in o._fields and o.check_ids) or
+             ('check_line_ids' in o._fields and o.check_line_ids) or
              ('payment_check_ids' in o._fields and o.payment_check_ids) or
              ('payment_check_line_ids' in o._fields and o.payment_check_line_ids) or
-             ('third_party_check_ids' in o._fields and o.third_party_check_ids) or
              False
            "/>
-        <!-- Detección dinámica: primer One2many cuyo nombre contenga 'cheque' o 'check' y tenga registros -->
-        <t t-set="dyn_check_fname" t-value="next((fname for fname, f in o._fields.items() if getattr(f, 'type', '') == 'one2many' and ('cheque' in fname or 'check' in fname)), False)"/>
-        <t t-set="dyn_check_lines" t-value="(dyn_check_fname and getattr(o, dyn_check_fname)) or False"/>
-        <t t-set="check_lines" t-value="check_lines or dyn_check_lines or False"/>
         <t t-set="has_checks" t-value="bool(check_lines)"/>
         <t t-set="acc_num" t-value="(o.journal_id.bank_account_id.acc_number if (o.journal_id and o.journal_id.bank_account_id) else '')"/>
         <t t-set="acc_mask" t-value="('••••' + str(acc_num)[-4:]) if acc_num else ''"/>
@@ -114,7 +110,7 @@
                                 ('name' in c._fields and c.name) or
                                 ('x_number' in c._fields and c.x_number) or
                                 ('x_name' in c._fields and c.x_name) or
-                                next((getattr(c, fn) for fn in c._fields if 'number' in fn or 'nro' in fn or 'cheque' in fn), c.display_name)
+                                c.display_name
                               "/>
                             </td>
                             <!-- Banco -->
@@ -123,7 +119,7 @@
                                 (('bank_id' in c._fields and c.bank_id and c.bank_id.name) or
                                  ('x_bank_id' in c._fields and c.x_bank_id and c.x_bank_id.name) or
                                  ('bank' in c._fields and c.bank) or
-                                 next((getattr(getattr(c, fn), 'name', getattr(c, fn)) for fn in c._fields if 'bank' in fn), '')
+                                 ''
                                 )
                               "/>
                             </td>
@@ -133,7 +129,7 @@
                                 ('owner_vat' in c._fields and c.owner_vat) or
                                 ('owner_cuit' in c._fields and c.owner_cuit) or
                                 ('x_owner_vat' in c._fields and c.x_owner_vat) or
-                                next((getattr(c, fn) for fn in c._fields if 'cuit' in fn or 'vat' in fn), '')
+                                ''
                               "/>
                             </td>
                             <!-- Razón social -->
@@ -141,7 +137,7 @@
                               <t t-esc="
                                 ('owner_name' in c._fields and c.owner_name) or
                                 ('x_owner_name' in c._fields and c.x_owner_name) or
-                                next((getattr(c, fn) for fn in c._fields if 'owner' in fn and 'name' in fn), '')
+                                ''
                               "/>
                             </td>
                             <!-- Fecha -->
@@ -149,11 +145,6 @@
                               <t t-if="('due_date' in c._fields and c.due_date)"><t t-esc="c.due_date.strftime('%d/%m/%Y')"/></t>
                               <t t-elif="('payment_date' in c._fields and c.payment_date)"><t t-esc="c.payment_date.strftime('%d/%m/%Y')"/></t>
                               <t t-elif="('issue_date' in c._fields and c.issue_date)"><t t-esc="c.issue_date.strftime('%d/%m/%Y')"/></t>
-                              <t t-elif="next((fn for fn in c._fields if 'date' in fn and getattr(c, fn)), False)">
-                                <t t-set="dyn_date_field" t-value="next((fn for fn in c._fields if 'date' in fn and getattr(c, fn)), False)"/>
-                                <t t-set="dyn_date_val" t-value="getattr(c, dyn_date_field)"/>
-                                <t t-esc="getattr(dyn_date_val, 'strftime', False) and dyn_date_val.strftime('%d/%m/%Y') or dyn_date_val"/>
-                              </t>
                             </td>
                             <!-- Importe -->
                             <td class="r-right">
@@ -170,6 +161,7 @@
                     </td>
                   </tr>
                 </t>
+
                 <t t-if="(not has_checks) and is_checks_journal">
                   <tr>
                     <td>Cheques de terceros</td>
