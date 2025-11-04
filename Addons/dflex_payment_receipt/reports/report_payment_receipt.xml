@@ -12,7 +12,6 @@
         <t t-set="is_getnet" t-value="'getnet' in jn"/>
         <t t-set="is_mp" t-value="'mercadopago' in jn or 'mercado' in jn"/>
         <t t-set="is_checks_journal" t-value="'cheque' in jn or 'checks' in jn or 'terceros' in jn"/>
-        <!-- Soportamos múltiples campos para líneas de cheques -->
         <t t-set="check_lines"
            t-value="
              ('check_line_ids' in o._fields and o.check_line_ids) or
@@ -47,7 +46,6 @@
         </style>
 
         <div class="page r-wrap">
-          <!-- Header -->
           <div class="r-header">
             <div>
               <div class="r-title">ORDEN DE COBRANZA</div>
@@ -75,7 +73,6 @@
             </div>
           </div>
 
-          <!-- MEDIOS DE PAGO -->
           <div class="r-section">
             <div class="head">MEDIOS DE PAGO</div>
             <table>
@@ -86,7 +83,6 @@
                 </tr>
               </thead>
               <tbody>
-                <!-- Cheques de terceros: detallar si hay líneas -->
                 <t t-if="has_checks">
                   <tr>
                     <td colspan="2" style="padding:0;">
@@ -116,7 +112,7 @@
                               <t t-elif="('issue_date' in c._fields and c.issue_date)"><t t-esc="c.issue_date.strftime('%d/%m/%Y')"/></t>
                             </td>
                             <td class="r-right">
-                              <span t-esc="('amount' in c._fields and c.amount) or ('payment_amount' in c._fields and c.payment_amount) or 0.0" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
+                              <span t-esc="('amount' in c._fields and c.amount) or ('payment_amount' in c._fields and c.payment_amount) or 0.0" t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
                             </td>
                           </tr>
                         </tbody>
@@ -127,27 +123,24 @@
                 <t t-if="(not has_checks) and is_checks_journal">
                   <tr>
                     <td>Cheques de terceros</td>
-                    <td class="r-right"><span t-esc="o.amount" t-options='{\"widget\": \"monetary\", \"display_currency\": o.currency_id}'/></td>
+                    <td class="r-right"><span t-esc="o.amount" t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/></td>
                   </tr>
                 </t>
 
-                <!-- Tarjeta crédito Getnet -->
                 <t t-if="(not has_checks) and (not is_checks_journal) and is_getnet">
                   <tr>
                     <td>Pago hecho por <b>tarjeta de crédito</b> plataforma <b>Getnet</b></td>
-                    <td class="r-right"><span t-esc="o.amount" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/></td>
+                    <td class="r-right"><span t-esc="o.amount" t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/></td>
                   </tr>
                 </t>
 
-                <!-- Tarjeta / Link de pago Mercadopago -->
                 <t t-if="(not has_checks) and (not is_checks_journal) and (not is_getnet) and is_mp">
                   <tr>
                     <td>Pago hecho por <b>tarjeta / Link de pago</b> a <b>Mercadopago</b></td>
-                    <td class="r-right"><span t-esc="o.amount" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/></td>
+                    <td class="r-right"><span t-esc="o.amount" t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/></td>
                   </tr>
                 </t>
 
-                <!-- Transferencia bancaria -->
                 <t t-if="(not has_checks) and (not is_checks_journal) and (not is_getnet) and (not is_mp) and is_bank">
                   <tr>
                     <td>
@@ -156,30 +149,28 @@
                       <t t-if="acc_mask"> cuenta <t t-esc="acc_mask"/></t>
                       <t t-if="has_payment_reference"> — N° <t t-esc="o.payment_reference"/></t>
                     </td>
-                    <td class="r-right"><span t-esc="o.amount" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/></td>
+                    <td class="r-right"><span t-esc="o.amount" t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/></td>
                   </tr>
                 </t>
 
-                <!-- Efectivo -->
                 <t t-if="(not has_checks) and (not is_checks_journal) and (not is_getnet) and (not is_mp) and (not is_bank) and is_cash">
                   <tr>
                     <td>Pago en efectivo</td>
-                    <td class="r-right"><span t-esc="o.amount" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/></td>
+                    <td class="r-right"><span t-esc="o.amount" t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/></td>
                   </tr>
                 </t>
 
-                <!-- Fallback -->
                 <t t-if="(not has_checks) and (not is_checks_journal) and (not is_getnet) and (not is_mp) and (not is_bank) and (not is_cash)">
                   <tr>
                     <td><t t-esc="(o.payment_method_line_id and o.payment_method_line_id.name) or 'Pago'"/></td>
-                    <td class="r-right"><span t-esc="o.amount" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/></td>
+                    <td class="r-right"><span t-esc="o.amount" t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/></td>
                   </tr>
                 </t>
               </tbody>
               <tfoot>
                 <tr>
                   <th class="r-right r-total">TOTAL</th>
-                  <th class="r-right r-total"><span t-esc="o.amount" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/></th>
+                  <th class="r-right r-total"><span t-esc="o.amount" t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/></th>
                 </tr>
                 <tr>
                   <td colspan="2" class="r-small r-muted">Son: <t t-esc="o.currency_id.amount_to_text(o.amount)"/></td>
@@ -188,13 +179,11 @@
             </table>
           </div>
 
-          <!-- Observaciones -->
           <div class="r-section" t-if="obs">
             <div class="head">OBSERVACIONES</div>
             <div class="r-pre" style="padding:10px;"><t t-esc="obs"/></div>
           </div>
 
-          <!-- Imputaciones (facturas relacionadas) -->
           <div class="r-section" t-if="'reconciled_invoice_ids' in o._fields and o.reconciled_invoice_ids">
             <div class="head">IMPUTACIONES</div>
             <table>
@@ -210,14 +199,13 @@
                 <tr t-foreach="o.reconciled_invoice_ids" t-as="inv">
                   <td><t t-esc="(inv.invoice_date or inv.date).strftime('%d/%m/%Y') if (inv.invoice_date or inv.date) else ''"/></td>
                   <td><t t-esc="inv.name or inv.ref or inv.move_name"/></td>
-                  <td class="r-right"><span t-esc="inv.amount_total_signed" t-options='{"widget": "monetary", "display_currency": inv.currency_id}'/></td>
-                  <td class="r-right"><span t-esc="inv.amount_residual_signed" t-options='{"widget": "monetary", "display_currency": inv.currency_id}'/></td>
+                  <td class="r-right"><span t-esc="inv.amount_total_signed" t-options="{'widget': 'monetary', 'display_currency': inv.currency_id}"/></td>
+                  <td class="r-right"><span t-esc="inv.amount_residual_signed" t-options="{'widget': 'monetary', 'display_currency': inv.currency_id}"/></td>
                 </tr>
               </tbody>
             </table>
           </div>
 
-          <!-- Firmas -->
           <div class="r-foot">
             <div class="sig">
               <div class="line"></div>
