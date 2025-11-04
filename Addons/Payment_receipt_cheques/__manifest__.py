@@ -1,14 +1,10 @@
 {
-    "name": "Payment Receipt - Cheques",
-    "summary": "Add check lines to customer payments and print them on the Payment Receipt",
-    "version": "18.0.1.0.4",
-    "category": "Accounting/Accounting",
-    "depends": ["account"],
-    "data": [
-        "security/ir.model.access.csv",
-        "views/account_payment_views.xml",
-        "reports/report_payment_receipt_checks.xml"
-    ],
+    "name": "Stock Delivery Remito Custom",
+    "summary": "Custom 'Remito' (Delivery Slip) layout similar to the provided design",
+    "version": "18.0.1.0.0",
+    "category": "Inventory/Reporting",
+    "depends": ["stock", "web"],
+    "data": ["reports/report_delivery_remito.xml"],
     "license": "LGPL-3",
     "installable": True,
     "application": False,

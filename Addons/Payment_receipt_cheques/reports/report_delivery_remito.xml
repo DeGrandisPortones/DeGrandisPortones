@@ -1,0 +1,133 @@
+<odoo>
+  <template id="report_delivery_document_remito_custom" inherit_id="stock.report_delivery_document">
+    <xpath expr="//t[@t-call='web.external_layout' or @t-call='web.external_layout_clean']" position="replace">
+      <t t-call="web.external_layout_clean">
+        <t t-set="o" t-value="o"/>
+        <style>
+          .remito-green { color:#1e7d3a; }
+          .remito-bar   { height:8px; background:#1e7d3a; }
+          .remito-box   { border:1.5px solid #1e7d3a; border-collapse:collapse; }
+          .remito-box td, .remito-box th { border:1px solid #1e7d3a; padding:6px; }
+          .remito-muted { color:#4d4d4d; }
+          .remito-grey  { background:#e6e6e6; height:22px; }
+          .remito-center{ text-align:center; }
+          .remito-small { font-size:11px; }
+          .remito-title { font-weight:700; font-size:18px; text-align:center; }
+          .signature-line { border-top:1px solid #1e7d3a; width:80%; margin:24px auto 4px; }
+        </style>
+
+        <div class="page">
+          <table style="width:100%; border-collapse:collapse;">
+            <tr>
+              <td style="width:33%; vertical-align:top;">
+                <img t-if="o.company_id.logo" t-att-src="'data:image/png;base64,%s' % (o.company_id.logo)" style="max-height:60px;"/>
+                <div class="remito-small remito-muted" t-if="o.company_id.street or o.company_id.city">
+                  <t t-esc="o.company_id.street or ''"/><t t-if="o.company_id.street2">, <t t-esc="o.company_id.street2"/></t><br/>
+                  <t t-esc="(o.company_id.city or '')"/><t t-if="o.company_id.state_id">, <t t-esc="o.company_id.state_id.name"/></t>
+                  <t t-if="o.company_id.zip"> <t t-esc="o.company_id.zip"/></t><br/>
+                  <t t-if="o.company_id.phone">Cel: <t t-esc="o.company_id.phone"/></t>
+                </div>
+              </td>
+              <td style="width:34%; vertical-align:middle;">
+                <div class="remito-title">REMITO</div>
+              </td>
+              <td style="width:33%; vertical-align:top;">
+                <table style="width:100%; border-collapse:collapse;">
+                  <tr>
+                    <td class="remito-center remito-box remito-small" style="font-weight:700;">Solicitud de Servicio</td>
+                  </tr>
+                  <tr>
+                    <td class="remito-box remito-small"><b>FECHA:</b>
+                      <t t-esc="(o.scheduled_date or o.date or o.create_date).strftime('%d/%m/%Y') if (o.scheduled_date or o.date or o.create_date) else ''"/>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+
+          <div class="remito-bar" style="margin:10px 0 6px;"></div>
+
+          <table class="remito-box" style="width:100%; margin-bottom:6px;">
+            <tr>
+              <th style="width:18%;">Empresa - Sr./a:</th>
+              <td><t t-esc="o.partner_id.display_name"/></td>
+            </tr>
+            <tr>
+              <th>DNI / CUIT:</th>
+              <td><t t-esc="o.partner_id.vat or ''"/></td>
+            </tr>
+            <tr>
+              <th>Destino:</th>
+              <td><t t-esc="o.partner_id.contact_address or ''"/></td>
+            </tr>
+            <tr>
+              <th>CP:</th>
+              <td><t t-esc="o.partner_id.zip or ''"/></td>
+            </tr>
+            <tr>
+              <th>Email:</th>
+              <td><t t-esc="o.partner_id.email or ''"/></td>
+            </tr>
+            <tr>
+              <th>Teléfono:</th>
+              <td>
+                <t t-if="o.partner_id.phone"><t t-esc="o.partner_id.phone"/></t>
+                <t t-if="o.partner_id.mobile"> / <t t-esc="o.partner_id.mobile"/></t>
+              </td>
+            </tr>
+            <tr>
+              <th>Aclaraciones</th>
+              <td><t t-esc="o.note or o.origin or ''"/></td>
+            </tr>
+          </table>
+
+          <table class="remito-box" style="width:100%; margin-top:6px;">
+            <thead>
+              <tr>
+                <th style="width:15%;">Cantidad</th>
+                <th>Descripción</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr t-foreach="o.move_ids_without_package" t-as="m">
+                <td class="remito-center">
+                  <t t-esc="m.quantity_done or m.product_uom_qty"/>
+                </td>
+                <td>
+                  <t t-esc="m.product_id.display_name"/>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="remito-grey" style="margin:10px 0;"></div>
+
+          <table style="width:100%; border-collapse:collapse; margin-top:6px;">
+            <tr>
+              <td style="width:50%; text-align:center;">
+                <div class="signature-line"></div>
+                <div class="remito-small">CONFORMIDAD</div>
+              </td>
+              <td style="width:50%; text-align:center;">
+                <div class="signature-line"></div>
+                <div class="remito-small">Fecha Recepción</div>
+              </td>
+            </tr>
+          </table>
+
+          <div class="remito-small remito-center" style="margin-top:14px;">
+            <t t-if="o.company_id.street">
+              <t t-esc="o.company_id.street"/><t t-if="o.company_id.street2">, <t t-esc="o.company_id.street2"/></t> -
+            </t>
+            <t t-if="o.company_id.city"><t t-esc="o.company_id.city"/></t>
+            <t t-if="o.company_id.state_id">, <t t-esc="o.company_id.state_id.name"/></t>
+            <t t-if="o.company_id.zip"> <t t-esc="o.company_id.zip"/></t><br/>
+            <t t-if="o.company_id.website"><t t-esc="o.company_id.website"/></t><br/>
+            <t t-if="o.company_id.phone">Teléfono de contacto <t t-esc="o.company_id.phone"/></t>
+          </div>
+        </div>
+      </t>
+    </xpath>
+  </template>
+</odoo>
