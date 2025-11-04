@@ -6,7 +6,7 @@
     "depends": ["account", "payment_receipt_cheques"],
     "data": ["reports/report_payment_receipt_modern.xml"],
     "license": "LGPL-3",
-    "installable": true,
-    "application": false,
+    "installable": True,
+    "application": False,
     "author": "Esteban + ChatGPT"
 }
