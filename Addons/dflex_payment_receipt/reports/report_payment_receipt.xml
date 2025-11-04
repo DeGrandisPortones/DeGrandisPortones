@@ -1,12 +1,19 @@
 <odoo>
   <template id="dflex_report_payment_receipt_document" inherit_id="account.report_payment_receipt_document">
     <xpath expr="//t[@t-call='web.external_layout' or @t-call='web.external_layout_clean']" position="replace">
-      <!-- Seguimos usando el external_layout estándar para no duplicar header y footer -->
       <t t-call="web.external_layout">
         <t t-set="o" t-value="o"/>
         <!-- precompute safe values -->
         <t t-set="has_payment_reference" t-value="'payment_reference' in o._fields and o.payment_reference"/>
         <t t-set="obs" t-value="(('narration' in o._fields and o.narration) or ('communication' in o._fields and o.communication) or (has_payment_reference and o.payment_reference) or '')"/>
+        <t t-set="is_bank" t-value="o.journal_id and o.journal_id.type == 'bank'"/>
+        <t t-set="is_cash" t-value="o.journal_id and o.journal_id.type == 'cash'"/>
+        <t t-set="jn" t-value="(o.journal_id.name or '').lower() if o.journal_id else ''"/>
+        <t t-set="is_getnet" t-value="'getnet' in jn"/>
+        <t t-set="is_mp" t-value="'mercadopago' in jn or 'mercado' in jn"/>
+        <t t-set="has_checks" t-value="'check_line_ids' in o._fields and o.check_line_ids"/>
+        <t t-set="acc_num" t-value="(o.journal_id.bank_account_id.acc_number if (o.journal_id and o.journal_id.bank_account_id) else '')"/>
+        <t t-set="acc_mask" t-value="('••••' + str(acc_num)[-4:]) if acc_num else ''"/>
         <style>
           .r-wrap { padding: 2px 0; }
           .r-header { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
@@ -28,7 +35,7 @@
         </style>
 
         <div class="page r-wrap">
-          <!-- Header (sin bloque de empresa; eso ya lo imprime web.external_layout) -->
+          <!-- Header (solo título y datos del cliente; el external_layout imprime los datos de la empresa) -->
           <div class="r-header">
             <div>
               <div class="r-title">ORDEN DE COBRANZA</div>
@@ -56,7 +63,7 @@
             </div>
           </div>
 
-          <!-- Payment methods -->
+          <!-- MEDIOS DE PAGO -->
           <div class="r-section">
             <div class="head">MEDIOS DE PAGO</div>
             <table>
@@ -67,13 +74,14 @@
                 </tr>
               </thead>
               <tbody>
-                <!-- E-cheques (si existen en el pago) -->
-                <t t-if="'check_line_ids' in o._fields and o.check_line_ids">
+                <!-- Cheques de terceros: siempre priorizamos mostrarlos si existen -->
+                <t t-if="has_checks">
                   <tr t-foreach="o.check_line_ids" t-as="c">
                     <td>
-                      <t t-if="c.number">CHEQUE ELECTRONICO Nº <t t-esc="c.number"/></t>
+                      <t>CHEQUE DE TERCEROS</t>
+                      <t t-if="c.number"> Nº <t t-esc="c.number"/></t>
                       <t t-if="c.bank_id"> - <t t-esc="c.bank_id.name"/></t>
-                      <t t-if="c.due_date"> - <t t-esc="c.due_date.strftime('%d/%m/%Y')"/></t>
+                      <t t-if="c.due_date"> - Vto <t t-esc="c.due_date.strftime('%d/%m/%Y')"/></t>
                     </td>
                     <td class="r-right">
                       <span t-esc="c.amount" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
@@ -81,16 +89,34 @@
                   </tr>
                 </t>
 
-                <!-- Transferencia bancaria (datos del diario bancario receptor de Vert) -->
-                <t t-if="o.journal_id and o.journal_id.type == 'bank'">
+                <!-- Tarjeta crédito Getnet -->
+                <t t-if="(not has_checks) and is_getnet">
+                  <tr>
+                    <td>Pago hecho por <b>tarjeta de crédito</b> plataforma <b>Getnet</b></td>
+                    <td class="r-right">
+                      <span t-esc="o.amount" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
+                    </td>
+                  </tr>
+                </t>
+
+                <!-- Tarjeta / Link de pago Mercadopago -->
+                <t t-if="(not has_checks) and (not is_getnet) and is_mp">
+                  <tr>
+                    <td>Pago hecho por <b>tarjeta / Link de pago</b> a <b>Mercadopago</b></td>
+                    <td class="r-right">
+                      <span t-esc="o.amount" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
+                    </td>
+                  </tr>
+                </t>
+
+                <!-- Transferencia bancaria (Banco Santander u otro) -->
+                <t t-if="(not has_checks) and (not is_getnet) and (not is_mp) and is_bank">
                   <tr>
                     <td>
-                      <t>TRANSFERENCIA BANCARIA</t>
-                      <t t-if="has_payment_reference"> N°: <t t-esc="o.payment_reference"/></t>
-                      <t t-if="o.journal_id.bank_id"> | <t t-esc="o.journal_id.bank_id.name"/></t>
-                      <t t-if="o.journal_id.bank_account_id">
-                         - <t t-esc="o.journal_id.bank_account_id.acc_number"/>
-                      </t>
+                      <t>Transferencia bancaria a </t>
+                      <t t-esc="o.journal_id.bank_id and o.journal_id.bank_id.name or 'Banco'"/>
+                      <t t-if="acc_mask"> cuenta <t t-esc="acc_mask"/></t>
+                      <t t-if="has_payment_reference"> — N° <t t-esc="o.payment_reference"/></t>
                     </td>
                     <td class="r-right">
                       <span t-esc="o.amount" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
@@ -98,8 +124,18 @@
                   </tr>
                 </t>
 
-                <!-- Otros medios -->
-                <t t-if="not (('check_line_ids' in o._fields and o.check_line_ids) or (o.journal_id and o.journal_id.type == 'bank'))">
+                <!-- Efectivo -->
+                <t t-if="(not has_checks) and (not is_getnet) and (not is_mp) and (not is_bank) and is_cash">
+                  <tr>
+                    <td>Pago en efectivo</td>
+                    <td class="r-right">
+                      <span t-esc="o.amount" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
+                    </td>
+                  </tr>
+                </t>
+
+                <!-- Fallback -->
+                <t t-if="(not has_checks) and (not is_getnet) and (not is_mp) and (not is_bank) and (not is_cash)">
                   <tr>
                     <td><t t-esc="(o.payment_method_line_id and o.payment_method_line_id.name) or 'Pago'"/></td>
                     <td class="r-right">
