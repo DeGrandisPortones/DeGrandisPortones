@@ -92,7 +92,7 @@
             <tbody>
               <tr t-foreach="o.move_ids_without_package" t-as="m">
                 <td class="remito-center">
-                  <t t-esc="m.quantity_done or m.product_uom_qty"/>
+                  <t t-esc="m.quantity or m.product_uom_qty"/>
                 </td>
                 <td>
                   <t t-esc="m.product_id.display_name"/>
