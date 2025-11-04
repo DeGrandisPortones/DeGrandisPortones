@@ -7,7 +7,6 @@
           .r-wrap { padding: 2px 0; }
           .r-header { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
           .r-title { font-size:20px; font-weight:700; letter-spacing:.5px; }
-          .r-subpill { padding:3px 10px; border:1px solid #e5e7eb; border-radius:9999px; font-size:11px; }
           .r-muted { color:#6b7280; }
           .r-small { font-size:11px; }
           .r-kv td { padding:2px 6px; vertical-align:top; }
@@ -17,7 +16,6 @@
           .r-section th, .r-section td { padding:8px 10px; border-bottom:1px solid #e5e7eb; }
           .r-right { text-align:right; }
           .r-pre { white-space:pre-line; }
-          .r-badge { background:#e8f5e9; color:#166534; border:1px solid #bbf7d0; padding:2px 8px; border-radius:9999px; font-size:11px; }
           .r-total { font-size:14px; font-weight:700; }
           .r-foot { margin-top:18px; display:flex; gap:16px; }
           .r-foot .sig { flex:1; text-align:center; }
@@ -26,6 +24,7 @@
         </style>
 
         <div class="page r-wrap">
+          <!-- Header -->
           <div class="r-header">
             <div>
               <div class="r-title">ORDEN DE COBRANZA</div>
@@ -66,6 +65,7 @@
             </div>
           </div>
 
+          <!-- Payment methods -->
           <div class="r-section">
             <div class="head">MEDIOS DE PAGO</div>
             <table>
@@ -76,6 +76,7 @@
                 </tr>
               </thead>
               <tbody>
+                <!-- E-cheques -->
                 <t t-if="getattr(o, 'check_line_ids', False) and o.check_line_ids">
                   <tr t-foreach="o.check_line_ids" t-as="c">
                     <td>
@@ -84,34 +85,35 @@
                       <t t-if="c.due_date"> - <t t-esc="c.due_date.strftime('%d/%m/%Y')"/></t>
                     </td>
                     <td class="r-right">
-                      <span t-esc="c.amount" t-options='{"widget":"monetary","display_currency":o.currency_id}'/>
+                      <span t-esc="c.amount"
+                            t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
                     </td>
                   </tr>
                 </t>
-
-                <t t-if="o.payment_method_line_id and ('transfer' in (o.payment_method_line_id.code or '').lower() or 'manual' in (o.payment_method_line_id.code or '').lower())">
+                <!-- Bank transfer: use receiving company's bank (journal) -->
+                <t t-if="o.journal_id and o.journal_id.type == 'bank'">
                   <tr>
                     <td>
                       <t>TRANSFERENCIA BANCARIA</t>
                       <t t-if="o.ref or o.payment_reference"> N°: <t t-esc="o.ref or o.payment_reference"/></t>
-                      <t t-if="o.journal_id and o.journal_id.bank_id"> | <t t-esc="o.journal_id.bank_id.name"/></t>
-                      <t t-if="o.journal_id and o.journal_id.bank_account_id">
+                      <t t-if="o.journal_id.bank_id"> | <t t-esc="o.journal_id.bank_id.name"/></t>
+                      <t t-if="o.journal_id.bank_account_id">
                          - <t t-esc="o.journal_id.bank_account_id.acc_number"/>
                       </t>
                     </td>
                     <td class="r-right">
-                      <span t-esc="o.amount" t-options='{"widget":"monetary","display_currency":o.currency_id}'/>
+                      <span t-esc="o.amount" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
                     </td>
                   </tr>
                 </t>
-
-                <t t-if="not (getattr(o, 'check_line_ids', False) and o.check_line_ids) and not (o.payment_method_line_id and ('transfer' in (o.payment_method_line_id.code or '').lower() or 'manual' in (o.payment_method_line_id.code or '').lower()))">
+                <!-- Fallback single line -->
+                <t t-if="not (getattr(o, 'check_line_ids', False) and o.check_line_ids) and not (o.journal_id and o.journal_id.type == 'bank')">
                   <tr>
                     <td>
-                      <t t-esc="o.payment_method_line_id and o.payment_method_line_id.name or 'Pago'"/>
+                      <t t-esc="(o.payment_method_line_id and o.payment_method_line_id.name) or 'Pago'"/>
                     </td>
                     <td class="r-right">
-                      <span t-esc="o.amount" t-options='{"widget':'monetary','display_currency':o.currency_id}'/>
+                      <span t-esc="o.amount" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
                     </td>
                   </tr>
                 </t>
@@ -119,7 +121,7 @@
               <tfoot>
                 <tr>
                   <th class="r-right r-total">TOTAL</th>
-                  <th class="r-right r-total"><span t-esc="o.amount" t-options='{"widget":"monetary","display_currency":o.currency_id}'/></th>
+                  <th class="r-right r-total"><span t-esc="o.amount" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/></th>
                 </tr>
                 <tr>
                   <td colspan="2" class="r-small r-muted">
@@ -130,6 +132,7 @@
             </table>
           </div>
 
+          <!-- Observaciones -->
           <div class="r-section" t-if="o.ref or o.narration or o.communication">
             <div class="head">OBSERVACIONES</div>
             <div class="r-pre" style="padding:10px;">
@@ -137,6 +140,7 @@
             </div>
           </div>
 
+          <!-- Reconciled invoices -->
           <div class="r-section" t-if="getattr(o, 'reconciled_invoice_ids', False) and o.reconciled_invoice_ids">
             <div class="head">IMPUTACIONES</div>
             <table>
@@ -152,13 +156,14 @@
                 <tr t-foreach="o.reconciled_invoice_ids" t-as="inv">
                   <td><t t-esc="inv.invoice_date or inv.date or ''"/></td>
                   <td><t t-esc="inv.name or inv.ref or inv.move_name"/></td>
-                  <td class="r-right"><span t-esc="inv.amount_total_signed" t-options='{"widget":"monetary","display_currency":inv.currency_id}'/></td>
-                  <td class="r-right"><span t-esc="inv.amount_residual_signed" t-options='{"widget":"monetary","display_currency":inv.currency_id}'/></td>
+                  <td class="r-right"><span t-esc="inv.amount_total_signed" t-options='{"widget": "monetary", "display_currency": inv.currency_id}'/></td>
+                  <td class="r-right"><span t-esc="inv.amount_residual_signed" t-options='{"widget": "monetary", "display_currency": inv.currency_id}'/></td>
                 </tr>
               </tbody>
             </table>
           </div>
 
+          <!-- Footer / signatures -->
           <div class="r-foot">
             <div class="sig">
               <div class="line"></div>
