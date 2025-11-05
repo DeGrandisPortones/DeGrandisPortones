@@ -62,17 +62,7 @@
           <div class="r-section">
             <div class="head">MEDIOS DE PAGO</div>
             <table>
-              <thead>
-                <tr>
-                  <th>Detalle</th>
-                  <th class="r-right">Importe</th>
-                </tr>
-              </thead>
-              <tbody>
-                <t t-if="has_checks">
-                  <tr>
-                    <td colspan="2" style="padding:0;">
-                      <table style="width:100%; border-collapse:collapse;">
+              
                         <thead>
                           <tr>
                             <th style="padding:6px 10px;">Número</th>
@@ -83,13 +73,28 @@
                             <th class="r-right" style="padding:6px 10px;">Importe</th>
                           </tr>
                         </thead>
+              <tbody>
+                <t t-if="has_checks">
+                  <tr>
+                    <td colspan="2" style="padding:0;">
+                      <table style="width:100%; border-collapse:collapse;">
+                        <thead>
+                          <tr>
+                            <th style="padding:6px 10px;">Número</th>
+                            <th style="padding:6px 10px;">Banco</th>
+                            <th style="padding:6px 10px;">CUIT del emisor</th>
+                            <th class="text-left">Razón social emisor</th><th style="padding:6px 10px;">Razón social del emisor</th>
+                            <th style="padding:6px 10px;">Fecha de pago</th>
+                            <th class="r-right" style="padding:6px 10px;">Importe</th>
+                          </tr>
+                        </thead>
                         <tbody>
                           <tr t-foreach="check_lines" t-as="c">
                             <t t-set="issuer_partner" t-value="(getattr(c, 'issuer_vat', False) and o.env['res.partner'].sudo().search([('vat','=',c.issuer_vat)], limit=1)) or False"/>
-                            <td><t t-esc="('number' in c._fields and c.number) or ('name' in c._fields and c.name) or c.display_name"/></td>
+                            <td><t t-esc="getattr(c,'number', False) or getattr(c,'name', False) or c.display_name"/></td>
                             <td><t t-esc="(getattr(c, 'bank_id', False) and c.bank_id.name) or ''"/></td>
                             <td><t t-esc="getattr(c, 'issuer_vat', False) or getattr(c, 'owner_vat', False) or ''"/></td>
-                            <td><t t-esc="(issuer_partner and issuer_partner.display_name) or (getattr(c, 'owner_name', False) or '')"/></td>
+                            <td><t t-esc="getattr(c, 'x_studio_emisor_nombre', False) or (issuer_partner and issuer_partner.display_name) or getattr(c, 'owner_name', False) or ''"/></td><td><t t-esc="(issuer_partner and issuer_partner.display_name) or (getattr(c, 'owner_name', False) or '')"/></td>
                             <td><t t-esc="(getattr(c, 'payment_date', False) and c.payment_date and c.payment_date.strftime('%d/%m/%Y')) or ''"/></td>
                             <td class="r-right">
                               <span t-esc="getattr(c, 'amount', False) or getattr(c, 'payment_amount', 0.0)"
