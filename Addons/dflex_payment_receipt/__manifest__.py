@@ -1,13 +1,12 @@
-
 {
-    'name': 'DFlex Payment Receipt (Modern) – Cheques ADHOC',
-    'summary': 'Recibo de pago con detalle de cheques (l10n_latam.check: bank_id, issuer_vat, payment_date)',
-    'version': '18.0.1.0.11',
-    'category': 'Accounting/Reporting',
-    'depends': ['account', 'web'],
-    'data': ['reports/report_payment_receipt.xml'],
-    'license': 'LGPL-3',
-    'installable': True,
-    'application': False,
-    'author': 'Esteban + ChatGPT',
+    "name": "DFlex Payment Receipt (Modern) – Cheques ADHOC v2",
+    "summary": "Recibo de pago: banco, CUIT, fecha e importe + Razón social del cheque por CUIT",
+    "version": "18.0.1.0.12",
+    "category": "Accounting/Reporting",
+    "depends": ["account", "web"],
+    "data": ["reports/report_payment_receipt.xml"],
+    "license": "LGPL-3",
+    "installable": true,
+    "application": false,
+    "author": "Esteban + ChatGPT"
 }
