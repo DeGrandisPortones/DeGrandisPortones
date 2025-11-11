@@ -40,6 +40,7 @@
             <form string="Movimiento CC Empleado">
                 <header>
                     <button name="action_post" type="object" string="Asentar" class="btn-primary" states="draft"/>
+                        <button name="action_print_receipt" type="object" string="Imprimir recibo" class="btn-secondary" states="draft,posted"/>
                     <button name="action_cancel" type="object" string="Cancelar" states="draft,posted"/>
                     <button name="action_set_to_draft" type="object" string="Volver a borrador" states="cancel"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,posted,cancel"/>

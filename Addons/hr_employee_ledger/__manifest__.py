@@ -12,7 +12,8 @@
         "views/hr_employee_ledger_views.xml",
             "views/batch_views.xml",
         "views/batch_wizard_views.xml",
-        "views/res_config_settings_views.xml"
+        "views/res_config_settings_views.xml",
+            "reports/employee_payment_receipt.xml"
     ],
     "installable": True,
     "application": False
