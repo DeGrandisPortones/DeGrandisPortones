@@ -14,8 +14,9 @@ class HrEmployeeLedgerMove(models.Model):
 
     date = fields.Date(string="Fecha", required=True, default=fields.Date.context_today)
     payment_type = fields.Selection([("a","Pago A (dinero)"),("b","Pago B (alimentos)")], required=True, default="a", string="Tipo de pago")
-    account_src_id = fields.Many2one("account.account", string="Cuenta de salida (caja/banco)", required=True, domain=[("deprecated","=",False)])
-    amount = fields.Monetary(string="Importe", required=False, currency_field="currency_id", default=0.0)
+
+    account_src_id = fields.Many2one("account.account", string="Cuenta de salida (caja/banco)", required=False, domain=[("deprecated","=",False)])
+    amount = fields.Monetary(string="Importe", required=False, default=0.0, currency_field="currency_id")
     concept = fields.Char(string="Concepto abonado", required=False)
     narration = fields.Text(string="Notas")
     currency_id = fields.Many2one("res.currency", string="Moneda", required=True, default=lambda self: self.env.company.currency_id)
@@ -52,6 +53,8 @@ class HrEmployeeLedgerMove(models.Model):
                 raise UserError(_("Debe indicar la cuenta de salida."))
             if not move.amount or move.amount <= 0:
                 raise UserError(_("Debe indicar un importe mayor a 0."))
+            if not move.concept:
+                raise UserError(_("Debe indicar el concepto abonado."))
             if move.name in (False, "New"):
                 seq = self.env.ref("hr_employee_ledger.seq_hr_employee_ledger_move", raise_if_not_found=False)
                 move.name = seq.next_by_id() if seq else self.env["ir.sequence"].next_by_code("hr.employee.ledger.move") or "/"
@@ -80,7 +83,7 @@ class HrEmployeeLedgerMove(models.Model):
 class HrEmployee(models.Model):
     _inherit = "hr.employee"
 
-    company_currency_id = fields.Many2one('res.currency', related='company_id.currency_id', readonly=True, string='Moneda compañía')
+    company_currency_id = fields.Many2one('res.currency', related='company_id.currency_id', readonly=True, string="Moneda compañía")
     ledger_balance = fields.Monetary(string="Saldo CC Empleado", currency_field="company_currency_id", compute="_compute_ledger_balance", store=False)
     ledger_move_count = fields.Integer(string="Movimientos CC", compute="_compute_ledger_balance", store=False)
 
