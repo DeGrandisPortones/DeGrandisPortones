@@ -57,7 +57,7 @@
                                     <field name="amount"/>
                                 </list>
                             </field>
-                            <label string="El total de créditos debe igualar el total de movimientos."/>
+                            <div class="o_form_label">El total de créditos debe igualar el total de movimientos.</div>
                         </page>
                         <page string="Detalle por empleado">
                             <field name="employee_line_ids" readonly="1">
