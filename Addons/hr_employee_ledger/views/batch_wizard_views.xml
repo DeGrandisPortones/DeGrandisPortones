@@ -22,11 +22,4 @@
             </form>
         </field>
     </record>
-
-    <record id="action_hr_employee_ledger_batch_wizard" model="ir.actions.act_window">
-        <field name="name">Cierre mensual (A/B)</field>
-        <field name="res_model">hr.employee.ledger.batch.wizard</field>
-        <field name="view_mode">form</field>
-        <field name="target">new</field>
-    </record>
 </odoo>
