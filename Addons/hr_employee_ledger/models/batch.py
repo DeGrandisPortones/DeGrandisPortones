@@ -23,26 +23,20 @@ class HrEmployeeLedgerBatch(models.Model):
     state = fields.Selection([("draft","Borrador"),("posted","Asentado"),("cancel","Cancelado")], default="draft", string="Estado")
     account_move_id = fields.Many2one("account.move", string="Asiento contable", readonly=True, copy=False)
 
-    # Movimientos de RRHH incluidos en este lote
     move_ids = fields.One2many("hr.employee.ledger.move", "batch_id", string="Movimientos")
     move_total_amount = fields.Monetary(string="Total movimientos", currency_field="currency_id", compute="_compute_totals", store=False)
     move_count = fields.Integer(string="Cantidad movimientos", compute="_compute_totals", store=False)
 
-    # Líneas de crédito (libres): una por cuenta de salida (Caja/Banco u otras)
     credit_line_ids = fields.One2many("hr.employee.ledger.batch.credit.line", "batch_id", string="Contrapartidas (Crédito)", copy=True)
     credit_total_amount = fields.Monetary(string="Total crédito", currency_field="currency_id", compute="_compute_credit_total", store=False)
-        difference_amount = fields.Monetary(string="Diferencia", currency_field="currency_id", compute="_compute_credit_total", store=False)
+    difference_amount = fields.Monetary(string="Diferencia", currency_field="currency_id", compute="_compute_credit_total", store=False)
 
-    # Resumen por empleado (solo trazabilidad interna)
     employee_line_ids = fields.One2many("hr.employee.ledger.batch.employee.line", "batch_id", string="Detalle por empleado", copy=True)
 
     @api.depends("move_ids.amount_debit", "move_ids.amount_credit")
     def _compute_totals(self):
         for batch in self:
-            total = 0.0
-            for m in batch.move_ids:
-                # movimientos balanceados: usamos el total de débito
-                total += m.amount_debit
+            total = sum(m.amount_debit for m in batch.move_ids)
             batch.move_total_amount = total
             batch.move_count = len(batch.move_ids)
 
@@ -50,6 +44,7 @@ class HrEmployeeLedgerBatch(models.Model):
     def _compute_credit_total(self):
         for batch in self:
             batch.credit_total_amount = sum(l.amount for l in batch.credit_line_ids)
+            batch.difference_amount = (batch.move_total_amount or 0.0) - (batch.credit_total_amount or 0.0)
 
     def action_post(self):
         for batch in self:
@@ -57,14 +52,10 @@ class HrEmployeeLedgerBatch(models.Model):
                 raise UserError(_("Solo se pueden asentar lotes en borrador."))
             if not batch.move_ids:
                 raise UserError(_("No hay movimientos en el lote."))
-            # Validar balance: total créditos = total movimientos
             rounding = batch.currency_id.rounding or 0.01
             if abs((batch.credit_total_amount or 0.0) - (batch.move_total_amount or 0.0)) > rounding:
                 raise ValidationError(_("El total de créditos (%s) debe igualar el total de movimientos (%s).") % (batch.credit_total_amount, batch.move_total_amount))
-
-            # Construir asiento contable
             line_vals = []
-            # Débito a anticipos
             line_vals.append((0,0,{
                 "name": "%s %s" % (batch.memo or "", batch.payment_type.upper()),
                 "account_id": batch.debit_account_id.id,
@@ -72,7 +63,6 @@ class HrEmployeeLedgerBatch(models.Model):
                 "credit": 0.0,
                 "company_id": batch.company_id.id,
             }))
-            # Créditos libres
             for cl in batch.credit_line_ids:
                 if not cl.account_id or cl.amount <= 0.0:
                     continue
@@ -83,7 +73,6 @@ class HrEmployeeLedgerBatch(models.Model):
                     "credit": cl.amount,
                     "company_id": batch.company_id.id,
                 }))
-
             acc_move = self.env["account.move"].create({
                 "date": batch.date_to,
                 "journal_id": batch.journal_id.id,
@@ -94,7 +83,6 @@ class HrEmployeeLedgerBatch(models.Model):
             })
             acc_move.action_post()
             batch.account_move_id = acc_move.id
-            # vincular movimientos
             batch.move_ids.write({"batch_account_move_id": acc_move.id})
             batch.state = "posted"
         return True

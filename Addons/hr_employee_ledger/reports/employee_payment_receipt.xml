@@ -1,90 +1,82 @@
 <odoo>
-    <!-- Report Action -->
-    <record id="action_report_employee_payment_receipt" model="ir.actions.report">
-        <field name="name">Recibo de Anticipo</field>
-        <field name="model">hr.employee.ledger.move</field>
-        <field name="report_type">qweb-pdf</field>
-        <field name="report_name">hr_employee_ledger.report_employee_payment_receipt</field>
-        <field name="report_file">hr_employee_ledger.report_employee_payment_receipt</field>
-        <field name="print_report_name">'Recibo - %s - %s' % (object.employee_id.name, object.date)</field>
-    </record>
+  <record id="action_report_employee_payment_receipt" model="ir.actions.report">
+    <field name="name">Recibo de Anticipo</field>
+    <field name="model">hr.employee.ledger.move</field>
+    <field name="report_type">qweb-pdf</field>
+    <field name="report_name">hr_employee_ledger.report_employee_payment_receipt</field>
+    <field name="report_file">hr_employee_ledger.report_employee_payment_receipt</field>
+    <field name="print_report_name">'Recibo - %s - %s' % (object.employee_id.name, object.date)</field>
+  </record>
 
-    <!-- QWeb Template -->
-    <template id="report_employee_payment_receipt">
-        <t t-call="web.external_layout">
-            <t t-set="doc" t-value="doc"/>
-            <div class="page">
-                <h2 style="text-align:center;">Recibo de Anticipo</h2>
-                <p>
-                    <strong>Empleado:</strong>
-                    <span t-esc="doc.employee_id.name"/> 
-                    <t t-if="doc.employee_id.identification_id">
-                        — <strong>Documento:</strong> <span t-esc="doc.employee_id.identification_id"/>
-                    </t><br/>
-                    <t t-if="doc.employee_id.job_title">
-                        <strong>Puesto:</strong> <span t-esc="doc.employee_id.job_title"/><br/>
-                    </t>
-                    <t t-if="doc.employee_id.work_email">
-                        <strong>Email:</strong> <span t-esc="doc.employee_id.work_email"/><br/>
-                    </t>
-                    <strong>Fecha:</strong> <span t-esc="doc.date"/>
-                    — <strong>Tipo de pago:</strong>
-                    <t t-esc="dict(a='A (dinero)', b='B (alimentos)').get(doc.payment_type, doc.payment_type)"/>
-                </p>
+  <template id="report_employee_payment_receipt">
+    <t t-call="web.external_layout">
+      <t t-set="doc" t-value="doc"/>
+      <div class="page">
+        <h2 style="text-align:center;">Recibo de Anticipo</h2>
+        <p>
+          <strong>Empleado:</strong>
+          <span t-esc="doc.employee_id.name"/>
+          <t t-if="doc.employee_id.identification_id">
+            — <strong>Documento:</strong> <span t-esc="doc.employee_id.identification_id"/>
+          </t><br/>
+          <t t-if="doc.employee_id.job_title">
+            <strong>Puesto:</strong> <span t-esc="doc.employee_id.job_title"/><br/>
+          </t>
+          <t t-if="doc.employee_id.work_email">
+            <strong>Email:</strong> <span t-esc="doc.employee_id.work_email"/><br/>
+          </t>
+          <strong>Fecha:</strong> <span t-esc="doc.date"/>
+          — <strong>Tipo de pago:</strong>
+          <t t-esc="{'a':'A (dinero)','b':'B (alimentos)'}.get(doc.payment_type, doc.payment_type)"/>
+        </p>
 
-                <table class="table table-sm o_main_table">
-                    <thead>
-                        <tr>
-                            <th>Concepto</th>
-                            <th style="text-align:right;">Débito</th>
-                            <th style="text-align:right;">Crédito</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <t t-foreach="doc.line_ids" t-as="l">
-                            <t t-if="not l.display_type">
-                                <tr>
-                                    <td><span t-esc="l.name or ''"/></td>
-                                    <td style="text-align:right;">
-                                        <span t-esc="format_amount(l.debit, doc.currency_id)"/>
-                                    </td>
-                                    <td style="text-align:right;">
-                                        <span t-esc="format_amount(l.credit, doc.currency_id)"/>
-                                    </td>
-                                </tr>
-                            </t>
-                        </t>
-                    </tbody>
-                    <tfoot>
-                        <tr>
-                            <th style="text-align:right;">Totales</th>
-                            <th style="text-align:right;"><span t-esc="format_amount(doc.amount_debit, doc.currency_id)"/></th>
-                            <th style="text-align:right;"><span t-esc="format_amount(doc.amount_credit, doc.currency_id)"/></th>
-                        </tr>
-                    </tfoot>
-                </table>
+        <table class="table table-sm o_main_table">
+          <thead>
+            <tr>
+              <th>Concepto</th>
+              <th style="text-align:right;">Débito</th>
+              <th style="text-align:right;">Crédito</th>
+            </tr>
+          </thead>
+          <tbody>
+            <t t-foreach="doc.line_ids" t-as="l">
+              <tr>
+                <td><span t-esc="l.name or ''"/></td>
+                <td style="text-align:right;"><span t-esc="formatLang(l.debit, monetary=True, currency_obj=doc.currency_id)"/></td>
+                <td style="text-align:right;"><span t-esc="formatLang(l.credit, monetary=True, currency_obj=doc.currency_id)"/></td>
+              </tr>
+            </t>
+          </tbody>
+          <tfoot>
+            <tr>
+              <th style="text-align:right;">Totales</th>
+              <th style="text-align:right;"><span t-esc="formatLang(doc.amount_debit, monetary=True, currency_obj=doc.currency_id)"/></th>
+              <th style="text-align:right;"><span t-esc="formatLang(doc.amount_credit, monetary=True, currency_obj=doc.currency_id)"/></th>
+            </tr>
+          </tfoot>
+        </table>
 
-                <p t-if="doc.narration">
-                    <strong>Notas:</strong><br/>
-                    <span t-esc="doc.narration"/>
-                </p>
+        <p t-if="doc.narration">
+          <strong>Notas:</strong><br/>
+          <span t-esc="doc.narration"/>
+        </p>
 
-                <div style="margin-top:40px; display:flex; justify-content:space-between;">
-                    <div style="width:45%; text-align:center;">
-                        <div style="border-top:1px solid #000; padding-top:8px;">Firma RRHH</div>
-                        <div><t t-esc="doc.company_id.name"/></div>
-                    </div>
-                    <div style="width:45%; text-align:center;">
-                        <div style="border-top:1px solid #000; padding-top:8px;">Firma del Empleado</div>
-                        <div><t t-esc="doc.employee_id.name"/></div>
-                    </div>
-                </div>
+        <div style="margin-top:40px; display:flex; justify-content:space-between;">
+          <div style="width:45%; text-align:center;">
+            <div style="border-top:1px solid #000; padding-top:8px;">Firma RRHH</div>
+            <div><t t-esc="doc.company_id.name"/></div>
+          </div>
+          <div style="width:45%; text-align:center;">
+            <div style="border-top:1px solid #000; padding-top:8px;">Firma del Empleado</div>
+            <div><t t-esc="doc.employee_id.name"/></div>
+          </div>
+        </div>
 
-                <p style="margin-top:12px; font-size:10px; color:#555;">
-                    Este comprobante es emitido por RRHH solo a efectos informativos. La contabilidad
-                    únicamente registra los asientos mensuales agregados correspondientes.
-                </p>
-            </div>
-        </t>
-    </template>
+        <p style="margin-top:12px; font-size:10px; color:#555;">
+          Este comprobante es emitido por RRHH solo a efectos informativos. La contabilidad
+          únicamente registra los asientos mensuales agregados correspondientes.
+        </p>
+      </div>
+    </t>
+  </template>
 </odoo>

@@ -18,12 +18,11 @@ class HrEmployeeLedgerBatchWizard(models.TransientModel):
         company = self.company_id
         journal = self.journal_id or company.employee_batch_journal_id
         if not journal:
-            raise UserError(_("Defina un Diario en Ajustes de RRHH o en el asistente."))
+            raise UserError(_("Defina un Diario en Compañía (pestaña RRHH - Anticipos) o en el asistente."))
 
-        # elegir cuenta de anticipos por tipo
         advance_account = company.employee_advance_account_a_id if self.payment_type == "a" else company.employee_advance_account_b_id
         if not advance_account:
-            raise UserError(_("Defina la cuenta de anticipos para el tipo %s en Ajustes de RRHH.") % (self.payment_type.upper()))
+            raise UserError(_("Defina la cuenta de anticipos para el tipo %s en Compañía.") % (self.payment_type.upper()))
 
         Move = self.env["hr.employee.ledger.move"]
         domain = [
@@ -38,7 +37,6 @@ class HrEmployeeLedgerBatchWizard(models.TransientModel):
         if not moves:
             raise UserError(_("No hay movimientos elegibles para el período seleccionado."))
 
-        # totales por diario (para propuesta de contrapartidas)
         prop_by_account = {}
         for m in moves:
             j = m.journal_id
@@ -48,7 +46,6 @@ class HrEmployeeLedgerBatchWizard(models.TransientModel):
             prop_by_account.setdefault(acc.id, {"account": acc, "amount": 0.0})
             prop_by_account[acc.id]["amount"] += m.amount_debit
 
-        # Crear lote en borrador
         batch = self.env["hr.employee.ledger.batch"].create({
             "company_id": company.id,
             "date_from": self.date_from,
@@ -59,7 +56,6 @@ class HrEmployeeLedgerBatchWizard(models.TransientModel):
             "memo": self.memo,
         })
 
-        # sugerir líneas de crédito por cuenta (editable)
         credit_lines = []
         for d in prop_by_account.values():
             credit_lines.append((0,0,{
@@ -71,7 +67,6 @@ class HrEmployeeLedgerBatchWizard(models.TransientModel):
         if credit_lines:
             batch.write({"credit_line_ids": credit_lines})
 
-        # detalle por empleado
         emp_map = {}
         for m in moves:
             emp = m.employee_id
@@ -88,15 +83,12 @@ class HrEmployeeLedgerBatchWizard(models.TransientModel):
         if emp_lines:
             batch.write({"employee_line_ids": emp_lines})
 
-        # vincular movimientos al lote (pero sin asiento aún)
         moves.write({"batch_id": batch.id})
 
-        # asignar nombre por secuencia
         seq = self.env.ref("hr_employee_ledger.seq_hr_employee_ledger_batch", raise_if_not_found=False)
         name = seq.next_by_id() if seq else self.env["ir.sequence"].next_by_code("hr.employee.ledger.batch") or "/"
         batch.name = name
 
-        # abrir el lote para que RRHH lo edite y confirme
         return {
             "type": "ir.actions.act_window",
             "res_model": "hr.employee.ledger.batch",
