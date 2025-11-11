@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'HR Employee Ledger (A/B simple)',
-    'version': '18.0.4.0.2',
+    'version': '18.0.4.0.3',
     'summary': 'Cta. cte. empleados A/B con pseudo-movimientos y cierre por lote editable',
     'author': 'Dflex Argentina SAS / Esteban Scalerandi',
     'license': 'LGPL-3',
