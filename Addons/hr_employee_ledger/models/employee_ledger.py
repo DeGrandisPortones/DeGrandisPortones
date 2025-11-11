@@ -6,7 +6,7 @@ from odoo.exceptions import ValidationError, UserError
 class HrEmployeeLedgerMove(models.Model):
     _name = "hr.employee.ledger.move"
     _description = "Employee Ledger Move (Asiento RRHH)"
-    _order = "date desc, id desc"
+    _order = "sequence, id"
     _check_company_auto = True
 
     name = fields.Char(string="Número", readonly=True, copy=False, default="New")
@@ -46,7 +46,7 @@ class HrEmployeeLedgerMove(models.Model):
                                             help='Asiento agregado generado por el cierre mensual.')
     batch_id = fields.Many2one('hr.employee.ledger.batch', string='Lote mensual', readonly=True, copy=False)
 
-    @api.depends("line_ids.debit", "line_ids.credit", "line_ids.display_type")
+    @api.depends("line_ids.debit", "line_ids.credit")
     def _compute_amounts(self):
         for move in self:
             debit = credit = 0.0
@@ -93,9 +93,7 @@ class HrEmployeeLedgerMove(models.Model):
         self.ensure_one()
         line_vals = []
         for l in self.line_ids:
-            if l.display_type:
-                continue
-            lv = {
+                        lv = {
                 "name": l.name or self.name,
                 "account_id": l.account_id.id,
                 "debit": l.debit,
@@ -143,7 +141,6 @@ class HrEmployeeLedgerMoveLine(models.Model):
     move_id = fields.Many2one("hr.employee.ledger.move", string="Movimiento", required=True, ondelete="cascade", index=True)
     sequence = fields.Integer(default=10)
     name = fields.Char(string="Descripción", required=True)
-    display_type = fields.Selection([("line_section", "Sección"), ("line_note", "Nota")], default=False, help="Campos no contables para secciones/notas.")
     account_id = fields.Many2one("account.account", string="Cuenta contable", required=False,
                                  domain=[("deprecated", "=", False)], help="Si 'Postear a Contabilidad' está activo, se usará esta cuenta.")
     debit = fields.Monetary(string="Débito", currency_field="currency_id", default=0.0)
@@ -157,9 +154,7 @@ class HrEmployeeLedgerMoveLine(models.Model):
     @api.constrains("debit", "credit", "display_type")
     def _check_amounts(self):
         for line in self:
-            if line.display_type:
-                continue
-            if line.debit and line.credit:
+                        if line.debit and line.credit:
                 raise ValidationError(_("Una línea no puede tener débito y crédito a la vez."))
             if line.debit < 0.0 or line.credit < 0.0:
                 raise ValidationError(_("No se permiten importes negativos."))

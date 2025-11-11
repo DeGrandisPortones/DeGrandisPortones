@@ -44,13 +44,14 @@
                             <field name="debit_account_id"/>
                             <field name="move_total_amount" readonly="1"/>
                             <field name="credit_total_amount" readonly="1"/>
+                                <field name="difference_amount" readonly="1"/>
                             <field name="account_move_id" readonly="1" context="{'form_view_ref':'account.view_move_form'}"/>
                         </group>
                     </group>
                     <notebook>
                         <page string="Contrapartidas (Crédito)">
                             <field name="credit_line_ids">
-                                <list editable="bottom">
+                                <list editable="bottom" default_order="sequence">
                                     <field name="sequence" widget="handle"/>
                                     <field name="name"/>
                                     <field name="account_id"/>

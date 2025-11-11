@@ -31,6 +31,7 @@ class HrEmployeeLedgerBatch(models.Model):
     # Líneas de crédito (libres): una por cuenta de salida (Caja/Banco u otras)
     credit_line_ids = fields.One2many("hr.employee.ledger.batch.credit.line", "batch_id", string="Contrapartidas (Crédito)", copy=True)
     credit_total_amount = fields.Monetary(string="Total crédito", currency_field="currency_id", compute="_compute_credit_total", store=False)
+        difference_amount = fields.Monetary(string="Diferencia", currency_field="currency_id", compute="_compute_credit_total", store=False)
 
     # Resumen por empleado (solo trazabilidad interna)
     employee_line_ids = fields.One2many("hr.employee.ledger.batch.employee.line", "batch_id", string="Detalle por empleado", copy=True)
