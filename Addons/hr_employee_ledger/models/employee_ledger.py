@@ -15,7 +15,7 @@ class HrEmployeeLedgerMove(models.Model):
     date = fields.Date(string="Fecha", required=True, default=fields.Date.context_today)
     payment_type = fields.Selection([("a","Pago A (dinero)"),("b","Pago B (alimentos)")], required=True, default="a", string="Tipo de pago")
     account_src_id = fields.Many2one("account.account", string="Cuenta de salida (caja/banco)", required=True, domain=[("deprecated","=",False)])
-    amount = fields.Monetary(string="Importe", required=False, default=0.0, currency_field="currency_id", default=0.0)
+    amount = fields.Monetary(string="Importe", required=False, currency_field="currency_id", default=0.0)
     concept = fields.Char(string="Concepto abonado", required=False)
     narration = fields.Text(string="Notas")
     currency_id = fields.Many2one("res.currency", string="Moneda", required=True, default=lambda self: self.env.company.currency_id)
