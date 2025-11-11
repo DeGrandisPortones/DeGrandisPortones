@@ -33,10 +33,10 @@ class HrEmployeeLedgerBatch(models.Model):
 
     employee_line_ids = fields.One2many("hr.employee.ledger.batch.employee.line", "batch_id", string="Detalle por empleado", copy=True)
 
-    @api.depends("move_ids.amount_debit", "move_ids.amount_credit")
+    @api.depends("move_ids.amount")
     def _compute_totals(self):
         for batch in self:
-            total = sum(m.amount_debit for m in batch.move_ids)
+            total = sum(m.amount for m in batch.move_ids)
             batch.move_total_amount = total
             batch.move_count = len(batch.move_ids)
 
@@ -55,6 +55,7 @@ class HrEmployeeLedgerBatch(models.Model):
             rounding = batch.currency_id.rounding or 0.01
             if abs((batch.credit_total_amount or 0.0) - (batch.move_total_amount or 0.0)) > rounding:
                 raise ValidationError(_("El total de créditos (%s) debe igualar el total de movimientos (%s).") % (batch.credit_total_amount, batch.move_total_amount))
+
             line_vals = []
             line_vals.append((0,0,{
                 "name": "%s %s" % (batch.memo or "", batch.payment_type.upper()),

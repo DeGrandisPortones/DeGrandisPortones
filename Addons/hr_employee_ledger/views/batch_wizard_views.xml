@@ -11,6 +11,12 @@
             <field name="payment_type"/>
           </group>
           <group>
+            <field name="include_drafts"/>
+            <field name="confirm_drafts" attrs="{'invisible': [('include_drafts','=',False)]}"/>
+          </group>
+        </group>
+        <group>
+          <group>
             <field name="journal_id"/>
             <field name="memo"/>
           </group>

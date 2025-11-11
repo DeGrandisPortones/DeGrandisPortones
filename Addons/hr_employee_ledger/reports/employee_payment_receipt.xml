@@ -34,26 +34,17 @@
           <thead>
             <tr>
               <th>Concepto</th>
-              <th style="text-align:right;">Débito</th>
-              <th style="text-align:right;">Crédito</th>
+              <th>Cuenta de salida</th>
+              <th style="text-align:right;">Importe</th>
             </tr>
           </thead>
           <tbody>
-            <t t-foreach="doc.line_ids" t-as="l">
-              <tr>
-                <td><span t-esc="l.name or ''"/></td>
-                <td style="text-align:right;"><span t-esc="formatLang(l.debit, monetary=True, currency_obj=doc.currency_id)"/></td>
-                <td style="text-align:right;"><span t-esc="formatLang(l.credit, monetary=True, currency_obj=doc.currency_id)"/></td>
-              </tr>
-            </t>
-          </tbody>
-          <tfoot>
             <tr>
-              <th style="text-align:right;">Totales</th>
-              <th style="text-align:right;"><span t-esc="formatLang(doc.amount_debit, monetary=True, currency_obj=doc.currency_id)"/></th>
-              <th style="text-align:right;"><span t-esc="formatLang(doc.amount_credit, monetary=True, currency_obj=doc.currency_id)"/></th>
+              <td><span t-esc="doc.concept"/></td>
+              <td><span t-esc="doc.account_src_id.display_name"/></td>
+              <td style="text-align:right;"><span t-esc="formatLang(doc.amount, monetary=True, currency_obj=doc.currency_id)"/></td>
             </tr>
-          </tfoot>
+          </tbody>
         </table>
 
         <p t-if="doc.narration">

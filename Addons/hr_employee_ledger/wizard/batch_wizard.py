@@ -10,6 +10,10 @@ class HrEmployeeLedgerBatchWizard(models.TransientModel):
     date_from = fields.Date(string="Desde", required=True, default=lambda self: fields.Date.to_date(fields.Date.context_today(self)).replace(day=1))
     date_to = fields.Date(string="Hasta", required=True, default=fields.Date.context_today)
     payment_type = fields.Selection([("a","Pago A (dinero)"),("b","Pago B (alimentos)")], required=True, default="a", string="Tipo")
+
+    include_drafts = fields.Boolean(string="Incluir borradores", default=True)
+    confirm_drafts = fields.Boolean(string="Confirmar borradores al generar", default=True)
+
     journal_id = fields.Many2one("account.journal", string="Diario contable", domain=[("type","in",("general","cash","bank"))])
     memo = fields.Char(string="Referencia", default=lambda self: _("Cierre anticipos RRHH"))
 
@@ -27,24 +31,28 @@ class HrEmployeeLedgerBatchWizard(models.TransientModel):
         Move = self.env["hr.employee.ledger.move"]
         domain = [
             ("company_id","=",company.id),
-            ("state","=","posted"),
             ("payment_type","=", self.payment_type),
             ("date",">=", self.date_from),
             ("date","<=", self.date_to),
             ("batch_id","=", False),
+            ("state","in", ["posted","draft"] if self.include_drafts else ["posted"]),
         ]
         moves = Move.search(domain, order="date asc, id asc")
         if not moves:
             raise UserError(_("No hay movimientos elegibles para el período seleccionado."))
 
-        prop_by_account = {}
+        if self.confirm_drafts:
+            drafts = moves.filtered(lambda m: m.state == "draft")
+            if drafts:
+                drafts.action_post()
+
+        totals_by_account = {}
         for m in moves:
-            j = m.journal_id
-            if not j or not j.default_account_id:
+            acc = m.account_src_id
+            if not acc:
                 continue
-            acc = j.default_account_id
-            prop_by_account.setdefault(acc.id, {"account": acc, "amount": 0.0})
-            prop_by_account[acc.id]["amount"] += m.amount_debit
+            totals_by_account.setdefault(acc.id, {"account": acc, "amount": 0.0})
+            totals_by_account[acc.id]["amount"] += (m.amount or 0.0)
 
         batch = self.env["hr.employee.ledger.batch"].create({
             "company_id": company.id,
@@ -57,7 +65,7 @@ class HrEmployeeLedgerBatchWizard(models.TransientModel):
         })
 
         credit_lines = []
-        for d in prop_by_account.values():
+        for d in totals_by_account.values():
             credit_lines.append((0,0,{
                 "sequence": 10,
                 "name": "Salida %s" % (d["account"].name),
@@ -71,7 +79,7 @@ class HrEmployeeLedgerBatchWizard(models.TransientModel):
         for m in moves:
             emp = m.employee_id
             emp_map.setdefault(emp.id, {"employee": emp, "amount": 0.0, "count": 0})
-            emp_map[emp.id]["amount"] += m.amount_debit
+            emp_map[emp.id]["amount"] += (m.amount or 0.0)
             emp_map[emp.id]["count"] += 1
         emp_lines = []
         for e in emp_map.values():

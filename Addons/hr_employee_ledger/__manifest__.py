@@ -1,8 +1,9 @@
+# -*- coding: utf-8 -*-
 {
-    'name': 'HR Employee Ledger',
-    'version': '18.0.3.1.0',
-    'summary': 'Cuenta corriente de empleados (A/B), cierre por lote editable y recibo PDF.',
-    'author': 'ChatGPT Assistant',
+    'name': 'HR Employee Ledger (A/B simple)',
+    'version': '18.0.4.0.0',
+    'summary': 'Cta. cte. empleados A/B con pseudo-movimientos y cierre por lote editable',
+    'author': 'Dflex Argentina SAS / Esteban Scalerandi',
     'license': 'LGPL-3',
     'category': 'Human Resources',
     'depends': ['hr', 'account'],
