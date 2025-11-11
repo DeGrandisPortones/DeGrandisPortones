@@ -1,0 +1,19 @@
+<odoo>
+    <record id="view_res_config_settings_hr_ledger" model="ir.ui.view">
+        <field name="name">res.config.settings.hr.employee.ledger</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base.view_res_config_settings"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[hasclass('settings')]" position="inside">
+                <div class="app_settings_block" data-string="RRHH - Anticipos" string="RRHH - Anticipos" data-key="hr_employee_ledger">
+                    <h2>RRHH - Cuentas Corrientes Empleados</h2>
+                    <group>
+                        <field name="employee_batch_journal_id"/>
+                        <field name="employee_advance_account_a_id"/>
+                        <field name="employee_advance_account_b_id"/>
+                    </group>
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>

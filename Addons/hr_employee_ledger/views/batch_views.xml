@@ -1,0 +1,86 @@
+<odoo>
+    <record id="view_hr_employee_ledger_batch_tree" model="ir.ui.view">
+        <field name="name">hr.employee.ledger.batch.tree</field>
+        <field name="model">hr.employee.ledger.batch</field>
+        <field name="arch" type="xml">
+            <tree string="Lotes de cierre RRHH">
+                <field name="name"/>
+                <field name="payment_type"/>
+                <field name="date_from"/>
+                <field name="date_to"/>
+                <field name="journal_id"/>
+                <field name="debit_account_id"/>
+                <field name="move_total_amount"/>
+                <field name="credit_total_amount"/>
+                <field name="state"/>
+                <field name="account_move_id"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_hr_employee_ledger_batch_form" model="ir.ui.view">
+        <field name="name">hr.employee.ledger.batch.form</field>
+        <field name="model">hr.employee.ledger.batch</field>
+        <field name="arch" type="xml">
+            <form string="Lote de cierre RRHH">
+                <header>
+                    <button name="action_post" type="object" string="Asentar" class="btn-primary" states="draft"/>
+                    <button name="action_cancel" type="object" string="Cancelar" states="draft,posted"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,posted,cancel"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="payment_type"/>
+                            <field name="date_from"/>
+                            <field name="date_to"/>
+                            <field name="journal_id"/>
+                        </group>
+                        <group>
+                            <field name="debit_account_id"/>
+                            <field name="move_total_amount" readonly="1"/>
+                            <field name="credit_total_amount" readonly="1"/>
+                            <field name="account_move_id" readonly="1" context="{'form_view_ref':'account.view_move_form'}"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Contrapartidas (Crédito)">
+                            <field name="credit_line_ids">
+                                <tree editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="name"/>
+                                    <field name="account_id"/>
+                                    <field name="amount"/>
+                                </tree>
+                            </field>
+                            <label string="El total de créditos debe igualar el total de movimientos."/>
+                        </page>
+                        <page string="Detalle por empleado">
+                            <field name="employee_line_ids" readonly="1">
+                                <tree>
+                                    <field name="employee_id"/>
+                                    <field name="count_moves"/>
+                                    <field name="amount"/>
+                                </tree>
+                            </field>
+                            <button type="object" name="action_open_moves" string="Ver movimientos" class="btn-secondary"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_hr_employee_ledger_batch" model="ir.actions.act_window">
+        <field name="name">Lotes de cierre</field>
+        <field name="res_model">hr.employee.ledger.batch</field>
+        <field name="view_mode">tree,form</field>
+        <field name="context">{}</field>
+    </record>
+
+    <menuitem id="menu_hr_employee_ledger_batches" name="Lotes de cierre" parent="menu_hr_employee_ledger_root" action="action_hr_employee_ledger_batch" sequence="15"/>
+</odoo>
