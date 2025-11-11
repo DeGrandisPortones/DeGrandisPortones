@@ -26,8 +26,8 @@
         <field name="date"/>
         <field name="employee_id"/>
         <field name="payment_type"/>
-        <field name="account_src_id"/>
-        <field name="amount"/>
+        <field name="account_src_id" required="1"/>
+        <field name="amount" required="1"/>
         <field name="state"/>
         <field name="batch_id"/>
         <field name="account_move_id"/>
@@ -59,12 +59,12 @@
               <field name="payment_type"/>
             </group>
             <group>
-              <field name="account_src_id"/>
-              <field name="amount"/>
+              <field name="account_src_id" required="1"/>
+              <field name="amount" required="1"/>
             </group>
           </group>
           <group>
-            <field name="concept"/>
+            <field name="concept" required="1"/>
             <field name="narration"/>
           </group>
         </sheet>
