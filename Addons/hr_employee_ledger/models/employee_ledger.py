@@ -20,7 +20,7 @@ class HrEmployeeLedgerMove(models.Model):
     narration = fields.Text(string="Notas")
     currency_id = fields.Many2one("res.currency", string="Moneda", required=True, default=lambda self: self.env.company.currency_id)
 
-    state = fields.Selection([("draft","Borrador"),("posted","Asentado"),("cancel","Cancelado")], default="draft", tracking=True, string="Estado")
+    state = fields.Selection([("draft","Borrador"),("posted","Asentado"),("cancel","Cancelado")], default="draft", string="Estado")
 
     account_move_id = fields.Many2one("account.move", string="Asiento contable", readonly=True, copy=False)
     batch_account_move_id = fields.Many2one("account.move", string="Asiento mensual", readonly=True, copy=False)
@@ -80,7 +80,7 @@ class HrEmployeeLedgerMove(models.Model):
 class HrEmployee(models.Model):
     _inherit = "hr.employee"
 
-    company_currency_id = fields.Many2one('res.currency', related='company_id.currency_id', readonly=True)
+    company_currency_id = fields.Many2one('res.currency', related='company_id.currency_id', readonly=True, string='Moneda compañía')
     ledger_balance = fields.Monetary(string="Saldo CC Empleado", currency_field="company_currency_id", compute="_compute_ledger_balance", store=False)
     ledger_move_count = fields.Integer(string="Movimientos CC", compute="_compute_ledger_balance", store=False)
 
