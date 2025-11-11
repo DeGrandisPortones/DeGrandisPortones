@@ -24,8 +24,8 @@
         <field name="arch" type="xml">
             <form string="Lote de cierre RRHH">
                 <header>
-                    <button name="action_post" type="object" string="Asentar" class="btn-primary" states="draft"/>
-                    <button name="action_cancel" type="object" string="Cancelar" states="draft,posted"/>
+                    <button name="action_post" type="object" string="Asentar" class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_cancel" type="object" string="Cancelar" invisible="not (state in ['draft', 'posted'])"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,posted,cancel"/>
                 </header>
                 <sheet>

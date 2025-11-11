@@ -47,10 +47,10 @@
         <field name="arch" type="xml">
             <form string="Movimiento CC Empleado">
                 <header>
-                    <button name="action_post" type="object" string="Asentar" class="btn-primary" states="draft"/>
-                        <button name="action_print_receipt" type="object" string="Imprimir recibo" class="btn-secondary" states="draft,posted"/>
-                    <button name="action_cancel" type="object" string="Cancelar" states="draft,posted"/>
-                    <button name="action_set_to_draft" type="object" string="Volver a borrador" states="cancel"/>
+                    <button name="action_post" type="object" string="Asentar" class="btn-primary" invisible="state != 'draft'"/>
+                        <button name="action_print_receipt" type="object" string="Imprimir recibo" class="btn-secondary" invisible="not (state in ['draft', 'posted'])"/>
+                    <button name="action_cancel" type="object" string="Cancelar" invisible="not (state in ['draft', 'posted'])"/>
+                    <button name="action_set_to_draft" type="object" string="Volver a borrador" invisible="state != 'cancel'"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,posted,cancel"/>
                 </header>
                 <sheet>
@@ -79,7 +79,7 @@
                                     <field name="sequence" widget="handle"/>
                                     <field name="display_type"/>
                                     <field name="name"/>
-                                    <field name="account_id" attrs="{'required':[('parent.post_in_accounting','=',True)], 'invisible':[('parent.post_in_accounting','=',False)]}"/>
+                                    <field name="account_id"/>
                                     <field name="debit"/>
                                     <field name="credit"/>
                                     <field name="analytic_account_id" groups="analytic.group_analytic_accounting"/>
