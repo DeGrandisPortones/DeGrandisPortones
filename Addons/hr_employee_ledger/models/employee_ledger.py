@@ -2,6 +2,7 @@
 from odoo import api, fields, models, _
 from odoo.exceptions import ValidationError, UserError
 
+
 class HrEmployeeLedgerMove(models.Model):
     _name = "hr.employee.ledger.move"
     _description = "Employee Ledger Move (Asiento RRHH)"
@@ -17,8 +18,10 @@ class HrEmployeeLedgerMove(models.Model):
     currency_id = fields.Many2one("res.currency", string="Moneda", required=True,
                                   default=lambda self: self.env.company.currency_id)
     narration = fields.Text(string="Notas")
-    payment_type = fields.Selection([('a','Pago A (dinero)'),('b','Pago B (alimentos)')], string='Tipo de pago', required=True, default='a')
-        state = fields.Selection([("draft", "Borrador"),
+    payment_type = fields.Selection([("a", "Pago A (dinero)"),
+                                     ("b", "Pago B (alimentos)")],
+                                    string="Tipo de pago", required=True, default="a")
+    state = fields.Selection([("draft", "Borrador"),
                               ("posted", "Asentado"),
                               ("cancel", "Cancelado")],
                              default="draft", tracking=True, string="Estado")
@@ -31,13 +34,17 @@ class HrEmployeeLedgerMove(models.Model):
     balance = fields.Monetary(string="Balance", currency_field="currency_id",
                               compute="_compute_amounts", store=True)
 
+    # Por defecto no posteamos a contabilidad; usamos el lote mensual
     post_in_accounting = fields.Boolean(string="Postear a Contabilidad", default=False,
                                         help="Si está habilitado, al asentar se generará un asiento contable (account.move) "
                                              "en el diario indicado con las mismas líneas, sin partner; de este modo no impacta "
                                              "en reportes de proveedores.")
     account_move_id = fields.Many2one("account.move", string="Asiento contable", readonly=True, copy=False)
-        batch_account_move_id = fields.Many2one('account.move', string='Asiento mensual', readonly=True, copy=False, help='Asiento agregado generado por el cierre mensual.')
-        batch_id = fields.Many2one('hr.employee.ledger.batch', string='Lote mensual', readonly=True, copy=False)
+
+    # Enlazado a cierres mensuales
+    batch_account_move_id = fields.Many2one('account.move', string='Asiento mensual', readonly=True, copy=False,
+                                            help='Asiento agregado generado por el cierre mensual.')
+    batch_id = fields.Many2one('hr.employee.ledger.batch', string='Lote mensual', readonly=True, copy=False)
 
     @api.depends("line_ids.debit", "line_ids.credit", "line_ids.display_type")
     def _compute_amounts(self):
@@ -46,8 +53,8 @@ class HrEmployeeLedgerMove(models.Model):
             for line in move.line_ids:
                 if line.display_type:
                     continue
-                debit += line.debit
-                credit += line.credit
+                debit += line.debit or 0.0
+                credit += line.credit or 0.0
             move.amount_debit = debit
             move.amount_credit = credit
             move.balance = debit - credit
@@ -58,8 +65,8 @@ class HrEmployeeLedgerMove(models.Model):
             if move.state == "posted":
                 if not move.line_ids:
                     raise ValidationError(_("No se puede asentar sin líneas."))
-                # tolerancia por redondeo
-                if abs((move.amount_debit or 0.0) - (move.amount_credit or 0.0)) > (move.currency_id.rounding or 0.01):
+                rounding = move.currency_id.rounding or 0.01
+                if abs((move.amount_debit or 0.0) - (move.amount_credit or 0.0)) > rounding:
                     raise ValidationError(_("El asiento debe estar balanceado (débitos = créditos)."))
 
     def action_post(self):
@@ -97,7 +104,7 @@ class HrEmployeeLedgerMove(models.Model):
                 "analytic_tag_ids": [(6, 0, l.analytic_tag_ids.ids)] if l.analytic_tag_ids else False,
                 "company_id": self.company_id.id,
             }
-            # No partner para no contaminar reportes de terceros
+            # sin partner
             line_vals.append((0, 0, lv))
         vals = {
             "date": self.date,
@@ -122,6 +129,10 @@ class HrEmployeeLedgerMove(models.Model):
                 raise UserError(_("El asiento contable asociado está posteado. Anúlelo en Contabilidad primero o quite 'Postear a Contabilidad' antes de asentar."))
             move.state = "cancel"
         return True
+
+    def action_print_receipt(self):
+        self.ensure_one()
+        return self.env.ref('hr_employee_ledger.action_report_employee_payment_receipt').report_action(self)
 
 
 class HrEmployeeLedgerMoveLine(models.Model):
