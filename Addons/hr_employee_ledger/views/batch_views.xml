@@ -3,7 +3,7 @@
         <field name="name">hr.employee.ledger.batch.tree</field>
         <field name="model">hr.employee.ledger.batch</field>
         <field name="arch" type="xml">
-            <tree string="Lotes de cierre RRHH">
+            <list string="Lotes de cierre RRHH">
                 <field name="name"/>
                 <field name="payment_type"/>
                 <field name="date_from"/>
@@ -14,7 +14,7 @@
                 <field name="credit_total_amount"/>
                 <field name="state"/>
                 <field name="account_move_id"/>
-            </tree>
+            </list>
         </field>
     </record>
 
@@ -50,22 +50,22 @@
                     <notebook>
                         <page string="Contrapartidas (Crédito)">
                             <field name="credit_line_ids">
-                                <tree editable="bottom">
+                                <list editable="bottom">
                                     <field name="sequence" widget="handle"/>
                                     <field name="name"/>
                                     <field name="account_id"/>
                                     <field name="amount"/>
-                                </tree>
+                                </list>
                             </field>
                             <label string="El total de créditos debe igualar el total de movimientos."/>
                         </page>
                         <page string="Detalle por empleado">
                             <field name="employee_line_ids" readonly="1">
-                                <tree>
+                                <list>
                                     <field name="employee_id"/>
                                     <field name="count_moves"/>
                                     <field name="amount"/>
-                                </tree>
+                                </list>
                             </field>
                             <button type="object" name="action_open_moves" string="Ver movimientos" class="btn-secondary"/>
                         </page>
@@ -78,7 +78,7 @@
     <record id="action_hr_employee_ledger_batch" model="ir.actions.act_window">
         <field name="name">Lotes de cierre</field>
         <field name="res_model">hr.employee.ledger.batch</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
         <field name="context">{}</field>
     </record>
 
