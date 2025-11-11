@@ -168,8 +168,9 @@ class HrEmployeeLedgerMoveLine(models.Model):
 class HrEmployee(models.Model):
     _inherit = "hr.employee"
 
+    company_currency_id = fields.Many2one('res.currency', related='company_id.currency_id', readonly=True)
     ledger_balance = fields.Monetary(string="Saldo CC Empleado",
-                                     currency_field="company_id.currency_id",
+                                     currency_field="company_currency_id",
                                      compute="_compute_ledger_balance", store=False)
     ledger_move_count = fields.Integer(string="Movimientos CC", compute="_compute_ledger_balance", store=False)
 
