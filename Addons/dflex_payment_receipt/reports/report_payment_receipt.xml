@@ -35,7 +35,7 @@
                      or False"/>
         <t t-set="has_checks" t-value="bool(check_lines)"/>
 
-        <!-- -------- Estilos mínimos -------- -->
+        <!--  Estilos mínimos-->
         <style>
           .r-wrap { padding: 2px 0; }
           .r-header { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
@@ -50,7 +50,7 @@
           .r-right { text-align:right; }
         </style>
 
-        <!-- -------- Contenido -------- -->
+        <!--  Contenido -->
         <div class="page r-wrap">
           <!-- Header -->
           <div class="r-header">
