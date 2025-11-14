@@ -2,25 +2,40 @@
   <template id="dflex_report_payment_receipt_document" inherit_id="account.report_payment_receipt_document">
     <xpath expr="//t[@t-call='web.external_layout' or @t-call='web.external_layout_clean']" position="replace">
       <t t-call="web.external_layout">
+  
         <t t-set="o" t-value="o"/>
         <t t-set="jn" t-value="(o.journal_id.name or '').lower() if o.journal_id else ''"/>
+        <t t-set="jn_code" t-value="(o.journal_id.code or '').lower() if o.journal_id else ''"/>
         <t t-set="is_bank" t-value="o.journal_id and o.journal_id.type == 'bank'"/>
         <t t-set="is_cash" t-value="o.journal_id and o.journal_id.type == 'cash'"/>
-        <t t-set="is_getnet" t-value="'getnet' in jn"/>
-        <t t-set="is_mp" t-value="'mercadopago' in jn or 'mercado' in jn"/>
+        <t t-set="acc_liq" t-value="o.journal_id and o.journal_id.default_account_id or False"/>
+        <t t-set="acc_lc" t-value="(acc_liq and (acc_liq.name or acc_liq.display_name) or '').lower()"/>
+
+        <!-- Getnet / MercadoPago (por nombre del diario, código o nombre de la cuenta contable) -->
+        <t t-set="is_getnet"
+           t-value="'getnet' in jn or 'get net' in jn
+                    or jn_code in ('csh5','getnet')
+                    or 'getnet' in acc_lc or 'get net' in acc_lc"/>
+        <t t-set="is_mp"
+           t-value="'mercadopago' in jn or 'mercado pago' in jn or 'mercado' in jn
+                    or 'mercadopago' in acc_lc or 'mercado pago' in acc_lc"/>
+
+        <!-- Cheques de terceros: nombre del diario -->
         <t t-set="is_checks_journal" t-value="'cheque' in jn or 'checks' in jn or 'terceros' in jn"/>
+
+        <!-- Otros datos de cabecera -->
         <t t-set="obs" t-value="(('narration' in o._fields and o.narration) or ('communication' in o._fields and o.communication) or '')"/>
         <t t-set="acc_num" t-value="(o.journal_id.bank_account_id.acc_number if (o.journal_id and o.journal_id.bank_account_id) else '')"/>
         <t t-set="acc_mask" t-value="('••••' + str(acc_num)[-4:]) if acc_num else ''"/>
 
+        <!-- Cheques vinculados al pago -->
         <t t-set="check_lines"
-           t-value="
-             (('l10n_latam_new_check_ids' in o._fields and o.l10n_latam_new_check_ids) and o.l10n_latam_new_check_ids)
-             or (('l10n_latam_move_check_ids' in o._fields and o.l10n_latam_move_check_ids) and o.l10n_latam_move_check_ids)
-             or False
-           "/>
+           t-value=" (('l10n_latam_new_check_ids' in o._fields and o.l10n_latam_new_check_ids) and o.l10n_latam_new_check_ids)
+                     or (('l10n_latam_move_check_ids' in o._fields and o.l10n_latam_move_check_ids) and o.l10n_latam_move_check_ids)
+                     or False"/>
         <t t-set="has_checks" t-value="bool(check_lines)"/>
 
+        <!-- -------- Estilos mínimos -------- -->
         <style>
           .r-wrap { padding: 2px 0; }
           .r-header { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
@@ -33,18 +48,20 @@
           .r-section table { width:100%; border-collapse:collapse; }
           .r-section th, .r-section td { padding:8px 10px; border-bottom:1px solid #e5e7eb; }
           .r-right { text-align:right; }
-          .r-pre { white-space:pre-line; }
-          .r-total { font-size:14px; font-weight:700; }
         </style>
 
+        <!-- -------- Contenido -------- -->
         <div class="page r-wrap">
+          <!-- Header -->
           <div class="r-header">
             <div>
               <div class="r-title">ORDEN DE COBRANZA</div>
               <table class="r-kv r-small">
                 <tr><td class="r-muted">N°</td><td><t t-esc="o.name"/></td></tr>
                 <tr><td class="r-muted">Cliente</td><td><t t-esc="o.partner_id.display_name"/></td></tr>
-                <tr><td class="r-muted">Fecha</td><td><t t-esc="(o.date or o.create_date).strftime('%d/%m/%Y') if (o.date or o.create_date) else ''"/></td></tr>
+                <tr><td class="r-muted">Fecha</td><td>
+                  <t t-esc="(o.date or o.create_date).strftime('%d/%m/%Y') if (o.date or o.create_date) else ''"/>
+                </td></tr>
               </table>
             </div>
             <div>
@@ -59,6 +76,7 @@
             </div>
           </div>
 
+          <!-- Medios de pago -->
           <div class="r-section">
             <div class="head">MEDIOS DE PAGO</div>
             <table>
@@ -69,6 +87,7 @@
                 </tr>
               </thead>
               <tbody>
+                <!-- Cheques detallados -->
                 <t t-if="has_checks">
                   <tr>
                     <td colspan="2" style="padding:0;">
@@ -85,7 +104,8 @@
                         </thead>
                         <tbody>
                           <tr t-foreach="check_lines" t-as="c">
-                            <t t-set="issuer_partner" t-value="(o.env['res.partner'].sudo().search([('vat','=', (('issuer_vat' in c._fields and c.issuer_vat) or ('owner_vat' in c._fields and c.owner_vat)))], limit=1)) or False"/>
+                            <t t-set="issuer_partner"
+                               t-value="(o.env['res.partner'].sudo().search([('vat','=', (('issuer_vat' in c._fields and c.issuer_vat) or ('owner_vat' in c._fields and c.owner_vat)))], limit=1)) or False"/>
                             <td><t t-esc="('number' in c._fields and c.number) or ('name' in c._fields and c.name) or c.display_name"/></td>
                             <td><t t-esc="(('bank_id' in c._fields and c.bank_id and c.bank_id.name) or '')"/></td>
                             <td><t t-esc="(('issuer_vat' in c._fields and c.issuer_vat) or ('owner_vat' in c._fields and c.owner_vat) or '')"/></td>
@@ -102,24 +122,40 @@
                   </tr>
                 </t>
 
+                <!-- Cheques (sin detalle) -->
                 <t t-if="(not has_checks) and is_checks_journal">
                   <tr>
                     <td>Cheques de terceros</td>
-                    <td class="r-right"><span t-esc="o.amount" t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/></td>
+                    <td class="r-right">
+                      <span t-esc="o.amount" t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                    </td>
                   </tr>
                 </t>
+
+                <!-- Getnet -->
                 <t t-if="(not has_checks) and (not is_checks_journal) and is_getnet">
                   <tr>
-                    <td>Pago hecho por <b>tarjeta de crédito</b> plataforma <b>Getnet</b></td>
-                    <td class="r-right"><span t-esc="o.amount" t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/></td>
+                    <td>
+                      Pago hecho por <b>tarjeta de crédito</b> plataforma
+                      <b><t t-esc="(acc_liq and (acc_liq.name or acc_liq.display_name)) or 'Getnet'"/></b>
+                    </td>
+                    <td class="r-right">
+                      <span t-esc="o.amount" t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                    </td>
                   </tr>
                 </t>
+
+                <!-- MercadoPago -->
                 <t t-if="(not has_checks) and (not is_checks_journal) and (not is_getnet) and is_mp">
                   <tr>
                     <td>Pago hecho por <b>tarjeta / Link de pago</b> a <b>Mercadopago</b></td>
-                    <td class="r-right"><span t-esc="o.amount" t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/></td>
+                    <td class="r-right">
+                      <span t-esc="o.amount" t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                    </td>
                   </tr>
                 </t>
+
+                <!-- Transferencia bancaria -->
                 <t t-if="(not has_checks) and (not is_checks_journal) and (not is_getnet) and (not is_mp) and is_bank">
                   <tr>
                     <td>
@@ -127,25 +163,35 @@
                       <t t-esc="o.journal_id.bank_id and o.journal_id.bank_id.name or 'Banco'"/>
                       <t t-if="acc_mask"> cuenta <t t-esc="acc_mask"/></t>
                     </td>
-                    <td class="r-right"><span t-esc="o.amount" t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/></td>
+                    <td class="r-right">
+                      <span t-esc="o.amount" t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                    </td>
                   </tr>
                 </t>
+
+                <!-- Efectivo -->
                 <t t-if="(not has_checks) and (not is_checks_journal) and (not is_getnet) and (not is_mp) and (not is_bank) and is_cash">
                   <tr>
                     <td>Pago en efectivo</td>
-                    <td class="r-right"><span t-esc="o.amount" t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/></td>
+                    <td class="r-right">
+                      <span t-esc="o.amount" t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                    </td>
                   </tr>
                 </t>
               </tbody>
+
               <tfoot>
                 <tr>
                   <th class="r-right">TOTAL</th>
-                  <th class="r-right"><span t-esc="o.amount" t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/></th>
+                  <th class="r-right">
+                    <span t-esc="o.amount" t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                  </th>
                 </tr>
               </tfoot>
             </table>
           </div>
 
+          <!-- Observaciones -->
           <div class="r-section" t-if="obs">
             <div class="head">OBSERVACIONES</div>
             <div style="padding:10px;"><t t-esc="obs"/></div>
