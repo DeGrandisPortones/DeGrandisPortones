@@ -1,21 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <data>
-        <record id="action_hr_employee_ledger_moves" model="ir.actions.act_window">
-            <field name="name">Movimientos CC Empleados</field>
-            <field name="res_model">hr.employee.ledger.move</field>
-            <field name="view_mode">list,form</field>
-            <field name="context">{}</field>
-        </record>
+  <!-- Acción de lista -->
+  <record id="action_hr_employee_ledger_moves" model="ir.actions.act_window">
+    <field name="name">Movimientos CC Empleados</field>
+    <field name="res_model">hr.employee.ledger.move</field>
+    <field name="view_mode">list,form</field>
+    <field name="context">{}</field>
+  </record>
 
-        <menuitem id="menu_hr_employee_ledger_root"
-                  name="Cuenta Corriente Empleados"
-                  parent="hr.menu_hr_root"
-                  sequence="90"/>
+  <!-- Menú bajo RRHH -->
+  <menuitem id="menu_hr_employee_ledger_root"
+            parent="hr.menu_hr_root"
+            name="Cuenta Corriente"/>
 
-        <menuitem id="menu_hr_employee_ledger_moves"
-                  name="Movimientos"
-                  parent="menu_hr_employee_ledger_root"
-                  action="action_hr_employee_ledger_moves"
-                  sequence="10"/>
-    </data>
+  <menuitem id="menu_hr_employee_ledger_moves"
+            parent="menu_hr_employee_ledger_root"
+            name="Movimientos"
+            action="action_hr_employee_ledger_moves"/>
 </odoo>
