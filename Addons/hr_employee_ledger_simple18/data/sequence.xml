@@ -4,5 +4,6 @@
         <field name="code">hr.employee.ledger.move</field>
         <field name="prefix">ELM/%(year)s/</field>
         <field name="padding">5</field>
+        <field name="company_id" eval="False"/>
     </record>
 </odoo>
