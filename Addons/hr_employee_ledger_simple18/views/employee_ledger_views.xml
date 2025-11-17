@@ -1,100 +1,105 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-  <!-- Vista de búsqueda -->
-  <record id="view_employee_ledger_move_search" model="ir.ui.view">
-    <field name="name">hr.employee.ledger.move.search</field>
-    <field name="model">hr.employee.ledger.move</field>
-    <field name="arch" type="xml">
-      <search string="Buscar movimientos">
-        <field name="employee_id"/>
-        <field name="concept"/>
-        <filter string="Dinero (A)" name="type_money" domain="[('type','=','money')]"/>
-        <filter string="Alimentos (B)" name="type_food" domain="[('type','=','food')]"/>
-        <filter string="Anticipos" name="dir_out" domain="[('direction','=','out')]"/>
-        <filter string="Descuentos" name="dir_in" domain="[('direction','=','in')]"/>
-        <separator/>
-        <filter string="Hoy" name="today" domain="[('date','=', context_today())]"/>
-        <filter string="Este Mes" name="this_month" domain="[('date','&gt;=', (context_today().replace(day=1))), ('date','&lt;=', (context_today().replace(day=31)))]"/>
-      </search>
-    </field>
-  </record>
+    <!-- Search -->
+    <record id="hr_employee_ledger_move_search" model="ir.ui.view">
+        <field name="name">hr.employee.ledger.move.search</field>
+        <field name="model">hr.employee.ledger.move</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="employee_id"/>
+                <filter string="Tipo A" name="type_a" domain="[('type','=','a')]"/>
+                <filter string="Tipo B" name="type_b" domain="[('type','=','b')]"/>
+                <filter string="Adelantos" name="dir_debit" domain="[('direction','=','debit')]"/>
+                <filter string="Descuentos" name="dir_credit" domain="[('direction','=','credit')]"/>
+                <field name="date" filter_domain="['&', ('date','&gt;=', self), ('date','&lt;=', self)]"/>
+                <group expand="0" string="Agrupar por">
+                    <filter string="Empleado" name="grp_employee" context="{'group_by':'employee_id'}"/>
+                    <filter string="Tipo" name="grp_type" context="{'group_by':'type'}"/>
+                    <filter string="Sentido" name="grp_dir" context="{'group_by':'direction'}"/>
+                    <filter string="Fecha" name="grp_date" context="{'group_by':'date'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
 
-  <!-- Lista -->
-  <record id="view_employee_ledger_move_list" model="ir.ui.view">
-    <field name="name">hr.employee.ledger.move.list</field>
-    <field name="model">hr.employee.ledger.move</field>
-    <field name="arch" type="xml">
-      <list string="Movimientos">
-        <field name="name"/>
-        <field name="date"/>
-        <field name="employee_id"/>
-        <field name="type"/>
-        <field name="direction"/>
-        <field name="amount"/>
-        <field name="concept"/>
-      </list>
-    </field>
-  </record>
-
-  <!-- Formulario con botón de recibo (type=object) -->
-  <record id="view_employee_ledger_move_form" model="ir.ui.view">
-    <field name="name">hr.employee.ledger.move.form</field>
-    <field name="model">hr.employee.ledger.move</field>
-    <field name="arch" type="xml">
-      <form string="Movimiento Cuenta Corriente">
-        <header>
-          <button name="action_print_receipt" type="object" class="btn-primary" string="Imprimir recibo"/>
-        </header>
-        <sheet>
-          <group>
-            <group>
-              <field name="name" readonly="1"/>
-              <field name="date"/>
-              <field name="employee_id" options="{'no_quick_create': True, 'no_create_edit': True}"/>
-            </group>
-            <group>
-              <field name="type"/>
-              <field name="direction"/>
-              <field name="amount"/>
-            </group>
-          </group>
-          <group>
-            <field name="concept" colspan="4"/>
-          </group>
-        </sheet>
-      </form>
-    </field>
-  </record>
-
-  <!-- Herencia de empleado: smart button + pestaña -->
-  <record id="hr_employee_form_inherit_ledger" model="ir.ui.view">
-    <field name="name">hr.employee.form.ledger</field>
-    <field name="model">hr.employee</field>
-    <field name="inherit_id" ref="hr.view_employee_form"/>
-    <field name="arch" type="xml">
-      <xpath expr="//form/header" position="inside">
-        <button name="action_open_ledger_moves" class="oe_stat_button" type="object">
-          <div class="o_stat_info">
-            <field name="ledger_move_count" widget="statinfo" string="Nº Movimientos"/>
-          </div>
-        </button>
-      </xpath>
-      <xpath expr="//form/sheet/notebook" position="inside">
-        <page string="Cuenta Corriente">
-          <group>
-            <field name="ledger_balance" readonly="1"/>
-          </group>
-          <field name="ledger_move_ids" context="{'default_employee_id': active_id}" nolabel="1">
-            <list editable="bottom">
-              <field name="date"/>
-              <field name="type"/>
-              <field name="direction"/>
-              <field name="concept"/>
-              <field name="amount"/>
+    <!-- List -->
+    <record id="view_employee_ledger_move_list" model="ir.ui.view">
+        <field name="name">hr.employee.ledger.move.list</field>
+        <field name="model">hr.employee.ledger.move</field>
+        <field name="arch" type="xml">
+            <list string="Movimientos">
+                <field name="name"/>
+                <field name="date"/>
+                <field name="employee_id"/>
+                <field name="type"/>
+                <field name="direction"/>
+                <field name="amount"/>
+                <field name="concept"/>
             </list>
-          </field>
-        </page>
-      </xpath>
-    </field>
-  </record>
+        </field>
+    </record>
+
+    <!-- Form -->
+    <record id="view_employee_ledger_move_form" model="ir.ui.view">
+        <field name="name">hr.employee.ledger.move.form</field>
+        <field name="model">hr.employee.ledger.move</field>
+        <field name="arch" type="xml">
+            <form string="Movimiento Cuenta Corriente">
+                <header>
+                    <button name="action_print_receipt" type="object" class="btn-primary" string="Imprimir recibo"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name" readonly="1"/>
+                            <field name="date"/>
+                            <field name="employee_id" options="{'no_quick_create': True, 'no_create_edit': True}"/>
+                        </group>
+                        <group>
+                            <field name="type"/>
+                            <field name="direction"/>
+                            <field name="amount"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="concept" colspan="4"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Employee form inherit -->
+    <record id="hr_employee_form_inherit_ledger" model="ir.ui.view">
+        <field name="name">hr.employee.form.ledger</field>
+        <field name="model">hr.employee</field>
+        <field name="inherit_id" ref="hr.view_employee_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//form/header" position="inside">
+                <button name="action_open_ledger_moves" type="object" class="oe_stat_button" string="">
+                    <div class="o_stat_info">
+                        <field name="ledger_move_count" widget="statinfo" string="Nº Movimientos"/>
+                    </div>
+                </button>
+            </xpath>
+            <xpath expr="//form/sheet/notebook" position="inside">
+                <page string="Cuenta Corriente">
+                    <group>
+                        <field name="ledger_balance" readonly="1"/>
+                    </group>
+                    <field name="ledger_move_ids" nolabel="1">
+                        <list editable="bottom">
+                            <field name="name" readonly="1"/>
+                            <field name="date"/>
+                            <field name="type"/>
+                            <field name="direction"/>
+                            <field name="amount"/>
+                            <field name="concept"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
 </odoo>
