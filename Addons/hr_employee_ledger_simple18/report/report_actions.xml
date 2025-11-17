@@ -1,10 +1,10 @@
-<?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <report
-        id="action_employee_ledger_move_receipt"
+        id="report_employee_ledger_move_receipt"
         model="hr.employee.ledger.move"
         string="Recibo de Movimiento"
         report_type="qweb-pdf"
         name="hr_employee_ledger_simple18.report_employee_ledger_move_receipt"
-        print_report_name="'Recibo_%s' % (object.name)"/>
+        file="hr_employee_ledger_simple18.report_employee_ledger_move_receipt"
+    />
 </odoo>

@@ -1,26 +1,26 @@
-<?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <template id="report_employee_ledger_move_receipt">
         <t t-call="web.external_layout">
-            <t t-set="doc" t-value="doc"/>
             <div class="page">
-                <h2>Recibo de Movimiento</h2>
-                <p><strong>Número:</strong> <t t-esc="doc.name"/></p>
-                <p><strong>Fecha:</strong> <t t-esc="doc.date"/></p>
-                <p><strong>Empleado:</strong> <t t-esc="doc.employee_id.name"/></p>
-                <p><strong>Tipo:</strong> <t t-esc="dict(doc.fields_get(allfields=['type'])['type']['selection']).get(doc.type) if hasattr(doc, 'fields_get') else doc.type"/></p>
-                <p><strong>Sentido:</strong> <t t-esc="dict(doc.fields_get(allfields=['direction'])['direction']['selection']).get(doc.direction) if hasattr(doc, 'fields_get') else doc.direction"/></p>
-                <p><strong>Monto:</strong> <t t-esc="doc.currency_id.symbol"/> <t t-esc="doc.amount"/></p>
-                <p><strong>Concepto:</strong></p>
-                <p t-esc="doc.concept"/>
-                <br/>
-                <table class="table table-sm" style="margin-top:40px;">
-                    <tr>
-                        <td style="padding-top:60px;">______________________________<br/>Firma del Empleado</td>
-                        <td style="padding-top:60px;">______________________________<br/>Aclaración</td>
-                        <td style="padding-top:60px;">______________________________<br/>DNI</td>
-                    </tr>
-                </table>
+                <h2 style="text-align:center;">Recibo de Movimiento</h2>
+                <p><strong>Empresa:</strong> <span t-esc="o.company_id.name"/></p>
+                <p><strong>Empleado:</strong> <span t-esc="o.employee_id.name"/></p>
+                <p><strong>Número:</strong> <span t-esc="o.name"/></p>
+                <p><strong>Fecha:</strong> <span t-esc="o.date"/></p>
+                <p><strong>Tipo:</strong> <span t-esc="dict(o._fields['type'].selection).get(o.type)"/></p>
+                <p><strong>Movimiento:</strong> <span t-esc="dict(o._fields['direction'].selection).get(o.direction)"/></p>
+                <p><strong>Concepto:</strong> <span t-esc="o.concept or ''"/></p>
+                <p><strong>Importe:</strong> <span t-esc="o.amount"/> <span t-esc="o.currency_id.symbol"/></p>
+
+                <br/><br/>
+                <div style="display:flex; gap:60px;">
+                    <div style="flex:1; text-align:center;">
+                        <div style="border-top:1px solid #000; margin-top:60px; padding-top:6px;">Firma del Empleado</div>
+                    </div>
+                    <div style="flex:1; text-align:center;">
+                        <div style="border-top:1px solid #000; margin-top:60px; padding-top:6px;">Firma y Sello</div>
+                    </div>
+                </div>
             </div>
         </t>
     </template>
