@@ -1,20 +1,23 @@
+
+# -*- coding: utf-8 -*-
 {
     'name': 'HR Employee Ledger (A/B)',
-    'version': '18.0.1.0.0',
-    'summary': 'Anticipos de sueldos (dinero/alimentos) con cuenta corriente por empleado y recibo impreso.',
+    'summary': 'Anticipos y cuenta corriente por empleado (tipos A/B)',
+    'version': '18.0.1.3',
+    'author': 'ChatGPT',
+    'website': 'https://example.com',
     'category': 'Human Resources',
     'license': 'LGPL-3',
-    'author': 'Dflex Argentina SAS',
-    'depends': ['hr'],
+    'depends': ['base', 'hr'],
     'data': [
         'security/ir.model.access.csv',
         'data/sequence.xml',
+        'report/receipt_templates.xml',
+        'report/report_actions.xml',
         'views/menu.xml',
         'views/employee_ledger_views.xml',
-        'report/report_actions.xml',
-        'report/receipt_templates.xml'
     ],
-    'assets': {},
     'installable': True,
-    'application': False
+    'application': False,
+    'auto_install': False,
 }
