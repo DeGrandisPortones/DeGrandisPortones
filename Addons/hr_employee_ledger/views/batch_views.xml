@@ -84,5 +84,5 @@
     <field name="context">{}</field>
   </record>
 
-  <menuitem id="menu_hr_employee_ledger_batches" name="Lotes de cierre" parent="menu_hr_employee_ledger_root" action="action_hr_employee_ledger_batch" sequence="15"/>
+  <menuitem id="menu_hr_employee_ledger_batches" name="Lotes de cierre" parent="menu_hr_employee_ledger_root" action="action_hr_employee_ledger_batch" sequence="15" groups="base.group_no_one"/>
 </odoo>

@@ -1,29 +1,49 @@
+
 <odoo>
-  <record id="view_hr_employee_ledger_batch_wizard" model="ir.ui.view">
+  <record id="view_hr_employee_ledger_batch_wizard_form" model="ir.ui.view">
     <field name="name">hr.employee.ledger.batch.wizard.form</field>
     <field name="model">hr.employee.ledger.batch.wizard</field>
     <field name="arch" type="xml">
-      <form string="Cierre mensual de anticipos">
+      <form string="Cierre mensual (A/B)">
         <group>
           <group>
+            <field name="payment_type"/>
             <field name="date_from"/>
             <field name="date_to"/>
-            <field name="payment_type"/>
-          </group>
-          <group>
             <field name="include_drafts"/>
-            <field name="confirm_drafts"/>
+            <field name="confirm_drafts" attrs="{'invisible':[('include_drafts','=',False)]}"/>
           </group>
-        </group>
-        <group>
           <group>
-            <field name="journal_id"/>
-            <field name="memo"/>
+            <field name="journal_id" context="{'default_company_id': company_id}"/>
+            <field name="debit_account_id" context="{'default_company_id': company_id}"/>
+            <field name="total_moves" readonly="1"/>
+            <field name="total_amount" readonly="1"/>
           </group>
         </group>
+        <notebook>
+          <page string="Resumen por cuenta">
+            <field name="line_ids" readonly="1">
+              <list>
+                <field name="account_id"/>
+                <field name="count_moves"/>
+                <field name="amount"/>
+              </list>
+            </field>
+          </page>
+          <page string="Detalle por empleado">
+            <field name="employee_line_ids" readonly="1">
+              <list>
+                <field name="employee_id"/>
+                <field name="count_moves"/>
+                <field name="amount"/>
+              </list>
+            </field>
+          </page>
+        </notebook>
         <footer>
-          <button name="action_generate" type="object" class="btn-primary" string="Generar lote"/>
-          <button special="cancel" string="Cancelar" class="btn-secondary"/>
+          <button name="_load_preview" type="object" string="Actualizar" class="btn-secondary"/>
+          <button name="action_generate" type="object" string="Generar lote" class="btn-primary"/>
+          <button string="Cerrar" special="cancel" class="btn-secondary"/>
         </footer>
       </form>
     </field>
