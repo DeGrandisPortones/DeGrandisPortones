@@ -1,3 +1,4 @@
+
 <odoo>
   <record id="action_report_employee_payment_receipt" model="ir.actions.report">
     <field name="name">Recibo de Anticipo</field>
@@ -14,59 +15,23 @@
       <div class="page">
         <h2 style="text-align:center;">Recibo de Anticipo</h2>
         <p>
-          <strong>Empleado:</strong>
-          <span t-esc="doc.employee_id.name"/>
-          <t t-if="doc.employee_id.identification_id">
-            — <strong>Documento:</strong> <span t-esc="doc.employee_id.identification_id"/>
-          </t><br/>
-          <t t-if="doc.employee_id.job_title">
-            <strong>Puesto:</strong> <span t-esc="doc.employee_id.job_title"/><br/>
-          </t>
-          <t t-if="doc.employee_id.work_email">
-            <strong>Email:</strong> <span t-esc="doc.employee_id.work_email"/><br/>
-          </t>
-          <strong>Fecha:</strong> <span t-esc="doc.date"/>
-          — <strong>Tipo de pago:</strong>
-          <t t-esc="{'a':'A (dinero)','b':'B (alimentos)'}.get(doc.payment_type, doc.payment_type)"/>
+          <strong>Empleado:</strong> <span t-esc="doc.employee_id.name"/>
+          <t t-if="doc.employee_id.identification_id"> — <strong>Documento:</strong> <span t-esc="doc.employee_id.identification_id"/></t><br/>
+          <strong>Fecha:</strong> <span t-esc="doc.date"/> —
+          <strong>Tipo de pago:</strong> <t t-esc="{'a':'A (dinero)','b':'B (alimentos)'}.get(doc.payment_type, doc.payment_type)"/>
         </p>
-
         <table class="table table-sm o_main_table">
-          <thead>
-            <tr>
-              <th>Concepto</th>
-              <th>Cuenta de salida</th>
-              <th style="text-align:right;">Importe</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><span t-esc="doc.concept"/></td>
-              <td><span t-esc="doc.account_src_id.display_name"/></td>
-              <td style="text-align:right;"><span t-esc="formatLang(doc.amount, monetary=True, currency_obj=doc.currency_id)"/></td>
-            </tr>
-          </tbody>
+          <thead><tr><th>Concepto</th><th>Cuenta de salida</th><th style="text-align:right;">Importe</th></tr></thead>
+          <tbody><tr>
+            <td><span t-esc="doc.concept"/></td>
+            <td><span t-esc="doc.account_src_id.display_name"/></td>
+            <td style="text-align:right;"><span t-esc="formatLang(doc.amount, monetary=True, currency_obj=doc.currency_id)"/></td>
+          </tr></tbody>
         </table>
-
-        <p t-if="doc.narration">
-          <strong>Notas:</strong><br/>
-          <span t-esc="doc.narration"/>
-        </p>
-
         <div style="margin-top:40px; display:flex; justify-content:space-between;">
-          <div style="width:45%; text-align:center;">
-            <div style="border-top:1px solid #000; padding-top:8px;">Firma RRHH</div>
-            <div><t t-esc="doc.company_id.name"/></div>
-          </div>
-          <div style="width:45%; text-align:center;">
-            <div style="border-top:1px solid #000; padding-top:8px;">Firma del Empleado</div>
-            <div><t t-esc="doc.employee_id.name"/></div>
-          </div>
+          <div style="width:45%; text-align:center;"><div style="border-top:1px solid #000; padding-top:8px;">Firma RRHH</div></div>
+          <div style="width:45%; text-align:center;"><div style="border-top:1px solid #000; padding-top:8px;">Firma del Empleado</div></div>
         </div>
-
-        <p style="margin-top:12px; font-size:10px; color:#555;">
-          Este comprobante es emitido por RRHH solo a efectos informativos. La contabilidad
-          únicamente registra los asientos mensuales agregados correspondientes.
-        </p>
       </div>
     </t>
   </template>

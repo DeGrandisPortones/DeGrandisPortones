@@ -1,18 +1,17 @@
+
 <odoo>
-  <data noupdate="1">
-    <record id="seq_hr_employee_ledger_move" model="ir.sequence">
-      <field name="name">HR Employee Ledger</field>
-      <field name="code">hr.employee.ledger.move</field>
-      <field name="prefix">ELM/%(range_year)s/</field>
-      <field name="padding">5</field>
-      <field name="company_id" eval="False"/>
-    </record>
-    <record id="seq_hr_employee_ledger_batch" model="ir.sequence">
-      <field name="name">HR Employee Ledger Batch</field>
-      <field name="code">hr.employee.ledger.batch</field>
-      <field name="prefix">ELB/%(range_year)s/</field>
-      <field name="padding">5</field>
-      <field name="company_id" eval="False"/>
-    </record>
-  </data>
+  <record id="seq_hr_employee_ledger_move" model="ir.sequence">
+    <field name="name">RRHH Movimiento</field>
+    <field name="code">hr.employee.ledger.move</field>
+    <field name="prefix">HRM/%(y)s/</field>
+    <field name="padding">5</field>
+    <field name="company_id" eval="False"/>
+  </record>
+  <record id="seq_hr_employee_ledger_batch" model="ir.sequence">
+    <field name="name">RRHH Lote</field>
+    <field name="code">hr.employee.ledger.batch</field>
+    <field name="prefix">HRB/%(y)s/</field>
+    <field name="padding">5</field>
+    <field name="company_id" eval="False"/>
+  </record>
 </odoo>

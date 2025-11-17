@@ -20,8 +20,8 @@ class HrEmployeeLedgerBatchWizard(models.TransientModel):
     journal_id = fields.Many2one('account.journal', string='Diario', domain=[('type','in',('general','cash','bank'))])
     debit_account_id = fields.Many2one('account.account', string='Cuenta débito (Anticipos)', domain=[('deprecated','=',False)])
 
-    include_drafts = fields.Boolean(string='Incluir borradores', default=False, help="Si se marca, también se incluyen movimientos en borrador.")
-    confirm_drafts = fields.Boolean(string='Asentar borradores', default=True, help="Si se incluye borrador, los asienta automáticamente.")
+    include_drafts = fields.Boolean(string='Incluir borradores', default=False)
+    confirm_drafts = fields.Boolean(string='Asentar borradores', default=True)
     memo = fields.Char(string='Referencia', default='Cierre anticipos RRHH')
 
     total_moves = fields.Integer(string='Cantidad de movimientos', compute='_compute_totals', store=False)
@@ -36,7 +36,6 @@ class HrEmployeeLedgerBatchWizard(models.TransientModel):
         company = self.env.company
         if not res.get('journal_id') and company.employee_batch_journal_id:
             res['journal_id'] = company.employee_batch_journal_id.id
-        # default debit account from company according to type A
         if not res.get('debit_account_id') and company.employee_advance_account_a_id:
             res['debit_account_id'] = company.employee_advance_account_a_id.id
         return res
@@ -62,7 +61,6 @@ class HrEmployeeLedgerBatchWizard(models.TransientModel):
     def _load_preview(self):
         Move = self.env['hr.employee.ledger.move']
         moves = Move.search(self._domain_moves())
-        # group by account for credits
         acc_map = defaultdict(lambda: {'amount':0.0, 'count':0})
         emp_map = defaultdict(lambda: {'amount':0.0, 'count':0})
         for m in moves:
@@ -81,6 +79,11 @@ class HrEmployeeLedgerBatchWizard(models.TransientModel):
             w.total_amount = sum(l.amount for l in w.line_ids)
             w.total_moves = sum(l.count_moves for l in w.line_ids)
 
+    def action_load_preview(self):
+        self.ensure_one()
+        self._load_preview()
+        return False
+
     def action_generate(self):
         self.ensure_one()
         Move = self.env['hr.employee.ledger.move']
@@ -93,23 +96,18 @@ class HrEmployeeLedgerBatchWizard(models.TransientModel):
                 m.action_post()
 
         company = self.company_id
-        # Use the wizard-provided journal/account, fallback to company config
         journal = self.journal_id or company.employee_batch_journal_id
         if not journal:
             raise UserError(_("Seleccione el Diario."))
 
-        debit_account = self.debit_account_id
-        if not debit_account:
-            debit_account = company.employee_advance_account_a_id if self.payment_type == 'a' else company.employee_advance_account_b_id
+        debit_account = self.debit_account_id or (company.employee_advance_account_a_id if self.payment_type == 'a' else company.employee_advance_account_b_id)
         if not debit_account:
             raise UserError(_("Seleccione la Cuenta de anticipos para este tipo (%s).") % self.payment_type.upper())
 
-        # determine period from available moves
         dates = [m.date for m in moves if m.date]
         dfrom = min(dates) if dates else fields.Date.context_today(self)
         dto = max(dates) if dates else fields.Date.context_today(self)
 
-        # Build credit lines grouped by account
         acc_map = defaultdict(float)
         for m in moves:
             if m.account_src_id:
@@ -124,13 +122,12 @@ class HrEmployeeLedgerBatchWizard(models.TransientModel):
             'debit_account_id': debit_account.id,
             'memo': self.memo or _('Cierre anticipos RRHH'),
         }
-
         batch = self.env['hr.employee.ledger.batch'].create(batch_vals)
+
         credit_lines = [(0,0,{'account_id': acc_id, 'amount': amt, 'name': _('Salida de %s') % self.env['account.account'].browse(acc_id).name}) for acc_id, amt in acc_map.items() if amt]
         if credit_lines:
             batch.write({'credit_line_ids': credit_lines})
 
-        # Fill employee summary
         emp_map = defaultdict(lambda: {'amount':0.0, 'count':0})
         for m in moves:
             emp_map[m.employee_id.id]['amount'] += (m.amount or 0.0)
@@ -139,7 +136,6 @@ class HrEmployeeLedgerBatchWizard(models.TransientModel):
         if emp_lines:
             batch.write({'employee_line_ids': emp_lines})
 
-        # Link moves
         moves.write({'batch_id': batch.id})
 
         action = self.env.ref('hr_employee_ledger.action_hr_employee_ledger_batch').read()[0]
@@ -165,9 +161,3 @@ class HrEmployeeLedgerBatchWizardEmployeeLine(models.TransientModel):
     count_moves = fields.Integer(string='Movimientos')
     amount = fields.Monetary(string='Importe', currency_field='currency_id')
     currency_id = fields.Many2one(related='wizard_id.currency_id', store=True, readonly=True)
-
-
-def action_load_preview(self):
-    self.ensure_one()
-    self._load_preview()
-    return False

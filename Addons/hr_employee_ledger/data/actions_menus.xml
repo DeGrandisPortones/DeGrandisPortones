@@ -1,0 +1,25 @@
+
+<odoo>
+  <record id="action_hr_employee_ledger_move" model="ir.actions.act_window">
+    <field name="name">Cuentas Corrientes de Empleados</field>
+    <field name="res_model">hr.employee.ledger.move</field>
+    <field name="view_mode">list,form,pivot,graph</field>
+  </record>
+
+  <record id="action_hr_employee_ledger_batch" model="ir.actions.act_window">
+    <field name="name">Lotes de cierre</field>
+    <field name="res_model">hr.employee.ledger.batch</field>
+    <field name="view_mode">list,form</field>
+  </record>
+
+  <record id="action_hr_employee_ledger_batch_wizard" model="ir.actions.act_window">
+    <field name="name">Cierre mensual (A/B)</field>
+    <field name="res_model">hr.employee.ledger.batch.wizard</field>
+    <field name="view_mode">form</field>
+    <field name="target">new</field>
+  </record>
+
+  <menuitem id="menu_hr_employee_ledger_root" name="Cuentas Corrientes" parent="hr.menu_hr_root" sequence="60"/>
+  <menuitem id="menu_hr_employee_ledger_moves" name="Movimientos" parent="menu_hr_employee_ledger_root" action="action_hr_employee_ledger_move" sequence="10"/>
+  <menuitem id="menu_hr_employee_ledger_batch_wizard" name="Cierre mensual (A/B)" parent="menu_hr_employee_ledger_root" action="action_hr_employee_ledger_batch_wizard" sequence="12"/>
+</odoo>
