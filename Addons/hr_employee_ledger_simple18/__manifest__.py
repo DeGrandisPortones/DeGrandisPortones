@@ -1,12 +1,13 @@
-
+# -*- coding: utf-8 -*-
 {
     "name": "HR Employee Ledger (A/B)",
     "version": "18.0.1.0.0",
-    "summary": "Adelantos a empleados tipo A (dinero) y tipo B (alimentos). Cuenta corriente por empleado y recibo.",
+    "summary": "Cuenta corriente de empleados con anticipos de sueldos Tipo A (dinero) y Tipo B (alimentos)",
     "category": "Human Resources",
     "author": "Dflex Argentina SAS",
-    "license": "LGPL-3",
-    "depends": ["hr", "base"],
+    "website": "https://example.com",
+    "license": "OPL-1",
+    "depends": ["hr", "web"],
     "data": [
         "security/ir.model.access.csv",
         "data/sequence.xml",
@@ -16,5 +17,5 @@
         "views/menu.xml"
     ],
     "installable": True,
-    "application": False
+    "application": False,
 }

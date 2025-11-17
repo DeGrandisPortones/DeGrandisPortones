@@ -1,5 +1,5 @@
-
+<?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <menuitem id="menu_hr_employee_ledger_root" name="Cuenta Corriente Empleados" parent="hr.menu_hr_root" sequence="95"/>
-    <menuitem id="menu_hr_employee_ledger_moves" name="Movimientos" parent="menu_hr_employee_ledger_root" action="hr_employee_ledger_simple18.action_employee_ledger_moves"/>
+    <menuitem id="menu_hr_employee_ledger_root" name="Cuenta Corriente" parent="hr.menu_hr_root" sequence="60"/>
+    <menuitem id="menu_hr_employee_ledger_moves" name="Movimientos" parent="menu_hr_employee_ledger_root" action="action_employee_ledger_moves" sequence="1"/>
 </odoo>
