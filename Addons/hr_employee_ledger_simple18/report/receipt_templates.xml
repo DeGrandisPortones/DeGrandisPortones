@@ -1,32 +1,21 @@
-
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <template id="report_employee_ledger_move_receipt">
         <t t-call="web.external_layout">
             <div class="page">
-                <h2>Recibo de Anticipo</h2>
-                <p><strong>Número:</strong> <t t-esc="o.name"/></p>
-                <p><strong>Fecha:</strong> <t t-esc="o.date"/></p>
+                <h2 style="text-align:center">Recibo de Anticipo</h2>
+                <p><strong>Empresa:</strong> <t t-esc="o.employee_id.company_id.name"/></p>
                 <p><strong>Empleado:</strong> <t t-esc="o.employee_id.name"/></p>
-                <p><strong>Tipo:</strong> <t t-esc="{'a': 'Tipo A (Dinero)', 'b': 'Tipo B (Alimentos)'}[o.type]"/></p>
-                <p><strong>Dirección:</strong> <t t-esc="{'in': 'Ingreso', 'out': 'Egreso'}[o.direction]"/></p>
-                <p><strong>Importe:</strong> <span t-esc="format_amount(o.amount, o.currency_id)"/></p>
-                <p><strong>Concepto:</strong></p>
-                <p t-esc="o.concept"/>
-                <br/>
-                <div style="margin-top:60px;">
-                    <table style="width:100%;">
-                        <tr>
-                            <td style="width:50%; text-align:center;">
-                                ___________________________<br/>
-                                Firma del Empleado
-                            </td>
-                            <td style="width:50%; text-align:center;">
-                                ___________________________<br/>
-                                Autorización
-                            </td>
-                        </tr>
-                    </table>
+                <p><strong>Fecha:</strong> <t t-esc="o.date"/></p>
+                <p><strong>Número:</strong> <t t-esc="o.name"/></p>
+                <p><strong>Tipo:</strong> <t t-esc="dict(o._fields['type'].selection).get(o.type)"/></p>
+                <p><strong>Dirección:</strong> <t t-esc="dict(o._fields['direction'].selection).get(o.direction)"/></p>
+                <p><strong>Concepto:</strong> <t t-esc="o.concept"/></p>
+                <p><strong>Importe:</strong> <t t-esc="formatLang(o.amount, currency_obj=o.currency_id)"/></p>
+
+                <div style="margin-top:40px">
+                    <p>______________________________</p>
+                    <p>Firma del Empleado</p>
                 </div>
             </div>
         </t>

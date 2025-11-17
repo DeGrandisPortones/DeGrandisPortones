@@ -1,12 +1,12 @@
-
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <record id="employee_ledger_move_receipt_action" model="ir.actions.report">
-        <field name="name">Recibo de Anticipo</field>
-        <field name="model">hr.employee.ledger.move</field>
-        <field name="report_type">qweb-pdf</field>
-        <field name="report_name">hr_employee_ledger_simple18.report_employee_ledger_move_receipt</field>
-        <field name="paperformat_id" ref="base.paperformat_a4"/>
-        <field name="print_report_name">'Recibo - ' + (object.name or '')</field>
-    </record>
+    <report
+        id="employee_ledger_move_receipt_action"
+        model="hr.employee.ledger.move"
+        string="Recibo de Anticipo"
+        report_type="qweb-pdf"
+        name="hr_employee_ledger_simple18.report_employee_ledger_move_receipt"
+        file="hr_employee_ledger_simple18.report_employee_ledger_move_receipt"
+        print_report_name="'Recibo - %s' % (object.name)"
+    />
 </odoo>
