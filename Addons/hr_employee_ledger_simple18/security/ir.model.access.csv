@@ -1,2 +1,2 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-hr_employee_ledger_access_move_user,hr_employee_ledger_access_move_user,model_hr_employee_ledger_move,base.group_user,1,1,1,1
+access_hr_employee_ledger_move_user,access_hr_employee_ledger_move_user,hr_employee_ledger_simple18.model_hr_employee_ledger_move,base.group_user,1,1,1,1
