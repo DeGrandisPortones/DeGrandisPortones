@@ -1,21 +1,20 @@
-# -*- coding: utf-8 -*-
 {
-    "name": "HR Employee Ledger (A/B)",
-    "version": "18.0.1.0.0",
-    "summary": "Cuenta corriente de empleados con anticipos de sueldos Tipo A (dinero) y Tipo B (alimentos)",
-    "category": "Human Resources",
-    "author": "Dflex Argentina SAS",
-    "website": "https://example.com",
-    "license": "OPL-1",
-    "depends": ["hr", "web"],
-    "data": [
-        "security/ir.model.access.csv",
-        "data/sequence.xml",
-        "views/employee_ledger_views.xml",
-        "report/receipt_templates.xml",
-        "report/report_actions.xml",
-        "views/menu.xml"
+    'name': 'HR Employee Ledger (A/B)',
+    'version': '18.0.1.0.0',
+    'summary': 'Anticipos de sueldos (dinero/alimentos) con cuenta corriente por empleado y recibo impreso.',
+    'category': 'Human Resources',
+    'license': 'LGPL-3',
+    'author': 'Dflex Argentina SAS',
+    'depends': ['hr'],
+    'data': [
+        'security/ir.model.access.csv',
+        'data/sequence.xml',
+        'views/menu.xml',
+        'views/employee_ledger_views.xml',
+        'report/report_actions.xml',
+        'report/receipt_templates.xml'
     ],
-    "installable": True,
-    "application": False,
+    'assets': {},
+    'installable': True,
+    'application': False
 }

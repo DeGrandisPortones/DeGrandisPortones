@@ -1,43 +1,34 @@
-<?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <template id="employee_ledger_move_receipt">
         <t t-call="web.external_layout">
-            <t t-set="company" t-value="res_company"/>
             <div class="page">
-                <t t-foreach="docs" t-as="o">
-                    <h2 style="text-align:center;">Recibo de anticipo</h2>
-                    <p><strong>Empresa:</strong> <span t-esc="company.name"/></p>
-                    <p><strong>Fecha:</strong> <span t-esc="o.date"/></p>
-                    <p><strong>Número:</strong> <span t-esc="o.name"/></p>
-                    <p><strong>Empleado:</strong> <span t-esc="o.employee_id.name"/></p>
-                    <p><strong>Tipo:</strong>
-                        <span t-esc="dict(o._fields['type'].selection).get(o.type)"/>
-                    </p>
-                    <p><strong>Dirección:</strong>
-                        <span t-esc="dict(o._fields['direction'].selection).get(o.direction)"/>
-                    </p>
-                    <p><strong>Importe:</strong>
-                        <span t-esc="o.amount"/> <span t-esc="o.currency_id.symbol"/>
-                    </p>
-                    <p><strong>Concepto:</strong></p>
-                    <p t-esc="o.concept or ''"/>
-                    <br/><br/>
-                    <div style="margin-top:80px;">
-                        <table style="width:100%;">
-                            <tr>
-                                <td style="width:50%; text-align:center;">
-                                    _________________________________<br/>
-                                    Firma del empleado
-                                </td>
-                                <td style="width:50%; text-align:center;">
-                                    _________________________________<br/>
-                                    Aclaración DNI
-                                </td>
-                            </tr>
-                        </table>
-                    </div>
-                    <div style="page-break-after:always;"></div>
-                </t>
+                <h2>Recibo de adelanto</h2>
+                <p><strong>Empresa:</strong> <span t-esc="o.company_id.name"/></p>
+                <p><strong>Fecha:</strong> <span t-esc="o.date"/></p>
+                <p><strong>Número:</strong> <span t-esc="o.name"/></p>
+                <p><strong>Empleado:</strong> <span t-esc="o.employee_id.name"/></p>
+                <p><strong>Tipo:</strong> 
+                    <t t-if="o.type == 'a'">Anticipo dinero (A)</t>
+                    <t t-if="o.type == 'b'">Anticipo alimentos (B)</t>
+                </p>
+                <p><strong>Dirección:</strong>
+                    <t t-if="o.direction == 'debit'">Debe (paga empresa)</t>
+                    <t t-if="o.direction == 'credit'">Haber (devuelve empleado)</t>
+                </p>
+                <p><strong>Importe:</strong> <span t-esc="formatLang(o.amount, currency_obj=o.currency_id)"/></p>
+                <p><strong>Concepto:</strong></p>
+                <p t-esc="o.concept"/>
+                <br/><br/>
+                <table class="table table-sm" style="width:100%;margin-top:48px;">
+                    <tr>
+                        <td style="width:50%;text-align:center;">
+                            _______________________________<br/>Firma Empleado
+                        </td>
+                        <td style="width:50%;text-align:center;">
+                            _______________________________<br/>Firma Empresa
+                        </td>
+                    </tr>
+                </table>
             </div>
         </t>
     </template>
