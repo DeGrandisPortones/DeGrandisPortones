@@ -1,47 +1,24 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <odoo>
-    <!-- Search -->
-    <record id="view_hr_employee_ledger_move_search" model="ir.ui.view">
-        <field name="name">hr.employee.ledger.move.search</field>
-        <field name="model">hr.employee.ledger.move</field>
-        <field name="arch" type="xml">
-            <search string="Buscar movimientos">
-                <field name="name"/>
-                <field name="employee_id"/>
-                <field name="move_kind"/>
-                <field name="direction"/>
-                <filter string="Tipo A" name="flt_a" domain="[('move_kind','=','a')]"/>
-                <filter string="Tipo B" name="flt_b" domain="[('move_kind','=','b')]"/>
-                <filter string="Anticipos (+)" name="flt_adv" domain="[('direction','=','advance')]"/>
-                <filter string="Descuentos (-)" name="flt_ded" domain="[('direction','=','deduction')]"/>
-                <group expand="0" string="Agrupar por">
-                    <filter string="Empleado" context="{'group_by':'employee_id'}"/>
-                    <filter string="Tipo" context="{'group_by':'move_kind'}"/>
-                    <filter string="Dirección" context="{'group_by':'direction'}"/>
-                    <filter string="Fecha" context="{'group_by':'date'}"/>
-                </group>
-            </search>
-        </field>
-    </record>
+    <!-- Menú principal -->
+    <menuitem id="menu_hr_employee_ledger_root" name="Ctas Ctes Empleados" parent="hr.menu_hr_root" sequence="50"/>
 
-    <!-- List -->
+    <!-- Acción y vistas de Movimientos -->
     <record id="view_hr_employee_ledger_move_list" model="ir.ui.view">
         <field name="name">hr.employee.ledger.move.list</field>
         <field name="model">hr.employee.ledger.move</field>
         <field name="arch" type="xml">
             <list string="Movimientos">
-                <field name="name"/>
+                <field name="name" readonly="1"/>
                 <field name="date"/>
                 <field name="employee_id"/>
-                <field name="move_kind"/>
+                <field name="type"/>
                 <field name="direction"/>
+                <field name="amount" sum="1"/>
                 <field name="concept"/>
-                <field name="amount"/>
             </list>
         </field>
     </record>
 
-    <!-- Form -->
     <record id="view_hr_employee_ledger_move_form" model="ir.ui.view">
         <field name="name">hr.employee.ledger.move.form</field>
         <field name="model">hr.employee.ledger.move</field>
@@ -52,27 +29,92 @@
                         <group>
                             <field name="name" readonly="1"/>
                             <field name="date"/>
-                            <field name="employee_id" options="{'no_open': True}"/>
-                            <field name="move_kind"/>
+                            <field name="employee_id" options="{'no_create_edit': False}"/>
+                            <field name="type"/>
                             <field name="direction"/>
                         </group>
                         <group>
-                            <field name="concept"/>
-                            <field name="amount"/>
                             <field name="company_id" readonly="1"/>
                             <field name="currency_id" readonly="1"/>
+                            <field name="amount"/>
+                            <field name="concept"/>
                         </group>
                     </group>
                     <group>
-                        <field name="note" placeholder="Notas internas..."/>
+                        <field name="note"/>
                     </group>
                 </sheet>
-                <header>
-                    <button name="%(report_employee_advance_receipt)d" string="Imprimir recibo" type="action" class="btn-primary"/>
-                </header>
             </form>
         </field>
     </record>
 
-    <!-- Tree (by employee) via Employees list is handled in employee view -->
+    <record id="view_hr_employee_ledger_move_search" model="ir.ui.view">
+        <field name="name">hr.employee.ledger.move.search</field>
+        <field name="model">hr.employee.ledger.move</field>
+        <field name="arch" type="xml">
+            <search string="Buscar movimientos">
+                <field name="name"/>
+                <field name="employee_id"/>
+                <field name="date"/>
+                <filter name="type_a" string="Tipo A (Dinero)" domain="[('type','=','a')]"/>
+                <filter name="type_b" string="Tipo B (Alimentos)" domain="[('type','=','b')]"/>
+                <filter name="debit" string="Cargos (+)" domain="[('direction','=','debit')]"/>
+                <filter name="credit" string="Abonos (–)" domain="[('direction','=','credit')]"/>
+                <group string="Agrupar por">
+                    <filter name="g_employee" string="Empleado" context="{'group_by':'employee_id'}"/>
+                    <filter name="g_type" string="Tipo A/B" context="{'group_by':'type'}"/>
+                    <filter name="g_month" string="Mes" context="{'group_by':'date:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_hr_employee_ledger_moves" model="ir.actions.act_window">
+        <field name="name">Movimientos</field>
+        <field name="res_model">hr.employee.ledger.move</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_hr_employee_ledger_move_search"/>
+    </record>
+
+    <menuitem id="menu_hr_employee_ledger_moves" name="Movimientos" parent="menu_hr_employee_ledger_root"
+              action="action_hr_employee_ledger_moves" sequence="10"/>
+
+    <!-- Resumen por Empleado (lista propia de hr.employee) -->
+    <record id="view_hr_employee_ledger_employee_list" model="ir.ui.view">
+        <field name="name">hr.employee.ledger.employee.list</field>
+        <field name="model">hr.employee</field>
+        <field name="arch" type="xml">
+            <list string="Resumen por Empleado">
+                <field name="name"/>
+                <field name="work_email"/>
+                <field name="work_phone"/>
+                <field name="ledger_balance" sum="1"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_hr_employee_ledger_employee_search" model="ir.ui.view">
+        <field name="name">hr.employee.ledger.employee.search</field>
+        <field name="model">hr.employee</field>
+        <field name="arch" type="xml">
+            <search string="Buscar empleados">
+                <field name="name"/>
+                <group string="Agrupar por">
+                    <filter name="g_department" string="Departamento" context="{'group_by':'department_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_hr_employee_ledger_summary" model="ir.actions.act_window">
+        <field name="name">Resumen por Empleado</field>
+        <field name="res_model">hr.employee</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="view_hr_employee_ledger_employee_list"/>
+        <field name="search_view_id" ref="view_hr_employee_ledger_employee_search"/>
+        <field name="context">{}</field>
+    </record>
+
+    <menuitem id="menu_hr_employee_ledger_summary" name="Resumen por Empleado"
+              parent="menu_hr_employee_ledger_root" action="action_hr_employee_ledger_summary" sequence="20"/>
 </odoo>

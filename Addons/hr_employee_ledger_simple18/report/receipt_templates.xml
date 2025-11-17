@@ -1,0 +1,27 @@
+<odoo>
+    <template id="report_employee_ledger_receipt">
+        <t t-call="web.html_container">
+            <t t-call="web.internal_layout">
+                <div class="page">
+                    <h2 style="text-align:center;">Recibo de Anticipo</h2>
+                    <t t-foreach="docs" t-as="o">
+                        <div style="margin-top: 12px;">
+                            <p><strong>Empresa:</strong> <span t-esc="o.company_id.name"/></p>
+                            <p><strong>Empleado:</strong> <span t-esc="o.employee_id.name"/></p>
+                            <p><strong>Fecha:</strong> <span t-esc="o.date"/></p>
+                            <p><strong>Número:</strong> <span t-esc="o.name"/></p>
+                            <p><strong>Tipo:</strong> <span t-esc="dict([('a','Tipo A (Dinero)'), ('b','Tipo B (Alimentos)')]).get(o.type)"/></p>
+                            <p><strong>Dirección:</strong> <span t-esc="dict([('debit','Cargo (+)'), ('credit','Abono (–)')]).get(o.direction)"/></p>
+                            <p><strong>Concepto:</strong> <span t-esc="o.concept or ''"/></p>
+                            <p><strong>Importe:</strong> <span t-esc="o.amount"/> <span t-esc="o.currency_id.symbol"/></p>
+                            <div style="margin-top:40px;">
+                                <p>______________________________</p>
+                                <p>Firma del empleado</p>
+                            </div>
+                        </div>
+                    </t>
+                </div>
+            </t>
+        </t>
+    </template>
+</odoo>
