@@ -1,13 +1,9 @@
 <odoo>
-    <data>
-        <report
-            id="action_report_employee_move_receipt"
-            string="Recibo de anticipo"
+    <report id="action_employee_ledger_receipt"
             model="hr.employee.ledger.move"
+            string="Recibo de movimiento"
             report_type="qweb-pdf"
-            name="hr_employee_ledger_simple18.report_employee_move_receipt"
-            file="hr_employee_ledger_simple18.report_employee_move_receipt"
-            print_report_name="'Recibo_' + (object.name or 'anticipo')"
-        />
-    </data>
+            name="hr_employee_ledger_simple18.report_employee_ledger_receipt"
+            file="hr_employee_ledger_simple18.report_employee_ledger_receipt"
+            print_report_name="'Recibo - %s' % (object.name)"/>
 </odoo>
