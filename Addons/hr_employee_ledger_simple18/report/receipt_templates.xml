@@ -1,27 +1,30 @@
 <odoo>
-    <template id="report_employee_ledger_receipt">
-        <t t-call="web.html_container">
-            <t t-call="web.internal_layout">
-                <div class="page">
-                    <h2 style="text-align:center;">Recibo de Anticipo</h2>
-                    <t t-foreach="docs" t-as="o">
-                        <div style="margin-top: 12px;">
-                            <p><strong>Empresa:</strong> <span t-esc="o.company_id.name"/></p>
-                            <p><strong>Empleado:</strong> <span t-esc="o.employee_id.name"/></p>
-                            <p><strong>Fecha:</strong> <span t-esc="o.date"/></p>
-                            <p><strong>Número:</strong> <span t-esc="o.name"/></p>
-                            <p><strong>Tipo:</strong> <span t-esc="dict([('a','Tipo A (Dinero)'), ('b','Tipo B (Alimentos)')]).get(o.type)"/></p>
-                            <p><strong>Dirección:</strong> <span t-esc="dict([('debit','Cargo (+)'), ('credit','Abono (–)')]).get(o.direction)"/></p>
-                            <p><strong>Concepto:</strong> <span t-esc="o.concept or ''"/></p>
-                            <p><strong>Importe:</strong> <span t-esc="o.amount"/> <span t-esc="o.currency_id.symbol"/></p>
-                            <div style="margin-top:40px;">
-                                <p>______________________________</p>
-                                <p>Firma del empleado</p>
-                            </div>
-                        </div>
-                    </t>
+    <template id="report_employee_move_receipt">
+        <t t-call="web.external_layout">
+            <div class="page">
+                <h2 style="text-align:center">RECIBO DE ANTICIPO</h2>
+                <p><strong>Empresa:</strong> <span t-esc="company.name"/></p>
+                <p><strong>Fecha:</strong> <span t-esc="format_date(doc.date)"/></p>
+                <p><strong>Número:</strong> <span t-esc="doc.name"/></p>
+                <p><strong>Empleado:</strong> <span t-esc="doc.employee_id.name"/></p>
+                <p><strong>Tipo:</strong> <span t-esc="dict(A='Anticipo de dinero (A)', B='Alimentos (B)')[doc.move_type]"/></p>
+                <p><strong>Dirección:</strong> <span t-esc="dict(out='Pago al empleado', in_='Devolución/Descuento').get(doc.direction, doc.direction)"/></p>
+                <p><strong>Concepto:</strong> <span t-esc="doc.concept"/></p>
+                <p><strong>Importe:</strong> <span t-esc="format_amount(doc.amount, doc.currency_id)"/></p>
+
+                <p style="margin-top:20px;"><em>El empleado declara haber recibido lo indicado o adeudar según corresponda.</em></p>
+
+                <div style="display:flex;justify-content:space-between;margin-top:60px;">
+                    <div style="width:45%;text-align:center;">
+                        <div style="border-top:1px solid #000;padding-top:4px;">Firma Empleado</div>
+                        <div><span t-esc="doc.employee_id.name"/></div>
+                    </div>
+                    <div style="width:45%;text-align:center;">
+                        <div style="border-top:1px solid #000;padding-top:4px;">Firma RRHH</div>
+                        <div><span t-esc="company.name"/></div>
+                    </div>
                 </div>
-            </t>
+            </div>
         </t>
     </template>
 </odoo>
