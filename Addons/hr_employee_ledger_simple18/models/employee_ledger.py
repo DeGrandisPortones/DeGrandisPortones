@@ -1,72 +1,66 @@
-# -*- coding: utf-8 -*-
-from odoo import api, fields, models, _
+from odoo import models, fields, api, _
 
 class HREmployee(models.Model):
-    _inherit = "hr.employee"
+    _inherit = 'hr.employee'
 
     ledger_move_ids = fields.One2many(
-        "hr.employee.ledger.move", "employee_id", string="Movimientos CC"
+        'hr.employee.ledger.move', 'employee_id', string='Movimientos CC'
     )
     ledger_move_count = fields.Integer(
-        compute="_compute_ledger_counts", string="Nº Movs", store=False
+        compute='_compute_ledger_counters', string='Movs CC'
     )
     ledger_balance = fields.Monetary(
-        compute="_compute_ledger_balance", currency_field="ledger_currency_id", string="Saldo CC", store=False
+        compute='_compute_ledger_counters', string='Saldo CC',
+        currency_field='ledger_currency_id'
     )
     ledger_currency_id = fields.Many2one(
-        "res.currency", related="company_id.currency_id", readonly=True
+        'res.currency', compute='_compute_ledger_currency', string='Moneda', readonly=True
     )
 
-    def _compute_ledger_counts(self):
-        for emp in self:
-            emp.ledger_move_count = len(emp.ledger_move_ids)
+    def _compute_ledger_currency(self):
+        for rec in self:
+            rec.ledger_currency_id = (rec.company_id or self.env.company).currency_id
 
-    def _compute_ledger_balance(self):
-        for emp in self:
+    def _compute_ledger_counters(self):
+        for rec in self:
+            moves = rec.ledger_move_ids
+            rec.ledger_move_count = len(moves)
             balance = 0.0
-            for m in emp.ledger_move_ids:
-                sign = 1 if m.direction == "in" else -1
+            for m in moves:
+                sign = 1.0 if m.direction == 'out' else -1.0
                 balance += sign * (m.amount or 0.0)
-            emp.ledger_balance = balance
+            rec.ledger_balance = balance
+
+    def action_hr_employee_ledger_moves(self):
+        self.ensure_one()
+        action = self.env.ref('hr_employee_ledger_simple18.action_hr_employee_ledger_moves').read()[0]
+        action['domain'] = [('employee_id', '=', self.id)]
+        action['context'] = {'default_employee_id': self.id}
+        return action
 
 
-class HREmployeeLedgerMove(models.Model):
-    _name = "hr.employee.ledger.move"
-    _description = "Employee Ledger Move"
-    _order = "date desc, id desc"
+class EmployeeLedgerMove(models.Model):
+    _name = 'hr.employee.ledger.move'
+    _description = 'Movimiento Cuenta Corriente Empleado'
+    _order = 'date desc, id desc'
 
-    name = fields.Char(string="Número", default="New", copy=False, readonly=True)
-    employee_id = fields.Many2one("hr.employee", string="Empleado", required=True, ondelete="cascade")
-    date = fields.Date(string="Fecha", required=True, default=fields.Date.context_today)
-    type = fields.Selection(
-        selection=[("a", "A - Dinero"), ("b", "B - Alimentos")], string="Tipo", required=True, default="a"
-    )
-    direction = fields.Selection(
-        selection=[("in", "Pago al empleado"), ("out", "Descuento / Devolución")],
-        string="Dirección",
-        required=True,
-        default="in",
-    )
-    concept = fields.Char(string="Concepto", required=True)
-    amount = fields.Monetary(string="Importe", required=True, currency_field="currency_id")
-    currency_id = fields.Many2one(
-        "res.currency", string="Moneda", related="employee_id.company_id.currency_id", store=True, readonly=True
-    )
-    company_id = fields.Many2one(related="employee_id.company_id", store=True, readonly=True)
+    name = fields.Char(string='Referencia', default='New', copy=False)
+    employee_id = fields.Many2one('hr.employee', string='Empleado', required=True, ondelete='cascade')
+    date = fields.Date(string='Fecha', default=fields.Date.context_today, required=True)
+    type = fields.Selection([('money', 'Dinero'), ('food', 'Alimentos')], string='Tipo', required=True, default='money')
+    direction = fields.Selection([('out', 'Entrega al empleado'), ('in', 'Descuento/Devolución')], string='Movimiento', required=True, default='out')
+    concept = fields.Char(string='Concepto')
+    amount = fields.Monetary(string='Importe', required=True)
+    currency_id = fields.Many2one('res.currency', related='employee_id.company_id.currency_id', store=False, readonly=True)
+
+    def action_print_receipt(self):
+        self.ensure_one()
+        return self.env.ref('hr_employee_ledger_simple18.action_employee_ledger_move_receipt').report_action(self)
 
     @api.model_create_multi
     def create(self, vals_list):
-        seq = self.env.ref("hr_employee_ledger_simple18.seq_employee_ledger_move", raise_if_not_found=False)
+        IrSeq = self.env['ir.sequence']
         for vals in vals_list:
-            if vals.get("name", "New") == "New":
-                if seq:
-                    vals["name"] = self.env["ir.sequence"].next_by_code("hr.employee.ledger.move") or _("New")
-                else:
-                    vals["name"] = _("New")
+            if not vals.get('name') or vals.get('name') in ('New', '/', False):
+                vals['name'] = IrSeq.next_by_code('hr.employee.ledger.move') or _('New')
         return super().create(vals_list)
-
-    def action_view_employee_moves(self):
-        self.ensure_one()
-        action = self.env.ref("hr_employee_ledger_simple18.action_hr_employee_ledger_moves").read()[0]
-        action["domain"] = [("employee_id", "=", self.employee_id.id)]
-        return action

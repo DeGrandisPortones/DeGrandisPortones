@@ -1,17 +1,21 @@
 {
-    "name": "HR Employee Ledger (A/B)",
-    "version": "18.0.1.2.0",
-    "summary": "Adelantos y cuenta corriente por empleado (Tipo A/B) con recibo PDF",
-    "category": "Human Resources/Employees",
-    "depends": ["hr"],
-    "data": [
-        "security/ir.model.access.csv",
-        "data/sequence.xml",
-        "views/employee_ledger_views.xml",
-        "report/report_actions.xml",
-        "report/receipt_templates.xml"
+    'name': 'HR Employee Ledger (A/B)',
+    'version': '18.0.1.0.1',
+    'summary': 'Anticipos y cuenta corriente por empleado (Tipos A: Dinero, B: Alimentos)',
+    'description': 'Gestión simple de anticipos de sueldos y cuenta corriente por empleado. Incluye recibo PDF.',
+    'author': 'Esteban / Dflex Argentina',
+    'website': 'https://dflex.com.ar',
+    'license': 'LGPL-3',
+    'depends': ['base', 'hr'],
+    'data': [
+        'security/ir.model.access.csv',
+        'data/sequence.xml',
+        'views/menu.xml',
+        'views/employee_ledger_views.xml',
+        'report/receipt_templates.xml',
+        'report/report_actions.xml'
     ],
-    "installable": true,
-    "application": false,
-    "license": "LGPL-3"
+    'installable': True,
+    'application': True,
+    'auto_install': False,
 }

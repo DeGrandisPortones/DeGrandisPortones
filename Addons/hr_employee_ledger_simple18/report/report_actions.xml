@@ -1,11 +1,11 @@
 <odoo>
-    <report
-        id="action_hr_employee_ledger_receipt"
-        model="hr.employee.ledger.move"
-        string="Recibo de Movimiento"
-        report_type="qweb-pdf"
-        name="hr_employee_ledger_simple18.receipt_template"
-        file="hr_employee_ledger_simple18.receipt_template"
-        print_report_name="'Recibo - %s' % (object.name)"
-    />
+  <data>
+    <record id="action_employee_ledger_move_receipt" model="ir.actions.report">
+      <field name="name">Recibo de Movimiento</field>
+      <field name="model">hr.employee.ledger.move</field>
+      <field name="report_type">qweb-pdf</field>
+      <field name="report_name">hr_employee_ledger_simple18.report_employee_ledger_move_receipt</field>
+      <field name="print_report_name">'Recibo_%s' % (object.name)</field>
+    </record>
+  </data>
 </odoo>
