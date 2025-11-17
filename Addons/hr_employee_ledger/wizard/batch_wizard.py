@@ -165,3 +165,9 @@ class HrEmployeeLedgerBatchWizardEmployeeLine(models.TransientModel):
     count_moves = fields.Integer(string='Movimientos')
     amount = fields.Monetary(string='Importe', currency_field='currency_id')
     currency_id = fields.Many2one(related='wizard_id.currency_id', store=True, readonly=True)
+
+
+def action_load_preview(self):
+    self.ensure_one()
+    self._load_preview()
+    return False

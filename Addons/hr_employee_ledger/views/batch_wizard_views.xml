@@ -41,7 +41,7 @@
           </page>
         </notebook>
         <footer>
-          <button name="_load_preview" type="object" string="Actualizar" class="btn-secondary"/>
+          <button name="action_load_preview" type="object" string="Actualizar" class="btn-secondary"/>
           <button name="action_generate" type="object" string="Generar lote" class="btn-primary"/>
           <button string="Cerrar" special="cancel" class="btn-secondary"/>
         </footer>
