@@ -1,26 +1,34 @@
+
 <odoo>
-    <template id="report_employee_ledger_move_receipt">
+    <template id="employee_ledger_move_receipt_document">
         <t t-call="web.external_layout">
             <div class="page">
-                <h2 style="text-align:center;">Recibo de Movimiento</h2>
-                <p><strong>Empresa:</strong> <span t-esc="o.company_id.name"/></p>
-                <p><strong>Empleado:</strong> <span t-esc="o.employee_id.name"/></p>
-                <p><strong>Número:</strong> <span t-esc="o.name"/></p>
-                <p><strong>Fecha:</strong> <span t-esc="o.date"/></p>
-                <p><strong>Tipo:</strong> <span t-esc="dict(o._fields['type'].selection).get(o.type)"/></p>
-                <p><strong>Movimiento:</strong> <span t-esc="dict(o._fields['direction'].selection).get(o.direction)"/></p>
-                <p><strong>Concepto:</strong> <span t-esc="o.concept or ''"/></p>
-                <p><strong>Importe:</strong> <span t-esc="o.amount"/> <span t-esc="o.currency_id.symbol"/></p>
-
-                <br/><br/>
-                <div style="display:flex; gap:60px;">
-                    <div style="flex:1; text-align:center;">
-                        <div style="border-top:1px solid #000; margin-top:60px; padding-top:6px;">Firma del Empleado</div>
+                <t t-foreach="docs" t-as="o">
+                    <h2>Recibo de Movimiento</h2>
+                    <p><strong>Número:</strong> <span t-esc="o.name"/></p>
+                    <p><strong>Fecha:</strong> <span t-esc="format_date(o.date)"/></p>
+                    <p><strong>Empleado:</strong> <span t-esc="o.employee_id.name"/></p>
+                    <p><strong>Tipo:</strong> <span t-esc="o.type_label"/></p>
+                    <p><strong>Movimiento:</strong> <span t-esc="o.direction_label"/></p>
+                    <p><strong>Concepto:</strong> <span t-esc="o.concept or ''"/></p>
+                    <p><strong>Importe:</strong> <span t-esc="format_amount(o.amount, o.currency_id)"/></p>
+                    <br/>
+                    <div style="margin-top:50px;">
+                        <table style="width:100%;">
+                            <tr>
+                                <td style="width:50%; text-align:center;">
+                                    ___________________________<br/>
+                                    Firma del Empleado
+                                </td>
+                                <td style="width:50%; text-align:center;">
+                                    ___________________________<br/>
+                                    Aclaración / DNI
+                                </td>
+                            </tr>
+                        </table>
                     </div>
-                    <div style="flex:1; text-align:center;">
-                        <div style="border-top:1px solid #000; margin-top:60px; padding-top:6px;">Firma y Sello</div>
-                    </div>
-                </div>
+                    <div style="page-break-after: always;"/>
+                </t>
             </div>
         </t>
     </template>

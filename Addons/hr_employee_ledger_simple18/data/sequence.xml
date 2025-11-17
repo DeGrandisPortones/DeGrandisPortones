@@ -1,10 +1,10 @@
+
 <odoo>
-    <record id="seq_hr_employee_ledger_move" model="ir.sequence">
-        <field name="name">Employee Ledger Move</field>
+    <record id="seq_employee_ledger_move" model="ir.sequence">
+        <field name="name">Empleado Movimiento</field>
         <field name="code">hr.employee.ledger.move</field>
-        <field name="prefix">ELM/%(range_year)s/</field>
+        <field name="prefix">ELM/%(year)s/</field>
         <field name="padding">4</field>
         <field name="company_id" eval="False"/>
-        <field name="implementation">no_gap</field>
     </record>
 </odoo>
