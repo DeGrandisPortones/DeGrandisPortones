@@ -6,6 +6,12 @@ from odoo import api, fields, models, _
 from odoo.exceptions import UserError, ValidationError
 
 class HrEmployeeLedgerBatchWizard(models.TransientModel):
+    @api.model
+    def create(self, vals):
+        rec = super(HrEmployeeLedgerBatchWizard, self).create(vals)
+        rec._load_preview()
+        return rec
+
     _name = "hr.employee.ledger.batch.wizard"
     _description = "Wizard de cierre mensual (A/B)"
     _check_company_auto = True
