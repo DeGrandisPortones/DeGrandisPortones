@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <!-- If the root menu of the ledger module exists, attach under it; otherwise attach under HR -->
+  <menuitem id="menu_hr_employee_ledger_balance"
+            name="Cuenta Corriente (Vista)"
+            parent="hr_employee_ledger_simple18.menu_hr_employee_ledger_root"
+            action="action_employee_ledger_balance"
+            sequence="30"/>
+</odoo>

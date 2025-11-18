@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <!-- List view with running balance -->
+  <record id="view_hr_employee_ledger_balance_list" model="ir.ui.view">
+    <field name="name">hr.employee.ledger.balance.list</field>
+    <field name="model">hr.employee.ledger.balance</field>
+    <field name="arch" type="xml">
+      <list create="0" edit="0" delete="0" string="Cuenta Corriente (Vista)">
+        <field name="date"/>
+        <field name="employee_id"/>
+        <field name="type"/>
+        <field name="concept"/>
+        <field name="amount" class="text-end"/>
+        <field name="running_balance" class="text-end"/>
+        <field name="move_id" invisible="1"/>
+      </list>
+    </field>
+  </record>
+
+  <!-- Search view -->
+  <record id="view_hr_employee_ledger_balance_search" model="ir.ui.view">
+    <field name="name">hr.employee.ledger.balance.search</field>
+    <field name="model">hr.employee.ledger.balance</field>
+    <field name="arch" type="xml">
+      <search string="Buscar">
+        <field name="employee_id" filter_domain="[]"/>
+        <field name="concept"/>
+        <filter string="Cargos" name="charges" domain="[('type','=','charge')]"/>
+        <filter string="Abonos" name="payments" domain="[('type','=','payment')]"/>
+        <separator/>
+        <filter string="Hoy" name="today" domain="[('date','=', context_today().date())]"/>
+        <filter string="Este mes" name="this_month" domain="[('date','&gt;=', (context_today().replace(day=1)).date()), ('date','&lt;=', (context_today().date()))]"/>
+        <group expand="0" string="Agrupar por">
+          <filter string="Empleado" name="grp_emp" context="{'group_by':'employee_id'}"/>
+          <filter string="Fecha" name="grp_date" context="{'group_by':'date'}"/>
+          <filter string="Tipo" name="grp_type" context="{'group_by':'type'}"/>
+        </group>
+      </search>
+    </field>
+  </record>
+
+  <!-- Action -->
+  <record id="action_employee_ledger_balance" model="ir.actions.act_window">
+    <field name="name">Cuenta Corriente</field>
+    <field name="res_model">hr.employee.ledger.balance</field>
+    <field name="view_mode">list</field>
+    <field name="search_view_id" ref="view_hr_employee_ledger_balance_search"/>
+    <field name="context">{}</field>
+    <field name="domain">[]</field>
+    <field name="help" type="html">
+      <p>
+        Use esta vista para ver los movimientos con <b>saldo corrido</b> por empleado.
+        Filtre por empleado desde la barra de búsqueda o use el botón en el empleado.
+      </p>
+    </field>
+  </record>
+</odoo>
