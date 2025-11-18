@@ -1,2 +1,2 @@
 from . import ledger_move
-from . import hr_employee
+from . import employee_inherit

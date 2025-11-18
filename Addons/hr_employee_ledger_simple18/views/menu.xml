@@ -1,12 +1,59 @@
-<?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <menuitem id="menu_hr_employee_ledger_root" name="Cuenta Corriente" parent="hr.menu_hr_root" sequence="80"/>
+    <menuitem id="menu_hr_employee_ledger_root" name="Cuenta Corriente" parent="hr.menu_hr_root"/>
+
+    <record id="view_employee_ledger_move_tree" model="ir.ui.view">
+        <field name="name">hr.employee.ledger.move.tree</field>
+        <field name="model">hr.employee.ledger.move</field>
+        <field name="arch" type="xml">
+            <list string="Movimientos">
+                <field name="name"/>
+                <field name="date"/>
+                <field name="employee_id"/>
+                <field name="type"/>
+                <field name="direction"/>
+                <field name="concept"/>
+                <field name="amount"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_employee_ledger_move_form" model="ir.ui.view">
+        <field name="name">hr.employee.ledger.move.form</field>
+        <field name="model">hr.employee.ledger.move</field>
+        <field name="arch" type="xml">
+            <form string="Movimiento Cuenta Corriente">
+                <header>
+                    <button name="action_print_receipt" type="object" class="btn-primary" string="Imprimir recibo"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name" readonly="1"/>
+                            <field name="date"/>
+                            <field name="employee_id" options="{'no_quick_create': True, 'no_create_edit': True}"/>
+                        </group>
+                        <group>
+                            <field name="type"/>
+                            <field name="direction"/>
+                            <field name="amount"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="concept" colspan="4"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
     <record id="action_employee_ledger_moves" model="ir.actions.act_window">
         <field name="name">Movimientos</field>
         <field name="res_model">hr.employee.ledger.move</field>
-        <field name="view_mode">list,form</field>
-        <field name="context">{}</field>
-        <field name="domain">[]</field>
+        <field name="view_mode">tree,form</field>
+        <field name="context">{'search_default_employee_id': active_id}</field>
     </record>
-    <menuitem id="menu_hr_employee_ledger_moves" name="Movimientos" parent="menu_hr_employee_ledger_root" action="action_employee_ledger_moves" sequence="10"/>
+
+    <menuitem id="menu_hr_employee_ledger_moves" name="Movimientos"
+              parent="menu_hr_employee_ledger_root"
+              action="action_employee_ledger_moves"/>
 </odoo>
