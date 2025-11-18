@@ -5,31 +5,49 @@ class EmployeeLedgerMove(models.Model):
     _description = "Employee Ledger Move"
     _order = "date desc, id desc"
 
-    name = fields.Char(string="Number", default="New", readonly=True, copy=False)
-    date = fields.Date(string="Date", required=True, default=fields.Date.context_today)
-    employee_id = fields.Many2one("hr.employee", string="Employee", required=True, ondelete="restrict")
+    name = fields.Char(string="Referencia", readonly=True, default=lambda self: _("New"))
+    date = fields.Date(string="Fecha", required=True, default=fields.Date.context_today)
+    employee_id = fields.Many2one("hr.employee", string="Empleado", required=True, ondelete="cascade")
     type = fields.Selection([
-        ("credit", "Credit"),
-        ("debit", "Debit"),
-    ], string="Type", required=True, default="credit")
-    direction = fields.Selection([
-        ("in", "In"),
-        ("out", "Out"),
-    ], string="Direction", required=True, default="in")
-    amount = fields.Monetary(string="Amount", required=True)
-    currency_id = fields.Many2one("res.currency", string="Currency",
-                                  default=lambda self: self.env.company.currency_id.id, required=True)
-    concept = fields.Text(string="Concept")
+        ("ajuste", "Ajuste"),
+        ("pago", "Pago"),
+        ("cargo", "Cargo"),
+    ], string="Tipo", required=True, default="ajuste")
+    direction = fields.Selection([("in", "Entrada"), ("out", "Salida")], string="Dirección", required=True, default="in")
+    amount = fields.Monetary(string="Monto", required=True)
+    currency_id = fields.Many2one("res.currency", string="Moneda",
+                                  related="employee_id.company_id.currency_id", store=True, readonly=True)
+    concept = fields.Text(string="Concepto")
+    company_id = fields.Many2one("res.company", string="Compañía",
+                                 related="employee_id.company_id", store=True, readonly=True)
 
-    @api.model_create_multi
-    def create(self, vals_list):
-        seq = self.env.ref("hr_employee_ledger_simple18.seq_employee_ledger_move", raise_if_not_found=False)
-        for vals in vals_list:
-            if not vals.get("name") or vals.get("name") == "New":
-                nextval = self.env["ir.sequence"].next_by_code("hr.employee.ledger.move") if not seq else seq.next_by_id()
-                vals["name"] = nextval or "/"
-        return super().create(vals_list)
+    @api.model
+    def create(self, vals):
+        if not vals.get("name") or vals.get("name") == _("New"):
+            vals["name"] = self.env["ir.sequence"].next_by_code("hr.employee.ledger.move") or "/"
+        return super().create(vals)
 
     def action_print_receipt(self):
         self.ensure_one()
-        return self.env.ref("hr_employee_ledger_simple18.employee_ledger_move_receipt_action").report_action(self)
+        action = self.env.ref("hr_employee_ledger_simple18.employee_ledger_move_receipt_action")
+        return action.report_action(self)
+
+
+class HrEmployee(models.Model):
+    _inherit = "hr.employee"
+
+    ledger_move_ids = fields.One2many("hr.employee.ledger.move", "employee_id", string="Movimientos")
+    ledger_move_count = fields.Integer(string="Movimientos", compute="_compute_ledger_data", store=False)
+    ledger_balance = fields.Monetary(string="Saldo", compute="_compute_ledger_data",
+                                     currency_field="ledger_currency_id", store=False, readonly=True)
+    ledger_currency_id = fields.Many2one("res.currency", string="Moneda",
+                                         related="company_id.currency_id", store=True, readonly=True)
+
+    def _compute_ledger_data(self):
+        for emp in self:
+            moves = emp.ledger_move_ids
+            emp.ledger_move_count = len(moves)
+            balance = 0.0
+            for m in moves:
+                balance += m.amount if m.direction == "in" else -m.amount
+            emp.ledger_balance = balance
