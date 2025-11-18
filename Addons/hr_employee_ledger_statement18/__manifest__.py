@@ -1,3 +1,4 @@
+
 {
     "name": "HR Employee Ledger Statement (A/B)",
     "version": "18.0.1.0.0",
@@ -7,8 +8,7 @@
     "data": [
         "security/ir.model.access.csv",
         "views/wizard_views.xml",
-        "views/move_views.xml",
-        "views/menu.xml"
+        "views/move_views.xml"
     ],
     "installable": True,
     "application": False,

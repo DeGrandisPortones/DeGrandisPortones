@@ -1,7 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
 <odoo>
-  <record id="view_employee_ledger_statement_wizard" model="ir.ui.view">
-    <field name="name">hr.employee.ledger.statement.wizard.form</field>
-    <field name="model">hr.employee.ledger.statement.wizard</field>
+  <record id="view_employee_ledger_statement_wizard_form" model="ir.ui.view">
+    <field name="name">employee.ledger.statement.wizard.form</field>
+    <field name="model">employee.ledger.statement.wizard</field>
     <field name="arch" type="xml">
       <form string="Cuenta Corriente">
         <group>
@@ -10,8 +11,8 @@
           <field name="date_to"/>
         </group>
         <footer>
-          <button name="action_view_statement" type="object" class="btn btn-primary" string="Ver movimientos"/>
-          <button string="Cancelar" special="cancel" class="btn btn-secondary"/>
+          <button string="Ver movimientos" name="action_open" type="object" class="btn-primary"/>
+          <button string="Cancelar" special="cancel" class="btn-secondary"/>
         </footer>
       </form>
     </field>
@@ -19,8 +20,15 @@
 
   <record id="action_employee_ledger_statement_wizard" model="ir.actions.act_window">
     <field name="name">Cuenta Corriente</field>
-    <field name="res_model">hr.employee.ledger.statement.wizard</field>
+    <field name="type">ir.actions.act_window</field>
+    <field name="res_model">employee.ledger.statement.wizard</field>
     <field name="view_mode">form</field>
     <field name="target">new</field>
   </record>
+
+  <menuitem id="menu_employee_ledger_statement_root"
+            name="Cuenta Corriente"
+            parent="hr.menu_hr_root"
+            action="action_employee_ledger_statement_wizard"
+            sequence="35"/>
 </odoo>
