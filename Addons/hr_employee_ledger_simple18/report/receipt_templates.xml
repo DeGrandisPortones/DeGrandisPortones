@@ -1,17 +1,17 @@
 <odoo>
-    <template id="report_employee_ledger_move_receipt">
+    <template id="employee_ledger_move_receipt_document">
         <t t-call="web.html_container">
             <t t-foreach="docs" t-as="o">
                 <t t-call="web.external_layout">
                     <div class="page">
                         <h2>Recibo de Movimiento</h2>
-                        <p><strong>Referencia:</strong> <t t-esc="o.name or ''"/></p>
-                        <p><strong>Fecha:</strong> <t t-esc="o.date"/></p>
-                        <p><strong>Empleado:</strong> <t t-esc="o.employee_id.name"/></p>
-                        <p><strong>Tipo:</strong> <t t-esc="dict(o._fields['type'].selection).get(o.type)"/></p>
-                        <p><strong>Dirección:</strong> <t t-esc="dict(o._fields['direction'].selection).get(o.direction)"/></p>
-                        <p><strong>Concepto:</strong> <t t-esc="o.concept or ''"/></p>
-                        <p><strong>Importe:</strong> <t t-esc="o.amount"/> <t t-esc="o.currency_id.symbol"/></p>
+                        <p><strong>Número:</strong> <span t-esc="o.name"/></p>
+                        <p><strong>Fecha:</strong> <span t-esc="o.date"/></p>
+                        <p><strong>Empleado:</strong> <span t-esc="o.employee_id.name"/></p>
+                        <p><strong>Tipo:</strong> <span t-esc="o.type"/></p>
+                        <p><strong>Dirección:</strong> <span t-esc="o.direction"/></p>
+                        <p><strong>Monto:</strong> <span t-esc="o.amount"/> <span t-esc="o.currency_id.symbol"/></p>
+                        <p><strong>Concepto:</strong> <span t-esc="o.concept"/></p>
                     </div>
                 </t>
             </t>
