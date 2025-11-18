@@ -12,7 +12,7 @@
         "report/report_actions.xml",
         "report/receipt_templates.xml"
     ],
-    "installable": true,
-    "application": false,
+    "installable": True,
+    "application": False,
     "license": "LGPL-3"
 }
