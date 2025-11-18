@@ -7,10 +7,10 @@
     "data": [
         "security/ir.model.access.csv",
         "data/sequence.xml",
-        "views/menu.xml",
         "views/employee_ledger_views.xml",
-        "report/report_actions.xml",
-        "report/receipt_templates.xml"
+        "views/menu.xml",
+        "report/receipt_templates.xml",
+        "report/report_actions.xml"
     ],
     "installable": True,
     "application": False,
