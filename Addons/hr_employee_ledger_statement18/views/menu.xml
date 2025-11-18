@@ -1,0 +1,4 @@
+<odoo>
+  <menuitem id="menu_hr_employee_ledger_statement_root" name="Cuenta Corriente"
+            parent="hr.menu_hr_root" sequence="60" action="action_employee_ledger_statement_wizard"/>
+</odoo>

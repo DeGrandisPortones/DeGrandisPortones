@@ -1,2 +1,1 @@
-from . import wizard
-from . import move
+from . import statement_wizard

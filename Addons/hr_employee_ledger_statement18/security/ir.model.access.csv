@@ -1,2 +1,2 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_hr_employee_ledger_statement_wizard,access.hr.employee.ledger.statement.wizard,model_hr_employee_ledger_statement_wizard,hr.group_hr_user,1,1,1,1
+access_hr_employee_ledger_statement_wizard,access_hr_employee_ledger_statement_wizard,model_hr_employee_ledger_statement_wizard,base.group_user,1,1,1,1

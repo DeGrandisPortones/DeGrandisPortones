@@ -1,19 +1,26 @@
 <odoo>
-  <record id="view_employee_ledger_statement_wizard_form" model="ir.ui.view">
+  <record id="view_employee_ledger_statement_wizard" model="ir.ui.view">
     <field name="name">hr.employee.ledger.statement.wizard.form</field>
     <field name="model">hr.employee.ledger.statement.wizard</field>
     <field name="arch" type="xml">
-      <form string="Cuenta Corriente del Empleado">
+      <form string="Cuenta Corriente">
         <group>
-          <field name="employee_id" required="1" domain="[('active','=',True)]"/>
+          <field name="employee_id"/>
           <field name="date_from"/>
           <field name="date_to"/>
         </group>
         <footer>
-          <button name="action_open_statement" type="object" string="Ver movimientos" class="btn-primary"/>
-          <button string="Cancelar" special="cancel" class="btn-secondary"/>
+          <button name="action_view_statement" type="object" class="btn btn-primary" string="Ver movimientos"/>
+          <button string="Cancelar" special="cancel" class="btn btn-secondary"/>
         </footer>
       </form>
     </field>
+  </record>
+
+  <record id="action_employee_ledger_statement_wizard" model="ir.actions.act_window">
+    <field name="name">Cuenta Corriente</field>
+    <field name="res_model">hr.employee.ledger.statement.wizard</field>
+    <field name="view_mode">form</field>
+    <field name="target">new</field>
   </record>
 </odoo>
