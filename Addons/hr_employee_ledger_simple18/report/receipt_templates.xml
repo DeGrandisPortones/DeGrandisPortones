@@ -1,22 +1,18 @@
-<?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <template id="report_employee_ledger_move_receipt">
+    <template id="employee_ledger_move_receipt">
         <t t-call="web.external_layout">
             <div class="page">
-                <h2 style="text-align:center">Recibo de Anticipo</h2>
-                <p><strong>Empresa:</strong> <t t-esc="o.employee_id.company_id.name"/></p>
-                <p><strong>Empleado:</strong> <t t-esc="o.employee_id.name"/></p>
-                <p><strong>Fecha:</strong> <t t-esc="o.date"/></p>
-                <p><strong>Número:</strong> <t t-esc="o.name"/></p>
-                <p><strong>Tipo:</strong> <t t-esc="dict(o._fields['type'].selection).get(o.type)"/></p>
-                <p><strong>Dirección:</strong> <t t-esc="dict(o._fields['direction'].selection).get(o.direction)"/></p>
-                <p><strong>Concepto:</strong> <t t-esc="o.concept"/></p>
-                <p><strong>Importe:</strong> <t t-esc="formatLang(o.amount, currency_obj=o.currency_id)"/></p>
-
-                <div style="margin-top:40px">
-                    <p>______________________________</p>
-                    <p>Firma del Empleado</p>
-                </div>
+                <t t-foreach="docs" t-as="doc">
+                    <h2>Recibo de Movimiento</h2>
+                    <p><strong>Número:</strong> <span t-esc="doc.name"/></p>
+                    <p><strong>Fecha:</strong> <span t-esc="doc.date"/></p>
+                    <p><strong>Empleado:</strong> <span t-esc="doc.employee_id.display_name"/></p>
+                    <p><strong>Tipo:</strong> <span t-esc="doc.type"/></p>
+                    <p><strong>Dirección:</strong> <span t-esc="doc.direction"/></p>
+                    <p><strong>Concepto:</strong> <span t-esc="doc.concept"/></p>
+                    <p><strong>Importe:</strong> <span t-esc="doc.amount"/> <span t-esc="doc.currency_id.symbol"/></p>
+                    <hr/>
+                </t>
             </div>
         </t>
     </template>
