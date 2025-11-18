@@ -1,4 +1,4 @@
-
+# -*- coding: utf-8 -*-
 {
     "name": "HR Employee Ledger (A/B)",
     "version": "18.0.1.0.0",
