@@ -1,13 +1,13 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <odoo>
-  <!-- List (root must be <list> in Odoo 18) -->
-  <record id="view_employee_ledger_move_list_balance" model="ir.ui.view">
+  <!-- LISTA GLOBAL (permite elegir empleado y crear pagos/cargos) -->
+  <record id="view_employee_ledger_move_tree_balance" model="ir.ui.view">
     <field name="name">hr.employee.ledger.move.list.balance</field>
     <field name="model">hr.employee.ledger.move</field>
     <field name="arch" type="xml">
-      <list string="Cuenta Corriente" editable="bottom">
+      <list create="1" edit="1">
         <field name="date"/>
-        <field name="employee_id" optional="hide"/>
+        <field name="employee_id" required="1"/>
         <field name="type"/>
         <field name="concept"/>
         <field name="amount"/>
@@ -15,49 +15,60 @@
     </field>
   </record>
 
-  <!-- Search -->
+  <!-- FORM PARA ALTA / EDICIÓN -->
+  <record id="view_employee_ledger_move_form_balance" model="ir.ui.view">
+    <field name="name">hr.employee.ledger.move.form.balance</field>
+    <field name="model">hr.employee.ledger.move</field>
+    <field name="arch" type="xml">
+      <form>
+        <sheet>
+          <group>
+            <field name="date"/>
+            <field name="employee_id" options="{'no_create_edit': False}"/>
+            <field name="type"/>
+            <field name="concept"/>
+            <field name="amount"/>
+          </group>
+        </sheet>
+      </form>
+    </field>
+  </record>
+
+  <!-- SEARCH VIEW con filtros útiles -->
   <record id="view_employee_ledger_move_search_balance" model="ir.ui.view">
     <field name="name">hr.employee.ledger.move.search.balance</field>
     <field name="model">hr.employee.ledger.move</field>
     <field name="arch" type="xml">
-      <search string="Buscar Movimientos">
+      <search>
+        <field name="name"/>
         <field name="employee_id"/>
-        <filter name="today" string="Hoy" domain="[('date','=', context_today().date())]"/>
-        <group expand="0" string="Agrupar por">
-          <filter name="group_employee" string="Empleado" context="{'group_by': 'employee_id'}"/>
-          <filter name="group_date" string="Fecha" context="{'group_by': 'date'}"/>
-          <filter name="group_type" string="Tipo" context="{'group_by': 'type'}"/>
-        </group>
+        <field name="type"/>
+        <filter string="Cargos" name="type_charge" domain="[('type','=','charge')]"/>
+        <filter string="Pagos" name="type_payment" domain="[('type','=','payment')]"/>
+        <filter string="Agrupar por empleado" name="group_employee" context="{'group_by': 'employee_id'}"/>
+        <separator/>
+        <field name="date"/>
       </search>
     </field>
   </record>
 
-  <!-- Action for MENU (no active_id in context) -->
-  <record id="action_employee_ledger_balance_menu" model="ir.actions.act_window">
-    <field name="name">Cuenta Corriente</field>
-    <field name="res_model">hr.employee.ledger.move</field>
-    <field name="view_mode">list,form</field>
-    <field name="search_view_id" ref="view_employee_ledger_move_search_balance"/>
-    <field name="target">current</field>
-    <!-- no context with active_id here to avoid NameError -->
-  </record>
-
-  <!-- Action bound to hr.employee (Action menu on employee form) -->
+  <!-- ACCIÓN GLOBAL (sin context, permite elegir cualquier empleado) -->
   <record id="action_employee_ledger_balance" model="ir.actions.act_window">
     <field name="name">Cuenta Corriente</field>
     <field name="res_model">hr.employee.ledger.move</field>
     <field name="view_mode">list,form</field>
     <field name="search_view_id" ref="view_employee_ledger_move_search_balance"/>
-    <field name="target">current</field>
-    <field name="context">{'search_default_employee_id': active_id and [active_id] or [], 'default_employee_id': active_id or False}</field>
+    <field name="context">{}</field>
+  </record>
+
+  <!-- ACCIÓN CONTEXTUAL en Empleado (Action menu). NO poner context en botones de vista -->
+  <record id="action_employee_ledger_balance_for_employee" model="ir.actions.act_window">
+    <field name="name">Cuenta Corriente</field>
+    <field name="res_model">hr.employee.ledger.move</field>
+    <field name="view_mode">list,form</field>
+    <field name="search_view_id" ref="view_employee_ledger_move_search_balance"/>
+    <field name="context">{'search_default_employee_id': active_id, 'default_employee_id': active_id}</field>
     <field name="binding_model_id" ref="hr.model_hr_employee"/>
     <field name="binding_view_types">form</field>
   </record>
-
-  <!-- Menu under the root menu of the ledger module -->
-  <menuitem id="menu_hr_employee_ledger_balance"
-            name="Cuenta Corriente"
-            parent="hr_employee_ledger_simple18.menu_hr_employee_ledger_root"
-            action="action_employee_ledger_balance_menu"
-            sequence="20"/>
 </odoo>
