@@ -1,21 +1,20 @@
 
+<?xml version="1.0" encoding="UTF-8"?>
 <odoo>
   <template id="employee_ledger_move_receipt">
     <t t-call="web.external_layout">
-      <main class="o_report_layout">
-        <t t-foreach="docs" t-as="doc">
-          <div class="page">
-            <h2>Recibo de Movimiento</h2>
-            <p><strong>Número:</strong> <span t-esc="doc.name"/></p>
-            <p><strong>Fecha:</strong> <span t-esc="doc.date"/></p>
-            <p><strong>Empleado:</strong> <span t-esc="doc.employee_id.display_name"/></p>
-            <p><strong>Tipo:</strong> <span t-esc="doc.type"/></p>
-            <p><strong>Dirección:</strong> <span t-esc="doc.direction"/></p>
-            <p><strong>Importe:</strong> <span t-esc="doc.amount"/></p>
-            <p><strong>Concepto:</strong> <span t-esc="doc.concept"/></p>
-          </div>
-        </t>
-      </main>
+      <t t-foreach="docs" t-as="o">
+        <div class="page">
+          <h2>Recibo de Movimiento</h2>
+          <p><strong>Número:</strong> <span t-field="o.name"/></p>
+          <p><strong>Fecha:</strong> <span t-field="o.date"/></p>
+          <p><strong>Empleado:</strong> <span t-field="o.employee_id"/></p>
+          <p><strong>Tipo:</strong> <span t-esc="o.type"/></p>
+          <p><strong>Dirección:</strong> <span t-esc="o.direction"/></p>
+          <p><strong>Importe:</strong> <span t-esc="o.amount"/></p>
+          <p><strong>Concepto:</strong> <span t-esc="o.concept"/></p>
+        </div>
+      </t>
     </t>
   </template>
 </odoo>

@@ -1,7 +1,7 @@
 
 {
     "name": "HR Employee Ledger (A/B)",
-    "version": "18.0.1.0.1",
+    "version": "18.0.1.0.0",
     "author": "Dflex Argentina SAS",
     "category": "Human Resources",
     "depends": ["hr"],
