@@ -1,0 +1,8 @@
+<odoo>
+  <record id="action_employee_ledger_statement_wizard" model="ir.actions.act_window">
+    <field name="name">Cuenta Corriente</field>
+    <field name="res_model">hr.employee.ledger.statement.wizard</field>
+    <field name="view_mode">form</field>
+    <field name="target">new</field>
+  </record>
+</odoo>

@@ -1,2 +1,2 @@
-from . import ledger_move_ext
-from . import statement_wizard
+from . import wizard
+from . import move

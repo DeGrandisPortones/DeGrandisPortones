@@ -1,0 +1,34 @@
+<odoo>
+  <record id="view_employee_ledger_move_tree_statement" model="ir.ui.view">
+    <field name="name">hr.employee.ledger.move.tree.statement</field>
+    <field name="model">hr.employee.ledger.move</field>
+    <field name="arch" type="xml">
+      <list string="Cuenta Corriente">
+        <field name="date"/>
+        <field name="employee_id"/>
+        <field name="type"/>
+        <field name="concept"/>
+        <field name="debit" sum="Total Débito"/>
+        <field name="credit" sum="Total Crédito"/>
+        <field name="running_balance" string="Saldo"/>
+      </list>
+    </field>
+  </record>
+
+  <record id="view_employee_ledger_move_search_statement" model="ir.ui.view">
+    <field name="name">hr.employee.ledger.move.search.statement</field>
+    <field name="model">hr.employee.ledger.move</field>
+    <field name="arch" type="xml">
+      <search>
+        <field name="employee_id"/>
+        <filter string="Cargos" name="filter_charge" domain="[('type','in',['charge','cargo'])]"/>
+        <filter string="Abonos" name="filter_payment" domain="[('type','in',['payment','abono'])]"/>
+        <group expand="0" string="Agrupar por...">
+          <filter string="Empleado" domain="[]" context="{'group_by':'employee_id'}"/>
+          <filter string="Tipo" domain="[]" context="{'group_by':'type'}"/>
+          <filter string="Fecha" domain="[]" context="{'group_by':'date'}"/>
+        </group>
+      </search>
+    </field>
+  </record>
+</odoo>
