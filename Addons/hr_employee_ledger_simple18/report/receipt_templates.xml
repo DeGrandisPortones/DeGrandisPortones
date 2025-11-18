@@ -1,18 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <template id="employee_ledger_move_receipt" name="Employee Ledger Move - Receipt">
+    <template id="receipt_document">
         <t t-call="web.html_container">
             <t t-foreach="docs" t-as="o">
+                <t t-set="doc" t-value="o"/>
                 <t t-call="web.external_layout">
                     <div class="page">
                         <h2>Recibo de Movimiento</h2>
-                        <p><strong>Empleado:</strong> <span t-esc="o.employee_id.display_name"/></p>
-                        <p><strong>Fecha:</strong> <span t-esc="o.date"/></p>
-                        <p><strong>Tipo:</strong> <span t-esc="o.type"/></p>
-                        <p><strong>Dirección:</strong> <span t-esc="o.direction"/></p>
-                        <p><strong>Monto:</strong>
-                            <span t-esc="formatLang(o.amount, currency_obj=(o.currency_id or o.company_id.currency_id))"/>
-                        </p>
-                        <p><strong>Concepto:</strong> <span t-esc="o.concept"/></p>
+                        <p><strong>Número:</strong> <t t-esc="o.name"/></p>
+                        <p><strong>Fecha:</strong> <t t-esc="o.date"/></p>
+                        <p><strong>Empleado:</strong> <t t-esc="o.employee_id.name"/></p>
+                        <p><strong>Tipo:</strong> <t t-esc="o.type"/></p>
+                        <p><strong>Dirección:</strong> <t t-esc="o.direction"/></p>
+                        <p><strong>Monto:</strong> <span t-field="o.amount" t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/></p>
+                        <p><strong>Concepto:</strong> <t t-esc="o.concept"/></p>
                     </div>
                 </t>
             </t>

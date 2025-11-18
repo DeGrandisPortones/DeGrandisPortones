@@ -1,9 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <record id="seq_hr_employee_ledger_move" model="ir.sequence">
-        <field name="name">HR Employee Ledger Move</field>
+    <record id="seq_employee_ledger_move" model="ir.sequence">
+        <field name="name">Employee Ledger Move</field>
         <field name="code">hr.employee.ledger.move</field>
-        <field name="prefix">ELM/</field>
-        <field name="padding">5</field>
+        <field name="prefix">LM%(y)s%(month)s-</field>
+        <field name="padding">4</field>
         <field name="company_id" eval="False"/>
     </record>
 </odoo>

@@ -3,7 +3,9 @@
     "version": "18.0.1.0.0",
     "author": "Dflex Argentina SAS",
     "category": "Human Resources",
-    "depends": ["hr"],
+    "depends": [
+        "hr"
+    ],
     "data": [
         "security/ir.model.access.csv",
         "data/sequence.xml",
@@ -12,7 +14,7 @@
         "report/report_actions.xml",
         "report/receipt_templates.xml"
     ],
-    "installable": True,
-    "application": False,
+    "installable": true,
+    "application": false,
     "license": "LGPL-3"
 }
