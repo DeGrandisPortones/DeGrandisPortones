@@ -1,21 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
   <template id="employee_ledger_move_receipt">
-    <t t-call="web.external_layout">
+    <t t-call="web.html_container">
       <t t-foreach="docs" t-as="o">
-        <main class="page">
-          <div class="row">
-            <div class="col-12">
+        <t t-call="web.external_layout">
+          <main>
+            <div class="page">
               <h2>Recibo de Movimiento</h2>
-              <p><strong>Número:</strong> <span t-esc="o.name"/></p>
+              <p><strong>Nombre:</strong> <span t-esc="o.name"/></p>
               <p><strong>Fecha:</strong> <span t-esc="o.date"/></p>
               <p><strong>Empleado:</strong> <span t-esc="o.employee_id.name"/></p>
-              <p><strong>Tipo:</strong> <span t-esc="dict(o._fields['type'].selection).get(o.type)"/></p>
+              <p><strong>Tipo:</strong> <span t-esc="o.type"/></p>
+              <p><strong>Dirección:</strong> <span t-esc="o.direction"/></p>
+              <p><strong>Monto:</strong> <span t-esc="o.amount"/></p>
               <p><strong>Concepto:</strong> <span t-esc="o.concept"/></p>
-              <p><strong>Importe:</strong> <span t-esc="o.amount"/></p>
             </div>
-          </div>
-        </main>
+          </main>
+        </t>
       </t>
     </t>
   </template>
