@@ -1,0 +1,65 @@
+<odoo>
+    <template id="report_receipt">
+        <t t-call="web.external_layout">
+            <div class="page">
+                <h2>Recibo de Anticipo</h2>
+                <t t-foreach="docs" t-as="o">
+                    <div class="mb-3">
+                        <table class="table table-sm" style="width:100%;">
+                            <tr>
+                                <td><strong>Empresa</strong></td>
+                                <td t-esc="o.company_id.name"/></tr>
+                            <tr>
+                                <td><strong>Fecha</strong></td>
+                                <td t-esc="o.date"/></tr>
+                            <tr>
+                                <td><strong>Número</strong></td>
+                                <td t-esc="o.name"/></tr>
+                            <tr>
+                                <td><strong>Empleado</strong></td>
+                                <td t-esc="o.employee_id.name"/></tr>
+                            <tr>
+                                <td><strong>Tipo</strong></td>
+                                <td>
+                                    <t t-if="o.move_kind == 'A'">Anticipo (Dinero)</t>
+                                    <t t-elif="o.move_kind == 'B'">Alimentos</t>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Dirección</strong></td>
+                                <td>
+                                    <t t-if="o.direction == 'debit'">Cargo</t>
+                                    <t t-elif="o.direction == 'credit'">Abono</t>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Concepto</strong></td>
+                                <td t-esc="o.concept"/></tr>
+                            <tr>
+                                <td><strong>Importe</strong></td>
+                                <td t-esc="format_amount(o.amount, o.currency_id)"/></tr>
+                        </table>
+                    </div>
+
+                    <div style="margin-top:50px; display:flex; justify-content:space-between;">
+                        <div style="width:45%; text-align:center;">
+                            <div style="border-top:1px solid #000; margin-top:40px; padding-top:5px;">Firma Empleado</div>
+                            <div style="margin-top:6px;">Aclaración y DNI</div>
+                        </div>
+                        <div style="width:45%; text-align:center;">
+                            <div style="border-top:1px solid #000; margin-top:40px; padding-top:5px;">Firma RRHH</div>
+                            <div style="margin-top:6px;">Aclaración</div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top:25px; font-size:10pt;">
+                        <span><strong>Observaciones:</strong></span>
+                        <span t-esc="o.note or ''"/>
+                    </div>
+
+                    <div class="page-break"/>
+                </t>
+            </div>
+        </t>
+    </template>
+</odoo>

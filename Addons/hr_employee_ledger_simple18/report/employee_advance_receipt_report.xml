@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <report
+        id="report_employee_advance_receipt"
+        model="hr.employee.ledger.move"
+        string="Recibo de Anticipo"
+        report_type="qweb-pdf"
+        name="hr_employee_ledger.report_employee_advance_receipt_document"
+        file="hr_employee_ledger.report_employee_advance_receipt_document"
+    />
+</odoo>

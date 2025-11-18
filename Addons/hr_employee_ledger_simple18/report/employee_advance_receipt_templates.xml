@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <template id="report_employee_advance_receipt_document">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <h2>Recibo de Anticipo</h2>
+                        <p><strong>Número:</strong> <span t-esc="o.name"/></p>
+                        <p><strong>Fecha:</strong> <span t-esc="o.date"/></p>
+                        <p><strong>Empleado:</strong> <span t-esc="o.employee_id.name"/></p>
+                        <p><strong>Tipo:</strong> <span t-esc="dict(o.fields_get(allfields=['move_kind'])['move_kind']['selection'])[o.move_kind] if o.move_kind else ''"/></p>
+                        <p><strong>Dirección:</strong> <span t-esc="dict(o.fields_get(allfields=['direction'])['direction']['selection'])[o.direction] if o.direction else ''"/></p>
+                        <p><strong>Concepto:</strong> <span t-esc="o.concept"/></p>
+                        <p><strong>Importe:</strong> <span t-esc="format_amount(o.amount, o.currency_id)"/></p>
+                        <br/>
+                        <p><strong>Observaciones:</strong></p>
+                        <p t-esc="o.note or ''"/>
+                        <br/><br/>
+                        <div style="margin-top:60px;">
+                            <div style="display:flex;justify-content:space-between;">
+                                <div>
+                                    _______________________________<br/>
+                                    <span t-esc="o.employee_id.name"/><br/>
+                                    Firma del empleado
+                                </div>
+                                <div>
+                                    _______________________________<br/>
+                                    <span t-esc="o.company_id.name"/><br/>
+                                    RRHH
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>
