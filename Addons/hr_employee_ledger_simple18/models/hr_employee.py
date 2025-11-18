@@ -1,33 +1,29 @@
+
 from odoo import api, fields, models
 
-class HREmployee(models.Model):
+class HrEmployee(models.Model):
     _inherit = "hr.employee"
 
-    ledger_move_ids = fields.One2many("hr.employee.ledger.move", "employee_id", string="Movimientos")
-    ledger_move_count = fields.Integer(compute="_compute_ledger_counts", string="Movimientos")
-    ledger_balance = fields.Monetary(compute="_compute_ledger_balance", string="Saldo", currency_field="currency_id")
-    currency_id = fields.Many2one("res.currency", related="company_id.currency_id", readonly=True, store=True)
+    ledger_move_ids = fields.One2many("hr.employee.ledger.move", "employee_id")
+    ledger_move_count = fields.Integer(compute="_compute_ledger_counts", store=False)
+    ledger_balance = fields.Monetary(compute="_compute_ledger_balance", currency_field="ledger_currency_id", store=False)
+    ledger_currency_id = fields.Many2one("res.currency", default=lambda self: self.env.company.currency_id.id)
+
+    @api.depends("ledger_move_ids.amount", "ledger_move_ids.direction")
+    def _compute_ledger_balance(self):
+        for emp in self:
+            total = 0.0
+            for m in emp.ledger_move_ids:
+                total += m.amount if m.direction == "in" else -m.amount
+            emp.ledger_balance = total
 
     def _compute_ledger_counts(self):
-        data = self.env["hr.employee.ledger.move"].read_group(
-            [("employee_id","in", self.ids)], ["employee_id"], ["employee_id"]
-        )
-        mapped = {d["employee_id"][0]: d["employee_id_count"] for d in data}
-        for rec in self:
-            rec.ledger_move_count = mapped.get(rec.id, 0)
-
-    def _compute_ledger_balance(self):
-        for rec in self:
-            moves = self.env["hr.employee.ledger.move"].search([("employee_id","=",rec.id)])
-            balance = 0.0
-            for m in moves:
-                sign = 1 if m.direction == "in" else -1
-                balance += sign * (m.amount or 0.0)
-            rec.ledger_balance = balance
+        for emp in self:
+            emp.ledger_move_count = len(emp.ledger_move_ids)
 
     def action_open_ledger_moves(self):
         self.ensure_one()
-        return {
+        action = {
             "type": "ir.actions.act_window",
             "name": "Movimientos",
             "res_model": "hr.employee.ledger.move",
@@ -36,3 +32,4 @@ class HREmployee(models.Model):
             "context": {"default_employee_id": self.id},
             "target": "current",
         }
+        return action

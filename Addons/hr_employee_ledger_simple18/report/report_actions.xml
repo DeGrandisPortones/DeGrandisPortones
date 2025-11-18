@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+
 <odoo>
   <record id="employee_ledger_move_receipt_action" model="ir.actions.report">
     <field name="name">Recibo Movimiento</field>
@@ -6,6 +6,6 @@
     <field name="report_type">qweb-pdf</field>
     <field name="report_name">hr_employee_ledger_simple18.employee_ledger_move_receipt</field>
     <field name="report_file">hr_employee_ledger_simple18.employee_ledger_move_receipt</field>
-    <field name="print_report_name">'Recibo - %s' % (object.name)</field>
+    <field name="print_report_name">'Recibo - %s' % (object.display_name)</field>
   </record>
 </odoo>
