@@ -1,0 +1,64 @@
+
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+  <!-- Tree (list) for statement with debit/credit and running balance -->
+  <record id="view_employee_ledger_move_tree_statement" model="ir.ui.view">
+    <field name="name">hr.employee.ledger.move.tree.statement</field>
+    <field name="model">hr.employee.ledger.move</field>
+    <field name="arch" type="xml">
+      <list string="Cuenta Corriente" create="true" edit="true" delete="true">
+        <field name="date"/>
+        <field name="employee_id"/>
+        <field name="type"/>
+        <field name="concept"/>
+        <field name="debit"/>
+        <field name="credit"/>
+        <field name="running_balance"/>
+      </list>
+    </field>
+  </record>
+
+  <record id="view_employee_ledger_move_form_statement" model="ir.ui.view">
+    <field name="name">hr.employee.ledger.move.form.statement</field>
+    <field name="model">hr.employee.ledger.move</field>
+    <field name="arch" type="xml">
+      <form string="Movimiento">
+        <sheet>
+          <group>
+            <field name="employee_id" options="{'no_create': True}"/>
+            <field name="date"/>
+            <field name="type"/>
+            <field name="concept"/>
+            <field name="amount"/>
+          </group>
+        </sheet>
+      </form>
+    </field>
+  </record>
+
+  <!-- Search view tailored for statement -->
+  <record id="view_employee_ledger_move_search_statement" model="ir.ui.view">
+    <field name="name">hr.employee.ledger.move.search.statement</field>
+    <field name="model">hr.employee.ledger.move</field>
+    <field name="arch" type="xml">
+      <search string="Buscar movimientos">
+        <field name="employee_id" filter_domain="[]"/>
+        <field name="date"/>
+        <filter string="Cargos" name="flt_charge" domain="[('type','in',('charge','cargo'))]"/>
+        <filter string="Abonos" name="flt_payment" domain="[('type','in',('payment','abono'))]"/>
+        <group expand="0" string="Agrupar por">
+          <filter name="grp_emp" string="Empleado" context="{'group_by':'employee_id'}"/>
+          <filter name="grp_date" string="Fecha" context="{'group_by':'date'}"/>
+          <filter name="grp_type" string="Tipo" context="{'group_by':'type'}"/>
+        </group>
+      </search>
+    </field>
+  </record>
+
+  <!-- Global menu to open wizard -->
+  <menuitem id="menu_hr_employee_ledger_statement_root"
+            name="Cuenta Corriente"
+            parent="hr.menu_hr_root"
+            action="action_hr_employee_ledger_statement_wizard"
+            sequence="25"/>
+</odoo>
