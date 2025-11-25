@@ -209,13 +209,21 @@ class ArLibroIvaWizard(models.TransientModel):
                 else:
                     otros_tributos += amount
 
-            # Exentos: líneas sin IVA (aproximación)
-            for line in move.invoice_line_ids:
-                if not line.tax_ids:
-                    imp_exento += fabs(line.price_subtotal or 0.0)
-
-            # Conceptos no gravados (si no distinguís, lo dejamos en 0)
+            # Conceptos no gravados / exentos
             imp_no_grav = 0.0
+
+            for line in move.invoice_line_ids:
+                subtotal = fabs(line.price_subtotal or 0.0)
+                if not line.tax_ids:
+                    # Sin impuestos: lo consideramos NO GRAVADO
+                    imp_no_grav += subtotal
+                else:
+                    # Si los impuestos de la línea son de grupo "Exento", lo mandamos a exento
+                    for tax in line.tax_ids:
+                        group_name = (tax.tax_group_id.name or "").lower()
+                        if "exento" in group_name:
+                            imp_exento += subtotal
+                            break
 
             # Crédito fiscal computable = suma IVA de alícuotas
             credito_fiscal = sum(vat_taxes.values())
