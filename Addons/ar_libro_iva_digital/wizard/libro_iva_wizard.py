@@ -134,6 +134,15 @@ class ArLibroIvaWizard(models.TransientModel):
             )
             tipo_cbte = str(tipo_cbte).rjust(3, "0")
 
+            # ¿Es comprobante letra B o C?
+            letter = getattr(doc_type, "l10n_ar_letter", False)
+            is_b_or_c = letter in ("B", "C")
+            if not letter:
+                # fallback por código AFIP clásico: algunos códigos típicos de B/C
+                b_c_codes = {"006", "007", "008", "009", "010", "011", "012", "013"}
+                if tipo_cbte in b_c_codes:
+                    is_b_or_c = True
+
             # Punto de venta / Número de comprobante
             doc_number = move.l10n_latam_document_number or move.name or ""
             only_digits = "".join(ch for ch in doc_number if ch.isdigit())
@@ -224,7 +233,12 @@ class ArLibroIvaWizard(models.TransientModel):
                 rate_int = int(round(rate * 10 ** 6))
                 tipo_cambio = str(rate_int).rjust(10, "0")
 
-            cant_alicuotas = max(len(vat_bases) or 1, 1)
+            if is_b_or_c:
+                # Para comprobantes B o C, la cantidad de alícuotas es 0
+                cant_alicuotas = 0
+            else:
+                cant_alicuotas = max(len(vat_bases) or 1, 1)
+
             cod_operacion = " "  # en blanco como en los ejemplos
 
             # Emisor/corredor (normalmente vacío)
@@ -268,6 +282,10 @@ class ArLibroIvaWizard(models.TransientModel):
             # -----------------------------------------------------------------
             # ALICUOTAS COMPRAS (84 caracteres)
             # -----------------------------------------------------------------
+            if is_b_or_c:
+                # Comprobantes B o C: no generan registro en el archivo de alícuotas
+                continue
+
             if not vat_bases:
                 code = "0003"  # Exento / sin IVA
                 ali_line = (
