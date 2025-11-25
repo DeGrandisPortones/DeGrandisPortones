@@ -4,6 +4,7 @@
     <field name="model">ar.libro.iva.wizard</field>
     <field name="arch" type="xml">
       <form string="Exportar Libro IVA Digital (TXT)">
+        <!-- Paso 1: elegir parámetros -->
         <group attrs="{'invisible': [('state', '=', 'download')]}">
           <field name="company_id"/>
           <field name="book_type"/>
@@ -11,15 +12,26 @@
           <field name="date_to"/>
         </group>
 
+        <!-- Paso 2: mostrar archivos para descargar -->
         <group attrs="{'invisible': [('state', '!=', 'download')]}">
-          <label string="Los archivos fueron generados. Descargalos desde los enlaces siguientes."/>
+          <!-- nombres de archivo (ocultos, sólo para filename=...) -->
+          <field name="file_cbte_name" invisible="1"/>
+          <field name="file_ali_name" invisible="1"/>
+
+          <label for="file_cbte"
+                 string="Los archivos fueron generados. Descargalos desde los enlaces siguientes."
+                 class="o_form_label"/>
           <field name="file_cbte" filename="file_cbte_name"/>
           <field name="file_ali" filename="file_ali_name"/>
         </group>
 
         <footer>
-          <button name="action_export" type="object" string="Generar archivos" class="btn-primary"
-                  attrs="{'invisible': [('state', '=', 'download')]}"/>
+          <button name="action_export"
+                  type="object"
+                  string="Generar archivos"
+                  class="btn-primary"
+                  attrs="{'invisible': [('state', '=', 'download')]}"
+          />
           <button string="Cerrar" class="btn-secondary" special="cancel"/>
         </footer>
       </form>
