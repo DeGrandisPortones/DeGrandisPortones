@@ -28,6 +28,20 @@ class ArLibroIvaWizard(models.TransientModel):
         default=lambda s: s.env.company,
     )
 
+    # Archivos generados
+    file_cbte = fields.Binary(string="Archivo comprobantes", readonly=True)
+    file_cbte_name = fields.Char(string="Nombre archivo comprobantes", readonly=True)
+    file_ali = fields.Binary(string="Archivo alícuotas", readonly=True)
+    file_ali_name = fields.Char(string="Nombre archivo alícuotas", readonly=True)
+
+    state = fields.Selection(
+        [
+            ("choose", "choose"),
+            ("download", "download"),
+        ],
+        default="choose",
+    )
+
     # -------------------------------------------------------------------------
     # Helpers de formato
     # -------------------------------------------------------------------------
@@ -45,9 +59,7 @@ class ArLibroIvaWizard(models.TransientModel):
     @staticmethod
     def _num_raw(value, length):
         """Numérico entero sin decimales, padded con ceros."""
-        s = (value or "").strip()
-        if not isinstance(s, str):
-            s = str(s)
+        s = (value or "").strip() if isinstance(value, str) else str(value or "")
         s = s.replace("-", "")
         if len(s) > length:
             s = s[-length:]
@@ -306,33 +318,31 @@ class ArLibroIvaWizard(models.TransientModel):
 
         txt_cbte, txt_ali = self._build_purchases_files()
 
-        suf = "COMPRAS"
-        fname1 = f"LIBRO_IVA_DIGITAL_{suf}_CBTE.txt"
-        fname2 = f"LIBRO_IVA_DIGITAL_{suf}_ALICUOTAS.txt"
+        # Nombres de archivo tipo:
+        #   LID Compras 11-2025.txt
+        #   LID Compras Alicuotas 11-2025.txt
+        periodo = (self.date_to or self.date_from).strftime("%m-%Y")
+        fname1 = f"LID Compras {periodo}.txt"
+        fname2 = f"LID Compras Alicuotas {periodo}.txt"
 
-        a1 = self.env["ir.attachment"].create(
+        self.write(
             {
-                "name": fname1,
-                "type": "binary",
-                "datas": base64.b64encode(
+                "file_cbte": base64.b64encode(
                     txt_cbte.encode("latin1", "ignore")
-                ).decode(),
-                "mimetype": "text/plain",
-            }
-        )
-        self.env["ir.attachment"].create(
-            {
-                "name": fname2,
-                "type": "binary",
-                "datas": base64.b64encode(
+                ),
+                "file_cbte_name": fname1,
+                "file_ali": base64.b64encode(
                     txt_ali.encode("latin1", "ignore")
-                ).decode(),
-                "mimetype": "text/plain",
+                ),
+                "file_ali_name": fname2,
+                "state": "download",
             }
         )
 
         return {
-            "type": "ir.actions.act_url",
-            "url": f"/web/content/{a1.id}?download=1",
-            "target": "self",
+            "type": "ir.actions.act_window",
+            "res_model": "ar.libro.iva.wizard",
+            "view_mode": "form",
+            "res_id": self.id,
+            "target": "new",
         }

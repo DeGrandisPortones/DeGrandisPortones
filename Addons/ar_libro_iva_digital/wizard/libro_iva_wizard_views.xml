@@ -1,19 +1,26 @@
-
 <odoo>
   <record id="view_ar_libro_iva_wizard" model="ir.ui.view">
     <field name="name">ar.libro.iva.wizard.form</field>
     <field name="model">ar.libro.iva.wizard</field>
     <field name="arch" type="xml">
       <form string="Exportar Libro IVA Digital (TXT)">
-        <group>
+        <group attrs="{'invisible': [('state', '=', 'download')]}">
           <field name="company_id"/>
           <field name="book_type"/>
           <field name="date_from"/>
           <field name="date_to"/>
         </group>
+
+        <group attrs="{'invisible': [('state', '!=', 'download')]}">
+          <label string="Los archivos fueron generados. Descargalos desde los enlaces siguientes."/>
+          <field name="file_cbte" filename="file_cbte_name"/>
+          <field name="file_ali" filename="file_ali_name"/>
+        </group>
+
         <footer>
-          <button name="action_export" type="object" string="Exportar TXT" class="btn-primary"/>
-          <button string="Cancelar" class="btn-secondary" special="cancel"/>
+          <button name="action_export" type="object" string="Generar archivos" class="btn-primary"
+                  attrs="{'invisible': [('state', '=', 'download')]}"/>
+          <button string="Cerrar" class="btn-secondary" special="cancel"/>
         </footer>
       </form>
     </field>
