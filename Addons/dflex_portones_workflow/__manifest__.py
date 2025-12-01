@@ -1,13 +1,13 @@
 {
-    'name': 'DFLEX Portones - Workflow Estados',
-    'version': '16.0.1.0.0',
+    'name': 'DFLEX Portones - Workflow',
+    'version': '1.0.0',
+    'summary': 'Estados, aprobaciones y botones de workflow para Portones',
     'author': 'Esteban + ChatGPT',
-    'category': 'Sales',
-    'summary': 'Workflow de estados para portones DFLEX',
-    'depends': ['base'],
+    'website': '',
+    'category': 'Custom',
+    'depends': ['base', 'portones_list'],
     'data': [
-        'security/ir.model.access.csv',
-        'views/dflex_porton_workflow_views.xml'
+        'views/dflex_porton_workflow_views.xml',
     ],
     'installable': True,
     'application': False,

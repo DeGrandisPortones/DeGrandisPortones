@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
-    <!-- Lista de portones con columnas de estado y aprobaciones -->
+    <!-- Lista: añadimos columnas de estado y aprobaciones -->
     <record id="view_dflex_porton_list_workflow" model="ir.ui.view">
         <field name="name">x_dflex_porton.list.workflow</field>
         <field name="model">x_dflex.porton</field>
-        <field name="inherit_id" ref="x_portones.view_x_dflex_porton_tree"/>
+        <field name="inherit_id" ref="portones_list.view_x_dflex_porton_list"/>
         <field name="arch" type="xml">
-            <xpath expr="//tree" position="inside">
+            <xpath expr="//tree/field[@name='display_name']" position="after">
                 <field name="x_estado"/>
                 <field name="x_aprob_comercial"/>
                 <field name="x_aprob_planificacion"/>
@@ -15,20 +15,58 @@
         </field>
     </record>
 
-    <!-- Formulario de portón con pestaña de workflow (sin botones por ahora) -->
+    <!-- Formulario: pestaña Workflow con campos y botones -->
     <record id="view_dflex_porton_form_workflow" model="ir.ui.view">
         <field name="name">x_dflex_porton.form.workflow</field>
         <field name="model">x_dflex.porton</field>
-        <field name="inherit_id" ref="x_portones.view_x_dflex_porton_form"/>
+        <field name="inherit_id" ref="portones_list.view_x_dflex_porton_form"/>
         <field name="arch" type="xml">
             <xpath expr="//sheet" position="inside">
-                <group string="Workflow DFLEX">
-                    <field name="x_estado"/>
-                    <field name="x_aprob_comercial"/>
-                    <field name="x_aprob_planificacion"/>
-                    <field name="x_aprob_administracion"/>
+                <group string="Workflow portón">
+                    <group>
+                        <field name="x_estado"/>
+                    </group>
+                    <group string="Aprobaciones">
+                        <field name="x_aprob_comercial"/>
+                        <field name="x_aprob_planificacion"/>
+                        <field name="x_aprob_administracion"/>
+                    </group>
                 </group>
+                <footer>
+                    <!-- Estados principales -->
+                    <button name="action_set_acopio"
+                            string="Marcar acopio"
+                            type="object"
+                            class="btn-secondary"/>
+
+                    <button name="action_set_pendiente_medicion"
+                            string="Pendiente medición"
+                            type="object"
+                            class="btn-secondary"/>
+
+                    <button name="action_set_pendiente_modif_comercial"
+                            string="Pendiente modif. comercial"
+                            type="object"
+                            class="btn-secondary"/>
+
+                    <!-- Aprobaciones (toggles) -->
+                    <button name="action_toggle_aprob_comercial"
+                            string="Aprobar Comercial"
+                            type="object"
+                            class="btn-primary"/>
+
+                    <button name="action_toggle_aprob_planificacion"
+                            string="Aprobar Planificación"
+                            type="object"
+                            class="btn-primary"/>
+
+                    <button name="action_toggle_aprob_administracion"
+                            string="Aprobar Administración"
+                            type="object"
+                            class="btn-primary"/>
+                </footer>
             </xpath>
         </field>
     </record>
+
 </odoo>
