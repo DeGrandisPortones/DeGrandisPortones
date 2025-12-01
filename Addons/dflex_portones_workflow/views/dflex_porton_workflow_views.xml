@@ -1,0 +1,118 @@
+<odoo>
+    <!-- Secuencia -->
+    <record id="seq_dflex_porton_workflow" model="ir.sequence">
+        <field name="name">DFLEX Porton Workflow</field>
+        <field name="code">dflex.porton.workflow</field>
+        <field name="prefix">PW</field>
+        <field name="padding">5</field>
+        <field name="company_id" eval="False"/>
+    </record>
+
+    <!-- Acción / vista árbol -->
+    <record id="view_dflex_porton_workflow_tree" model="ir.ui.view">
+        <field name="name">dflex.porton.workflow.tree</field>
+        <field name="model">dflex.porton.workflow</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="name"/>
+                <field name="porton_id"/>
+                <field name="sale_id"/>
+                <field name="state"/>
+                <field name="company_id"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_dflex_porton_workflow_form" model="ir.ui.view">
+        <field name="name">dflex.porton.workflow.form</field>
+        <field name="model">dflex.porton.workflow</field>
+        <field name="arch" type="xml">
+            <form string="Workflow Portón">
+                <sheet>
+                    <group>
+                        <field name="name" readonly="1"/>
+                        <field name="company_id"/>
+                        <field name="state" readonly="1"/>
+                    </group>
+                    <group>
+                        <field name="porton_id"/>
+                        <field name="sale_id"/>
+                    </group>
+                    <group>
+                        <field name="es_distribuidor"/>
+                        <field name="necesita_medicion"/>
+                    </group>
+                    <notebook>
+                        <page string="Medición">
+                            <group>
+                                <field name="fecha_medicion"/>
+                                <field name="usuario_medicion_id"/>
+                            </group>
+                        </page>
+                        <page string="Aprobaciones">
+                            <group string="Comercial">
+                                <field name="aprob_comercial_uid" readonly="1"/>
+                                <field name="aprob_comercial_date" readonly="1"/>
+                            </group>
+                            <group string="Planificación">
+                                <field name="aprob_planif_uid" readonly="1"/>
+                                <field name="aprob_planif_date" readonly="1"/>
+                            </group>
+                            <group string="Administración">
+                                <field name="aprob_admin_uid" readonly="1"/>
+                                <field name="aprob_admin_date" readonly="1"/>
+                            </group>
+                        </page>
+                        <page string="Producción">
+                            <group>
+                                <field name="production_id" readonly="1"/>
+                            </group>
+                        </page>
+                        <page string="Notas">
+                            <field name="notes"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <footer>
+                    <button name="action_set_acopio" type="object" string="Acopio" class="btn-secondary"
+                            attrs="{'invisible': [('state', 'not in', ['draft', 'pend_mod_comercial'])]}"/>
+                    <button name="action_set_pend_medicion" type="object" string="Pendiente medición" class="btn-secondary"
+                            attrs="{'invisible': [('state', '!=', 'draft')]}"/>
+                    <button name="action_set_pend_mod_comercial" type="object" string="Pend. ajustes comercial" class="btn-secondary"
+                            attrs="{'invisible': [('state', 'not in', ['pend_medicion'])]}"/>
+                    <button name="action_set_pre_produccion" type="object" string="Pre-producción" class="btn-secondary"
+                            attrs="{'invisible': [('state', 'not in', ['acopio', 'pend_mod_comercial'])]}"/>
+
+                    <button name="action_aprobar_comercial" type="object" string="Aprobar Comercial" class="btn-primary"
+                            attrs="{'invisible': [('state', '!=', 'pre_produccion')]}"/>
+                    <button name="action_aprobar_planificacion" type="object" string="Aprobar Planificación" class="btn-primary"
+                            attrs="{'invisible': [('state', '!=', 'pre_produccion')]}"/>
+                    <button name="action_aprobar_administracion" type="object" string="Aprobar Administración" class="btn-primary"
+                            attrs="{'invisible': [('state', '!=', 'pre_produccion')]}"/>
+
+                    <button name="action_crear_orden_produccion" type="object" string="Crear Orden de Producción"
+                            class="btn-primary"
+                            attrs="{'invisible': [('state', '!=', 'aprobado')]}"/>
+
+                    <button string="Cerrar" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_dflex_porton_workflow" model="ir.actions.act_window">
+        <field name="name">Workflow Portones</field>
+        <field name="res_model">dflex.porton.workflow</field>
+        <field name="view_mode">tree,form</field>
+        <field name="target">current</field>
+    </record>
+
+    <menuitem id="menu_dflex_porton_workflow_root"
+              name="DFLEX Portones"
+              parent="sale.sale_menu_root"/>
+
+    <menuitem id="menu_dflex_porton_workflow"
+              name="Workflow Portones"
+              parent="menu_dflex_porton_workflow_root"
+              action="action_dflex_porton_workflow"/>
+</odoo>

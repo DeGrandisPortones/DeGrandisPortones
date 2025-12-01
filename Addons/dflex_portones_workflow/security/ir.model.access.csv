@@ -1,0 +1,3 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_dflex_porton_workflow_user,access_dflex_porton_workflow_user,model_dflex_porton_workflow,,1,1,1,0
+access_dflex_porton_workflow_manager,access_dflex_porton_workflow_manager,model_dflex_porton_workflow,base.group_system,1,1,1,1
