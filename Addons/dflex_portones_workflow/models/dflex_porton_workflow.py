@@ -1,57 +1,32 @@
-from odoo import api, fields, models, _
+from odoo import models
 
 class DflexPortonWorkflow(models.Model):
-    _inherit = 'x_dflex.porton'
+    _inherit = "x_dflex.porton"
 
-    # No redefinimos los campos Studio (x_estado, x_aprob_*) para evitar conflictos.
-    # Solo implementamos acciones de workflow que los actualizan.
-
-    def _set_estado(self, estado):
-        for record in self:
-            record.x_estado = estado
-
-    # --- Estados principales ---
+    # --- Acciones de estado principales ---
 
     def action_set_acopio(self):
         for record in self:
-            record._set_estado('acopio')
-        return True
+            record.x_estado = "acopio"
 
     def action_set_pendiente_medicion(self):
         for record in self:
-            record._set_estado('pendiente_medicion')
-        return True
+            record.x_estado = "pendiente_medicion"
 
     def action_set_pendiente_modif_comercial(self):
         for record in self:
-            record._set_estado('pendiente_modif_comercial')
-        return True
+            record.x_estado = "pendiente_modif_comercial"
 
-    def action_set_preproduccion(self):
+    # --- Acciones de aprobaciones ---
+
+    def action_toggle_aprob_comercial(self):
         for record in self:
-            record._set_estado('preproduccion')
-        return True
+            record.x_aprob_comercial = not bool(record.x_aprob_comercial)
 
-    # --- Aprobaciones ---
-
-    def action_aprobar_comercial(self):
+    def action_toggle_aprob_planificacion(self):
         for record in self:
-            record.x_aprob_comercial = True
-        return True
+            record.x_aprob_planificacion = not bool(record.x_aprob_planificacion)
 
-    def action_aprobar_planificacion(self):
+    def action_toggle_aprob_administracion(self):
         for record in self:
-            record.x_aprob_planificacion = True
-        return True
-
-    def action_aprobar_administracion(self):
-        for record in self:
-            record.x_aprob_administracion = True
-        return True
-
-    def action_reset_aprobaciones(self):
-        for record in self:
-            record.x_aprob_comercial = False
-            record.x_aprob_planificacion = False
-            record.x_aprob_administracion = False
-        return True
+            record.x_aprob_administracion = not bool(record.x_aprob_administracion)
