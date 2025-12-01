@@ -1,0 +1,20 @@
+<odoo>
+    <!-- Menú principal bajo Ventas -->
+    <menuitem
+        id="menu_dflex_porton_workflow"
+        name="Portones - Workflow"
+        parent="sale.menu_sale_root"
+        sequence="30"
+        groups="dflex_portones_workflow.group_dflex_comercial,dflex_portones_workflow.group_dflex_planificacion,dflex_portones_workflow.group_dflex_administracion"
+    />
+
+    <!-- Submenú para lista de pre-producción -->
+    <menuitem
+        id="menu_dflex_porton_preproduction"
+        name="Portones en pre-producción"
+        parent="menu_dflex_porton_workflow"
+        action="action_dflex_porton_preproduction"
+        sequence="10"
+        groups="dflex_portones_workflow.group_dflex_comercial,dflex_portones_workflow.group_dflex_planificacion,dflex_portones_workflow.group_dflex_administracion"
+    />
+</odoo>

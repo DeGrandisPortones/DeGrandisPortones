@@ -1,30 +1,28 @@
-<?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Vista listado Portones con columnas de workflow -->
+    <!-- Lista simple para ver el estado y aprobaciones -->
     <record id="view_dflex_porton_list_workflow" model="ir.ui.view">
         <field name="name">x_dflex_porton.list.workflow</field>
         <field name="model">x_dflex.porton</field>
-        <field name="inherit_id" ref="x_portones.view_x_dflex_porton_tree"/>
         <field name="arch" type="xml">
-            <xpath expr="//tree" position="inside">
+            <list string="Portones - Workflow">
+                <field name="display_name"/>
                 <field name="x_estado"/>
                 <field name="x_aprob_comercial"/>
                 <field name="x_aprob_planificacion"/>
                 <field name="x_aprob_administracion"/>
-            </xpath>
+            </list>
         </field>
     </record>
 
-    <!-- Vista formulario Portones con pestaña de workflow -->
+    <!-- Formulario simple con botones de cambio de estado -->
     <record id="view_dflex_porton_form_workflow" model="ir.ui.view">
         <field name="name">x_dflex_porton.form.workflow</field>
         <field name="model">x_dflex.porton</field>
-        <field name="inherit_id" ref="x_portones.view_x_dflex_porton_form"/>
         <field name="arch" type="xml">
-            <!-- pestaña nueva -->
-            <xpath expr="//notebook" position="inside">
-                <page string="Workflow producción">
+            <form string="Portón - Workflow">
+                <sheet>
                     <group>
+                        <field name="display_name"/>
                         <field name="x_estado"/>
                     </group>
                     <group string="Aprobaciones">
@@ -32,25 +30,24 @@
                         <field name="x_aprob_planificacion"/>
                         <field name="x_aprob_administracion"/>
                     </group>
-                    <group string="Acciones rápidas">
-                        <button string="Marcar Acopio" type="object"
-                                name="action_marcar_acopio"
-                                class="btn-secondary"/>
-                        <button string="Pendiente medición" type="object"
-                                name="action_iniciar_medicion"
-                                class="btn-secondary"/>
-                        <button string="Pendiente modificaciones" type="object"
-                                name="action_marcar_pendiente_modif"
-                                class="btn-secondary"/>
-                        <button string="Pre-producción" type="object"
-                                name="action_marcar_preproduccion"
-                                class="btn-primary"/>
-                        <button string="Producción" type="object"
-                                name="action_marcar_produccion"
-                                class="btn-primary"/>
-                    </group>
-                </page>
-            </xpath>
+                    <footer>
+                        <button name="action_set_acopio" string="Marcar Acopio" type="object" class="btn-secondary"/>
+                        <button name="action_set_pendiente_medicion" string="Pendiente medición" type="object" class="btn-secondary"/>
+                        <button name="action_set_pendiente_modif_comercial" string="Pendiente modif. comercial" type="object" class="btn-secondary"/>
+                        <button name="action_set_preproduccion" string="Pre-producción" type="object" class="btn-secondary"/>
+                        <button name="action_set_produccion" string="Pasar a Producción" type="object" class="btn-primary"/>
+                    </footer>
+                </sheet>
+            </form>
         </field>
+    </record>
+
+    <!-- Acción para abrir los portones en workflow -->
+    <record id="action_dflex_porton_preproduction" model="ir.actions.act_window">
+        <field name="name">Portones - Pre-producción</field>
+        <field name="res_model">x_dflex.porton</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="view_dflex_porton_list_workflow"/>
+        <field name="domain">[("x_estado", "in", ["preproduccion", "pendiente_medicion", "pendiente_modif_comercial"])]</field>
     </record>
 </odoo>

@@ -1,6 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Grupos -->
     <record id="group_dflex_comercial" model="res.groups">
         <field name="name">DFLEX - Comercial</field>
     </record>
@@ -11,44 +9,5 @@
 
     <record id="group_dflex_administracion" model="res.groups">
         <field name="name">DFLEX - Administración</field>
-    </record>
-
-    <!-- Reglas de acceso básicas al modelo de portones -->
-    <record id="dflex_porton_rule_user" model="ir.rule">
-        <field name="name">Portones visibles para todos (multi-company ya filtra)</field>
-        <field name="model_id" ref="x_portones.model_x_dflex_porton"/>
-        <field name="global" eval="True"/>
-        <field name="domain_force">[(1, "=", 1)]</field>
-    </record>
-
-    <!-- Seguridad de los grupos para escribir aprobaciones (simple: permisos totales) -->
-    <record id="dflex_porton_access_comercial" model="ir.model.access">
-        <field name="name">dflex.porton.comercial.access</field>
-        <field name="model_id" ref="x_portones.model_x_dflex_porton"/>
-        <field name="group_id" ref="group_dflex_comercial"/>
-        <field name="perm_read" eval="1"/>
-        <field name="perm_write" eval="1"/>
-        <field name="perm_create" eval="0"/>
-        <field name="perm_unlink" eval="0"/>
-    </record>
-
-    <record id="dflex_porton_access_planificacion" model="ir.model.access">
-        <field name="name">dflex.porton.planificacion.access</field>
-        <field name="model_id" ref="x_portones.model_x_dflex_porton"/>
-        <field name="group_id" ref="group_dflex_planificacion"/>
-        <field name="perm_read" eval="1"/>
-        <field name="perm_write" eval="1"/>
-        <field name="perm_create" eval="0"/>
-        <field name="perm_unlink" eval="0"/>
-    </record>
-
-    <record id="dflex_porton_access_administracion" model="ir.model.access">
-        <field name="name">dflex.porton.administracion.access</field>
-        <field name="model_id" ref="x_portones.model_x_dflex_porton"/>
-        <field name="group_id" ref="group_dflex_administracion"/>
-        <field name="perm_read" eval="1"/>
-        <field name="perm_write" eval="1"/>
-        <field name="perm_create" eval="0"/>
-        <field name="perm_unlink" eval="0"/>
     </record>
 </odoo>
