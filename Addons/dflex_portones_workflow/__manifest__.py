@@ -8,6 +8,6 @@
     "data": [
         "security/dflex_portones_security.xml"
     ],
-    "installable": True,
+    "installable": False,
     "application": False
 }
