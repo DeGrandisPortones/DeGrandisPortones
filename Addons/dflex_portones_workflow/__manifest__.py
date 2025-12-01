@@ -13,6 +13,6 @@
         "security/ir.model.access.csv",
         "views/dflex_porton_workflow_views.xml"
     ],
-    "installable": true,
-    "application": false
+    "installable": True,
+    "application": False
 }
