@@ -1,20 +1,19 @@
 <odoo>
-    <data noupdate="1">
-
-        <!-- Grupo Comercial -->
+    <data noupdate="0">
+        <!-- Categoría genérica, para no depender de Ventas -->
         <record id="group_dflex_comercial" model="res.groups">
             <field name="name">DFLEX - Comercial</field>
+            <field name="category_id" ref="base.module_category_hidden"/>
         </record>
 
-        <!-- Grupo Planificación -->
         <record id="group_dflex_planificacion" model="res.groups">
             <field name="name">DFLEX - Planificación</field>
+            <field name="category_id" ref="base.module_category_hidden"/>
         </record>
 
-        <!-- Grupo Administración -->
         <record id="group_dflex_administracion" model="res.groups">
             <field name="name">DFLEX - Administración</field>
+            <field name="category_id" ref="base.module_category_hidden"/>
         </record>
-
     </data>
 </odoo>
