@@ -1,19 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <data noupdate="0">
-        <!-- Categoría genérica, para no depender de Ventas -->
-        <record id="group_dflex_comercial" model="res.groups">
-            <field name="name">DFLEX - Comercial</field>
-            <field name="category_id" ref="base.module_category_hidden"/>
-        </record>
+    <!-- Grupos específicos DFLEX -->
+    <record id="group_dflex_comercial" model="res.groups">
+        <field name="name">DFLEX - Comercial</field>
+        <field name="category_id" ref="base.module_category_hidden"/>
+    </record>
 
-        <record id="group_dflex_planificacion" model="res.groups">
-            <field name="name">DFLEX - Planificación</field>
-            <field name="category_id" ref="base.module_category_hidden"/>
-        </record>
+    <record id="group_dflex_planificacion" model="res.groups">
+        <field name="name">DFLEX - Planificación</field>
+        <field name="category_id" ref="base.module_category_hidden"/>
+    </record>
 
-        <record id="group_dflex_administracion" model="res.groups">
-            <field name="name">DFLEX - Administración</field>
-            <field name="category_id" ref="base.module_category_hidden"/>
-        </record>
-    </data>
+    <record id="group_dflex_administracion" model="res.groups">
+        <field name="name">DFLEX - Administración</field>
+        <field name="category_id" ref="base.module_category_hidden"/>
+    </record>
 </odoo>

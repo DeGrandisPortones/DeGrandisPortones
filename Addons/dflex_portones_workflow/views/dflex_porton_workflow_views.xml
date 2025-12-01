@@ -1,38 +1,38 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <!-- Lista simple para ver estado y aprobaciones -->
+    <!-- VISTA LISTA: columna de estado y aprobaciones -->
     <record id="view_dflex_porton_list_workflow" model="ir.ui.view">
         <field name="name">x_dflex_porton.list.workflow</field>
         <field name="model">x_dflex.porton</field>
+        <field name="inherit_id" ref="x_portones.x_dflex_porton_tree_view"/>
         <field name="arch" type="xml">
-            <list string="Portones - Workflow">
-                <field name="display_name"/>
+            <xpath expr="//tree" position="inside">
                 <field name="x_estado"/>
                 <field name="x_aprob_comercial"/>
                 <field name="x_aprob_planificacion"/>
                 <field name="x_aprob_administracion"/>
-            </list>
+            </xpath>
         </field>
     </record>
 
-    <!-- Formulario básico con botones de acción -->
+    <!-- VISTA FORMULARIO: botones de workflow -->
     <record id="view_dflex_porton_form_workflow" model="ir.ui.view">
         <field name="name">x_dflex_porton.form.workflow</field>
         <field name="model">x_dflex.porton</field>
+        <field name="inherit_id" ref="x_portones.x_dflex_porton_form_view"/>
         <field name="arch" type="xml">
-            <form string="Portón - Workflow">
-                <sheet>
-                    <group>
-                        <field name="display_name" readonly="1"/>
-                        <field name="x_estado"/>
-                    </group>
+            <xpath expr="//form/sheet/group" position="after">
+                <group string="Workflow DFLEX">
+                    <field name="x_estado"/>
+
                     <group string="Aprobaciones">
                         <field name="x_aprob_comercial"/>
                         <field name="x_aprob_planificacion"/>
                         <field name="x_aprob_administracion"/>
                     </group>
-                </sheet>
+                </group>
+
                 <footer>
                     <!-- Estados principales -->
                     <button name="action_set_acopio"
@@ -50,37 +50,22 @@
                             type="object"
                             class="btn-secondary"/>
 
-                    <!-- Transición a pre-producción (requiere 3 aprobaciones) -->
+                    <!-- Cambios de estado posteriores -->
                     <button name="action_set_preproduccion"
-                            string="Pasar a pre-producción"
+                            string="A Pre-producción"
+                            type="object"
+                            class="btn-secondary"/>
+
+                    <button name="action_set_produccion"
+                            string="A Producción"
                             type="object"
                             class="btn-primary"/>
 
-                    <!-- Paso final a producción -->
-                    <button name="action_set_produccion"
-                            string="Pasar a producción"
-                            type="object"
-                            class="btn-primary"/>
+                    <!-- Botón estándar de Cerrar / Guardar -->
+                    <button string="Guardar" type="object" name="action_save" class="btn-primary" special="save"/>
                 </footer>
-            </form>
+            </xpath>
         </field>
     </record>
-
-    <!-- Acción y menú para acceder al workflow -->
-    <record id="action_dflex_porton_workflow" model="ir.actions.act_window">
-        <field name="name">Workflow portones</field>
-        <field name="res_model">x_dflex.porton</field>
-        <field name="view_mode">tree,form</field>
-        <field name="view_id" ref="view_dflex_porton_list_workflow"/>
-    </record>
-
-    <menuitem id="menu_dflex_porton_workflow_root"
-              name="Portones workflow"
-              parent="base.menu_custom"/>
-
-    <menuitem id="menu_dflex_porton_workflow"
-              name="Portones"
-              parent="menu_dflex_porton_workflow_root"
-              action="action_dflex_porton_workflow"/>
 
 </odoo>
