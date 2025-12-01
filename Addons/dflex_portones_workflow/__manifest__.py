@@ -14,5 +14,6 @@
         "views/dflex_porton_workflow_views.xml"
     ],
     "installable": True,
-    "application": False
+    "application": False,
+    "auto_install": False
 }
