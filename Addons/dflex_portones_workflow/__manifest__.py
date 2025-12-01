@@ -1,16 +1,18 @@
 {
     "name": "DFLEX Portones - Workflow",
-    "version": "18.0.1.0.0",
-    "summary": "Workflow de portones: acopio, medición, pre-producción y producción",
-    "author": "DFLEX Argentina",
-    "website": "",
+    "version": "16.0.1.0.0",
+    "author": "ChatGPT",
     "category": "Sales",
-    "depends": ["base", "sale", "mrp"],
+    "license": "OPL-1",
+    "depends": [
+        "sale",
+        "mrp"
+    ],
     "data": [
         "security/dflex_portones_security.xml",
+        "security/ir.model.access.csv",
         "views/dflex_porton_workflow_views.xml"
     ],
-    "installable": True,
-    "application": False,
-    "license": "LGPL-3"
+    "installable": true,
+    "application": false
 }

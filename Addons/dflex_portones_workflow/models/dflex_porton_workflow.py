@@ -1,72 +1,61 @@
-from odoo import models, fields, api, _
-from odoo.exceptions import UserError
+from odoo import api, fields, models
 
 
 class DflexPorton(models.Model):
     _inherit = "x_dflex.porton"
 
+    # Estado general del portón
     x_estado = fields.Selection(
-        [
+        selection=[
             ("acopio", "Acopio"),
-            ("para_medir", "Para medir"),
-            ("pendiente_modif", "Pendiente de modificaciones"),
+            ("pend_medir", "Pendiente de medición"),
+            ("pend_modif", "Pendiente de modificaciones comerciales"),
             ("preproduccion", "Pre-producción"),
-            ("produccion", "Producción"),
+            ("produccion", "En producción"),
         ],
-        string="Estado",
+        string="Estado workflow",
         default="acopio",
         tracking=True,
     )
-    x_aprob_comercial = fields.Boolean("Aprob. Comercial", tracking=True)
-    x_aprob_planificacion = fields.Boolean("Aprob. Planificación", tracking=True)
-    x_aprob_administracion = fields.Boolean("Aprob. Administración", tracking=True)
 
-    def _reset_aprobaciones(self):
+    # Aprobaciones
+    x_aprob_comercial = fields.Boolean(string="Aprobación comercial", default=False)
+    x_aprob_planificacion = fields.Boolean(string="Aprobación planificación", default=False)
+    x_aprob_administracion = fields.Boolean(string="Aprobación administración", default=False)
+
+    # Helpers para ver si está todo aprobado
+    x_todas_aprobaciones = fields.Boolean(
+        string="Todas las aprobaciones OK",
+        compute="_compute_todas_aprobaciones",
+        store=True,
+    )
+
+    @api.depends("x_aprob_comercial", "x_aprob_planificacion", "x_aprob_administracion")
+    def _compute_todas_aprobaciones(self):
         for rec in self:
-            rec.x_aprob_comercial = False
-            rec.x_aprob_planificacion = False
-            rec.x_aprob_administracion = False
+            rec.x_todas_aprobaciones = bool(
+                rec.x_aprob_comercial and
+                rec.x_aprob_planificacion and
+                rec.x_aprob_administracion
+            )
 
-    def action_to_acopio(self):
+    # Acciones simples de cambio de estado (se podrán usar luego en botones)
+    def action_set_acopio(self):
         for rec in self:
             rec.x_estado = "acopio"
-            rec._reset_aprobaciones()
 
-    def action_to_para_medir(self):
+    def action_set_pend_medir(self):
         for rec in self:
-            rec.x_estado = "para_medir"
-            rec._reset_aprobaciones()
+            rec.x_estado = "pend_medir"
 
-    def action_to_pendiente_modif(self):
+    def action_set_pend_modif(self):
         for rec in self:
-            rec.x_estado = "pendiente_modif"
-            rec._reset_aprobaciones()
+            rec.x_estado = "pend_modif"
 
-    def action_to_preproduccion(self):
+    def action_set_preproduccion(self):
         for rec in self:
             rec.x_estado = "preproduccion"
-            rec._reset_aprobaciones()
 
-    def action_to_produccion(self):
+    def action_set_produccion(self):
         for rec in self:
-            if not (rec.x_aprob_comercial and rec.x_aprob_planificacion and rec.x_aprob_administracion):
-                raise UserError(
-                    _(
-                        "Para pasar a Producción se necesitan las 3 aprobaciones "
-                        "(Comercial, Planificación y Administración)."
-                    )
-                )
             rec.x_estado = "produccion"
-            # TODO: acá en el futuro se puede disparar la creación de la orden de fabricación.
-
-    def action_aprobar_comercial(self):
-        for rec in self:
-            rec.x_aprob_comercial = True
-
-    def action_aprobar_planificacion(self):
-        for rec in self:
-            rec.x_aprob_planificacion = True
-
-    def action_aprobar_administracion(self):
-        for rec in self:
-            rec.x_aprob_administracion = True

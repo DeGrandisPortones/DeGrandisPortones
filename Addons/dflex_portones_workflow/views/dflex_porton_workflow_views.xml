@@ -1,124 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <odoo>
-    <data>
 
-        <!-- Acción y menú -->
-        <record id="action_dflex_portones_workflow" model="ir.actions.act_window">
-            <field name="name">Portones DFLEX</field>
-            <field name="res_model">x_dflex.porton</field>
-            <field name="view_mode">list,form</field>
-            <field name="help" type="html">
-                <p>Aquí vas a gestionar el estado (Acopio / Medición / Pre-producción / Producción) de los portones.</p>
-            </field>
-        </record>
+    <!-- Vista lista simple para ver el workflow de los portones -->
+    <record id="view_dflex_porton_list_workflow" model="ir.ui.view">
+        <field name="name">x_dflex_porton.list.workflow</field>
+        <field name="model">x_dflex.porton</field>
+        <field name="arch" type="xml">
+            <list string="Portones - Workflow">
+                <field name="display_name"/>
+                <field name="x_estado"/>
+                <field name="x_aprob_comercial"/>
+                <field name="x_aprob_planificacion"/>
+                <field name="x_aprob_administracion"/>
+                <field name="x_todas_aprobaciones"/>
+            </list>
+        </field>
+    </record>
 
-        <menuitem id="menu_dflex_portones_root"
-                  name="DFLEX Portones"
-                  parent="sale.sale_menu_root"
-                  sequence="50"/>
+    <!-- Vista formulario extendida muy simple (no heredamos nada raro) -->
+    <record id="view_dflex_porton_form_workflow" model="ir.ui.view">
+        <field name="name">x_dflex_porton.form.workflow</field>
+        <field name="model">x_dflex.porton</field>
+        <field name="arch" type="xml">
+            <form string="Portón">
+                <sheet>
+                    <group>
+                        <field name="display_name"/>
+                    </group>
+                    <group string="Workflow DFLEX">
+                        <field name="x_estado"/>
+                        <field name="x_aprob_comercial"/>
+                        <field name="x_aprob_planificacion"/>
+                        <field name="x_aprob_administracion"/>
+                        <field name="x_todas_aprobaciones" readonly="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
 
-        <menuitem id="menu_dflex_portones_workflow"
-                  name="Portones"
-                  parent="menu_dflex_portones_root"
-                  action="action_dflex_portones_workflow"
-                  sequence="10"/>
+    <!-- Acción para abrir los portones en este workflow -->
+    <record id="action_dflex_porton_workflow" model="ir.actions.act_window">
+        <field name="name">Portones - Workflow</field>
+        <field name="res_model">x_dflex.porton</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="view_dflex_porton_list_workflow"/>
+        <field name="help" type="html">
+            <p>Panel simple para gestionar el estado y las aprobaciones de los portones.</p>
+        </field>
+    </record>
 
-        <!-- Vista de lista -->
-        <record id="view_dflex_porton_list_workflow" model="ir.ui.view">
-            <field name="name">x_dflex_porton.list.workflow</field>
-            <field name="model">x_dflex.porton</field>
-            <field name="arch" type="xml">
-                <list string="Portones DFLEX">
-                    <field name="display_name"/>
-                    <field name="x_estado"/>
-                    <field name="x_aprob_comercial"/>
-                    <field name="x_aprob_planificacion"/>
-                    <field name="x_aprob_administracion"/>
-                    <field name="company_id"/>
-                </list>
-            </field>
-        </record>
+    <!-- Menú (lo ponés donde quieras; por ahora en Ventas / Configuración) -->
+    <menuitem
+        id="menu_dflex_porton_workflow_root"
+        name="DFLEX Portones"
+        parent="sale.sale_menu_root"
+        sequence="50"
+    />
+    <menuitem
+        id="menu_dflex_porton_workflow"
+        name="Workflow de portones"
+        parent="menu_dflex_porton_workflow_root"
+        action="action_dflex_porton_workflow"
+        sequence="10"
+    />
 
-        <!-- Vista de formulario -->
-        <record id="view_dflex_porton_form_workflow" model="ir.ui.view">
-            <field name="name">x_dflex_porton.form.workflow</field>
-            <field name="model">x_dflex.porton</field>
-            <field name="arch" type="xml">
-                <form string="Portón DFLEX">
-                    <sheet>
-                        <header>
-                            <field name="x_estado" widget="statusbar"
-                                   statusbar_visible="acopio,para_medir,pendiente_modif,preproduccion,produccion"/>
-
-                            <button name="action_to_acopio"
-                                    string="Acopio"
-                                    type="object"
-                                    class="btn-secondary"/>
-
-                            <button name="action_to_para_medir"
-                                    string="Para medir"
-                                    type="object"
-                                    class="btn-secondary"/>
-
-                            <button name="action_to_pendiente_modif"
-                                    string="Pend. modificaciones"
-                                    type="object"
-                                    class="btn-secondary"/>
-
-                            <button name="action_to_preproduccion"
-                                    string="Pre-producción"
-                                    type="object"
-                                    class="btn-primary"/>
-
-                            <button name="action_to_produccion"
-                                    string="Pasar a producción"
-                                    type="object"
-                                    class="btn-primary"/>
-
-                            <!-- Botones de aprobación -->
-                            <button name="action_aprobar_comercial"
-                                    string="Aprobar Comercial"
-                                    type="object"
-                                    groups="dflex_portones_workflow.group_dflex_comercial"
-                                    class="btn-success"/>
-
-                            <button name="action_aprobar_planificacion"
-                                    string="Aprobar Planificación"
-                                    type="object"
-                                    groups="dflex_portones_workflow.group_dflex_planificacion"
-                                    class="btn-success"/>
-
-                            <button name="action_aprobar_administracion"
-                                    string="Aprobar Administración"
-                                    type="object"
-                                    groups="dflex_portones_workflow.group_dflex_administracion"
-                                    class="btn-success"/>
-                        </header>
-
-                        <group>
-                            <group>
-                                <field name="display_name" readonly="1"/>
-                                <field name="company_id" readonly="1"/>
-                                <field name="x_estado" readonly="1"/>
-                            </group>
-                            <group>
-                                <field name="x_aprob_comercial" readonly="1"/>
-                                <field name="x_aprob_planificacion" readonly="1"/>
-                                <field name="x_aprob_administracion" readonly="1"/>
-                            </group>
-                        </group>
-
-                        <notebook>
-                            <page string="Datos del portón">
-                                <group>
-                                    <field name="x_color_sistema"/>
-                                </group>
-                            </page>
-                        </notebook>
-
-                    </sheet>
-                </form>
-            </field>
-        </record>
-
-    </data>
 </odoo>
