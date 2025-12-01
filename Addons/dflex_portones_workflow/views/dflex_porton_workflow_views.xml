@@ -1,7 +1,5 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <odoo>
-
-    <!-- Vista lista simple para ver el workflow de los portones -->
+    <!-- Lista simple para ver estados -->
     <record id="view_dflex_porton_list_workflow" model="ir.ui.view">
         <field name="name">x_dflex_porton.list.workflow</field>
         <field name="model">x_dflex.porton</field>
@@ -12,12 +10,11 @@
                 <field name="x_aprob_comercial"/>
                 <field name="x_aprob_planificacion"/>
                 <field name="x_aprob_administracion"/>
-                <field name="x_todas_aprobaciones"/>
             </list>
         </field>
     </record>
 
-    <!-- Vista formulario extendida muy simple (no heredamos nada raro) -->
+    <!-- Formulario básico sólo con nuestros campos (para que no dependa de Studio) -->
     <record id="view_dflex_porton_form_workflow" model="ir.ui.view">
         <field name="name">x_dflex_porton.form.workflow</field>
         <field name="model">x_dflex.porton</field>
@@ -26,43 +23,31 @@
                 <sheet>
                     <group>
                         <field name="display_name"/>
-                    </group>
-                    <group string="Workflow DFLEX">
                         <field name="x_estado"/>
+                    </group>
+                    <group string="Aprobaciones">
                         <field name="x_aprob_comercial"/>
                         <field name="x_aprob_planificacion"/>
                         <field name="x_aprob_administracion"/>
-                        <field name="x_todas_aprobaciones" readonly="1"/>
                     </group>
                 </sheet>
             </form>
         </field>
     </record>
 
-    <!-- Acción para abrir los portones en este workflow -->
+    <!-- Acción -->
     <record id="action_dflex_porton_workflow" model="ir.actions.act_window">
-        <field name="name">Portones - Workflow</field>
+        <field name="name">Portones workflow</field>
         <field name="res_model">x_dflex.porton</field>
         <field name="view_mode">list,form</field>
         <field name="view_id" ref="view_dflex_porton_list_workflow"/>
-        <field name="help" type="html">
-            <p>Panel simple para gestionar el estado y las aprobaciones de los portones.</p>
-        </field>
     </record>
 
-    <!-- Menú (lo ponés donde quieras; por ahora en Ventas / Configuración) -->
+    <!-- Menú raíz propio, sin parent para no depender de otros módulos -->
     <menuitem
         id="menu_dflex_porton_workflow_root"
-        name="DFLEX Portones"
-        parent="sale.sale_menu_root"
-        sequence="50"
-    />
-    <menuitem
-        id="menu_dflex_porton_workflow"
-        name="Workflow de portones"
-        parent="menu_dflex_porton_workflow_root"
+        name="Portones workflow"
         action="action_dflex_porton_workflow"
         sequence="10"
     />
-
 </odoo>
