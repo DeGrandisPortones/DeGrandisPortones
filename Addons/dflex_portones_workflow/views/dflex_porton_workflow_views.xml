@@ -1,94 +1,34 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <odoo>
-    <!-- Lista de workflow -->
+    <!-- Lista de portones con columnas de estado y aprobaciones -->
     <record id="view_dflex_porton_list_workflow" model="ir.ui.view">
         <field name="name">x_dflex_porton.list.workflow</field>
         <field name="model">x_dflex.porton</field>
+        <field name="inherit_id" ref="x_portones.view_x_dflex_porton_tree"/>
         <field name="arch" type="xml">
-            <list string="Portones - Workflow">
-                <field name="display_name"/>
+            <xpath expr="//tree" position="inside">
                 <field name="x_estado"/>
                 <field name="x_aprob_comercial"/>
                 <field name="x_aprob_planificacion"/>
                 <field name="x_aprob_administracion"/>
-            </list>
+            </xpath>
         </field>
     </record>
 
-    <!-- Formulario simplificado con botones de estados y aprobaciones -->
+    <!-- Formulario de portón con pestaña de workflow (sin botones por ahora) -->
     <record id="view_dflex_porton_form_workflow" model="ir.ui.view">
         <field name="name">x_dflex_porton.form.workflow</field>
         <field name="model">x_dflex.porton</field>
+        <field name="inherit_id" ref="x_portones.view_x_dflex_porton_form"/>
         <field name="arch" type="xml">
-            <form string="Portón DFLEX - Workflow">
-                <sheet>
-                    <group>
-                        <group>
-                            <field name="display_name"/>
-                            <field name="x_estado"/>
-                        </group>
-                        <group>
-                            <field name="x_aprob_comercial"/>
-                            <field name="x_aprob_planificacion"/>
-                            <field name="x_aprob_administracion"/>
-                        </group>
-                    </group>
-                </sheet>
-                <footer>
-                    <!-- Estados principales -->
-                    <button name="action_set_acopio"
-                            string="Marcar acopio"
-                            type="object"
-                            class="btn-secondary"/>
-                    <button name="action_set_pendiente_medicion"
-                            string="Pendiente medición"
-                            type="object"
-                            class="btn-secondary"/>
-                    <button name="action_set_pendiente_modif_comercial"
-                            string="Pendiente modif. comercial"
-                            type="object"
-                            class="btn-secondary"/>
-                    <button name="action_set_preproduccion"
-                            string="Pasar a pre-producción"
-                            type="object"
-                            class="btn-primary"/>
-
-                    <!-- Aprobaciones -->
-                    <button name="action_aprobar_comercial"
-                            string="Aprobar Comercial"
-                            type="object"
-                            class="btn-secondary"/>
-                    <button name="action_aprobar_planificacion"
-                            string="Aprobar Planificación"
-                            type="object"
-                            class="btn-secondary"/>
-                    <button name="action_aprobar_administracion"
-                            string="Aprobar Administración"
-                            type="object"
-                            class="btn-secondary"/>
-                    <button name="action_reset_aprobaciones"
-                            string="Reset aprobaciones"
-                            type="object"
-                            class="btn-secondary"/>
-                </footer>
-            </form>
+            <xpath expr="//sheet" position="inside">
+                <group string="Workflow DFLEX">
+                    <field name="x_estado"/>
+                    <field name="x_aprob_comercial"/>
+                    <field name="x_aprob_planificacion"/>
+                    <field name="x_aprob_administracion"/>
+                </group>
+            </xpath>
         </field>
     </record>
-
-    <!-- Acción -->
-    <record id="action_dflex_porton_workflow" model="ir.actions.act_window">
-        <field name="name">Portones - Workflow</field>
-        <field name="res_model">x_dflex.porton</field>
-        <field name="view_mode">list,form</field>
-        <field name="view_id" ref="view_dflex_porton_list_workflow"/>
-        <field name="help" type="html">
-            <p>Gestione el estado y las aprobaciones de los portones.</p>
-        </field>
-    </record>
-
-    <!-- Menú raíz (sin padre para no depender de otros módulos) -->
-    <menuitem id="menu_dflex_porton_workflow_root"
-              name="Portones Workflow"
-              action="action_dflex_porton_workflow"
-              sequence="50"/>
 </odoo>

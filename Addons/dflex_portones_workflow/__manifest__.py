@@ -1,15 +1,15 @@
 {
-    'name': 'DFLEX Portones Workflow',
-    'version': '18.0.1.0.0',
-    'summary': 'Workflow de estados y aprobaciones para portones DFLEX',
-    'category': 'Sales',
+    'name': 'DFLEX Portones - Workflow Estados',
+    'version': '16.0.1.0.0',
     'author': 'Esteban + ChatGPT',
-    'website': '',
-    'license': 'LGPL-3',
+    'category': 'Sales',
+    'summary': 'Workflow de estados para portones DFLEX',
     'depends': ['base'],
     'data': [
-        'views/dflex_porton_workflow_views.xml',
+        'security/ir.model.access.csv',
+        'views/dflex_porton_workflow_views.xml'
     ],
     'installable': True,
     'application': False,
+    'license': 'LGPL-3',
 }
