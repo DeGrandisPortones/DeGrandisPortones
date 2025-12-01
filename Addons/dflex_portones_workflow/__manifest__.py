@@ -1,16 +1,15 @@
 {
-    "name": "DFLEX Portones - Workflow",
-    "version": "1.0",
-    "author": "DFLEX ARGENTINA S.A.S.",
-    "category": "Sales",
-    "depends": ["base", "sale"],
+    "name": "DFLEX Portones Workflow",
+    "version": "1.0.0",
+    "summary": "Flujo de estados y aprobaciones para portones DFLEX",
+    "author": "DFLEX / Esteban",
+    "license": "LGPL-3",
+    "category": "Custom",
+    "depends": ["base"],
     "data": [
         "security/dflex_portones_security.xml",
-        "security/ir.model.access.csv",
-        "views/dflex_porton_workflow_views.xml",
-        "views/dflex_porton_menus.xml"
+        "views/dflex_porton_workflow_views.xml"
     ],
     "installable": True,
-    "application": False,
-    "license": "LGPL-3"
+    "application": False
 }
