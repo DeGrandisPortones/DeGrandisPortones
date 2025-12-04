@@ -1,0 +1,16 @@
+<!-- stock_distributor_delivery_api/views/sale_order_views.xml -->
+<odoo>
+    <record id="view_order_form_distributor_flag" model="ir.ui.view">
+        <field name="name">sale.order.form.distributor.flag</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <!-- Lo pongo en la solapa 'Other Info', pero podés moverlo donde prefieras -->
+            <xpath expr="//sheet/notebook/page[@name='other_info']/group" position="inside">
+                <group string="Distribución">
+                    <field name="is_distributor_delivery"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>
