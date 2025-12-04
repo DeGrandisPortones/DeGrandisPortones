@@ -31,7 +31,7 @@ class DistributorApiController(http.Controller):
     @http.route(
         "/distributor/api/pickings",
         type="http",
-        auth="user",   # usás TU usuario + API key
+        auth="public",   # usás TU usuario + API key
         methods=["GET", "OPTIONS"],
         csrf=False,
     )
