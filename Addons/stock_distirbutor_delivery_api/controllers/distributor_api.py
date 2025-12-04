@@ -35,7 +35,7 @@ class DistributorApiController(http.Controller):
     @http.route(
         "/distributor/api/pickings",
         type="http",
-        auth="public",   # para pruebas; luego se puede pasar a 'user'
+        auth="user",   # para pruebas; luego se puede pasar a 'user'
         methods=["GET", "OPTIONS"],
         csrf=False,
     )
@@ -102,7 +102,7 @@ class DistributorApiController(http.Controller):
     @http.route(
         "/distributor/api/pickings/<int:picking_id>/final_customer",
         type="http",
-        auth="public",
+        auth="user",
         methods=["POST", "OPTIONS"],
         csrf=False,
     )
