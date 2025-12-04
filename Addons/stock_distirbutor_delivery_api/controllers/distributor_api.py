@@ -7,10 +7,14 @@ from odoo.http import request
 
 class DistributorApiController(http.Controller):
     """
-    API simple para tu futura app React (o para testear con curl/Postman):
+    API simple para la app del distribuidor (o para testear con curl/Postman):
 
     - GET  /distributor/api/pickings
-        Lista las entregas pendientes marcadas como 'Entrega vía distribuidor'.
+        Lista las entregas marcadas como 'Entrega vía distribuidor':
+        * Solo salidas (picking_type_id.code = 'outgoing')
+        * Solo estados pendientes (confirmed / assigned)
+        * Incluye tanto las que tienen cliente final cargado como las que no
+        * Incluye detalle de líneas (productos y cantidades)
 
     - POST /distributor/api/pickings/<picking_id>/final_customer
         Guarda los datos del cliente final para esa entrega.
@@ -31,7 +35,7 @@ class DistributorApiController(http.Controller):
     @http.route(
         "/distributor/api/pickings",
         type="http",
-        auth="public",   # usás TU usuario + API key
+        auth="public",   # para pruebas; luego se puede pasar a 'user'
         methods=["GET", "OPTIONS"],
         csrf=False,
     )
@@ -43,7 +47,10 @@ class DistributorApiController(http.Controller):
         - picking_type_id.code = 'outgoing'
         - state in ['confirmed', 'assigned']
         - is_distributor_delivery = True
-        - final_customer_completed = False
+
+        Nota: NO filtramos por final_customer_completed para que,
+        una vez cargado el cliente final, sigan apareciendo hasta
+        que el despachante marque la entrega como hecha (state = 'done').
         """
         if request.httprequest.method == "OPTIONS":
             return self._json_response({}, status=200)
@@ -56,13 +63,24 @@ class DistributorApiController(http.Controller):
             ("picking_type_id.code", "=", "outgoing"),
             ("state", "in", ["confirmed", "assigned"]),
             ("is_distributor_delivery", "=", True),
-            ("final_customer_completed", "=", False),
         ]
 
         pickings = Picking.search(domain, order="scheduled_date, id")
 
         data = []
         for picking in pickings:
+            # Detalle de líneas de productos
+            lines = []
+            for move in picking.move_ids_without_package:
+                lines.append(
+                    {
+                        "id": move.id,
+                        "product_name": move.product_id.display_name,
+                        "quantity": move.quantity or move.product_uom_qty,
+                        "uom": move.product_uom.name,
+                    }
+                )
+
             data.append(
                 {
                     "id": picking.id,
@@ -73,6 +91,9 @@ class DistributorApiController(http.Controller):
                     "partner_name": picking.partner_id.name,
                     "partner_ref": picking.partner_id.ref,
                     "is_distributor_delivery": picking.is_distributor_delivery,
+                    "final_customer_completed": picking.final_customer_completed,
+                    "final_customer_name": picking.final_customer_name,
+                    "lines": lines,
                 }
             )
 
