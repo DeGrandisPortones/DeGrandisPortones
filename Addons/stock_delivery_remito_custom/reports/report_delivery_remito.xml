@@ -49,42 +49,91 @@
 
           <div class="remito-bar" style="margin:10px 0 6px;"></div>
 
+          <!-- ======== BLOQUE MODIFICADO: DATOS DEL CLIENTE / CLIENTE FINAL ======== -->
           <table class="remito-box" style="width:100%; margin-bottom:6px;">
             <tr>
               <th style="width:18%;">Empresa - Sr./a:</th>
-              <td><t t-esc="o.partner_id.display_name"/></td>
+              <td>
+                <t t-if="o.final_customer_name">
+                  <t t-esc="o.final_customer_name"/>
+                </t>
+                <t t-else="">
+                  <t t-esc="o.partner_id.display_name"/>
+                </t>
+              </td>
             </tr>
             <tr>
               <th>DNI / CUIT:</th>
-              <td><t t-esc="o.partner_id.vat or ''"/></td>
+              <td>
+                <t t-if="o.final_customer_vat">
+                  <t t-esc="o.final_customer_vat"/>
+                </t>
+                <t t-else="">
+                  <t t-esc="o.partner_id.vat or ''"/>
+                </t>
+              </td>
             </tr>
             <tr>
               <th>Destino:</th>
-              <td><t t-esc="o.partner_id.contact_address or ''"/></td>
+              <td>
+                <t t-if="o.final_customer_street or o.final_customer_city">
+                  <t t-esc="o.final_customer_street or ''"/>
+                  <t t-if="o.final_customer_city">
+                    - <t t-esc="o.final_customer_city"/>
+                  </t>
+                </t>
+                <t t-else="">
+                  <t t-esc="o.partner_id.contact_address or ''"/>
+                </t>
+              </td>
             </tr>
             <tr>
               <th>CP:</th>
-              <td><t t-esc="o.partner_id.zip or ''"/></td>
+              <td>
+                <t t-esc="o.partner_id.zip or ''"/>
+              </td>
             </tr>
             <tr>
               <th>Email:</th>
-              <td><t t-esc="o.partner_id.email or ''"/></td>
+              <td>
+                <t t-esc="o.partner_id.email or ''"/>
+              </td>
             </tr>
             <tr>
               <th>Teléfono:</th>
               <td>
-                <t t-if="o.partner_id.phone"><t t-esc="o.partner_id.phone"/></t>
-                <t t-if="o.partner_id.mobile"> / <t t-esc="o.partner_id.mobile"/></t>
+                <t t-if="o.final_customer_phone">
+                  <t t-esc="o.final_customer_phone"/>
+                </t>
+                <t t-else="">
+                  <t t-if="o.partner_id.phone">
+                    <t t-esc="o.partner_id.phone"/>
+                  </t>
+                  <t t-if="o.partner_id.mobile">
+                    / <t t-esc="o.partner_id.mobile"/>
+                  </t>
+                </t>
               </td>
             </tr>
             <tr>
               <th>Aclaraciones</th>
               <td>
-                <div class="preline" t-if="o.note"><t t-esc="o.note"/></div>
-                <t t-if="not o.note"><t t-esc="o.origin or ''"/></t>
+                <!-- Primero, notas específicas del cliente final -->
+                <div class="preline" t-if="o.final_customer_notes">
+                  <t t-esc="o.final_customer_notes"/>
+                </div>
+                <!-- Si no hay notas del cliente final, usamos la nota del picking -->
+                <div class="preline" t-if="not o.final_customer_notes and o.note">
+                  <t t-esc="o.note"/>
+                </div>
+                <!-- Si tampoco hay nota, mostramos el origen (pedido) como antes -->
+                <t t-if="not o.final_customer_notes and not o.note">
+                  <t t-esc="o.origin or ''"/>
+                </t>
               </td>
             </tr>
           </table>
+          <!-- ======== FIN BLOQUE MODIFICADO ======== -->
 
           <table class="remito-box" style="width:100%; margin-top:6px;">
             <thead>
