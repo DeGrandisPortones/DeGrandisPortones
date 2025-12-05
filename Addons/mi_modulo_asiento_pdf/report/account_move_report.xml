@@ -38,7 +38,7 @@
                 <t t-call="web.external_layout">
                     <div class="page">
                         <h2 style="text-align:center; margin-bottom: 20px;">
-                            Comprobante de Asiento Contable
+                            Orden de pago
                         </h2>
 
                         <div>
