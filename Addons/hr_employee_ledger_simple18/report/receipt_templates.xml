@@ -53,10 +53,11 @@
                     <td style="padding:4px 0;">
                       <span t-esc="o.concept"/>
                     </td>
-                    <td style="padding:4px 0; text-align:right;">
-                      <!-- Monto con símbolo de $ (según moneda) -->
-                      <span t-esc="format_amount(o.amount, o.currency_id)"/>
-                    </td>
+                      <td style="padding:4px 0; text-align:right;">
+                       <!-- Monto con símbolo de moneda y 2 decimales, sin usar format_amount -->
+                       <span t-esc="(o.currency_id.symbol or '$') + ' ' + ('%.2f' % o.amount)"/>
+                      </td>
+
                   </tr>
                 </table>
 
