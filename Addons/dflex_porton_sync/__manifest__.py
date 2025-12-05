@@ -15,6 +15,6 @@
             "dflex_porton_sync/static/src/xml/porton_formula_widget.xml"
         ]
     },
-    "installable": true,
-    "application": false
+    "installable": True,
+    "application": False
 }
