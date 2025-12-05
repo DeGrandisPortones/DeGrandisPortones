@@ -4,7 +4,9 @@
         <field name="model">x_dflex.porton</field>
         <field name="arch" type="xml">
             <li editable="bottom">
-                <field name="sale_order_id"/>
+                <field name="x_studio_sale_order_id"/>
+                <field name="x_name"/>
+                <field name="x_nota_de_venta"/>
                 <field name="base_value"/>
                 <field name="computed_value"/>
                 <field name="formula_js" widget="porton_formula_js"/>
@@ -13,13 +15,15 @@
     </record>
 
     <record id="view_porton_form" model="ir.ui.view">
-        <field name="name">x_dflex.porton.form</field>
+        <field name="name">x_dflex.porton.form.dflexsync</field>
         <field name="model">x_dflex.porton</field>
         <field name="arch" type="xml">
             <form string="Portón Dflex">
                 <sheet>
                     <group>
-                        <field name="sale_order_id"/>
+                        <field name="x_studio_sale_order_id"/>
+                        <field name="x_name"/>
+                        <field name="x_nota_de_venta"/>
                         <field name="base_value"/>
                         <field name="computed_value"/>
                         <field name="formula_js" widget="porton_formula_js"/>

@@ -36,7 +36,7 @@ class SqlQuotationWizard(models.TransientModel):
         # Crear en Ajustes > Técnico > Parámetros del sistema
         #   Clave: dflex_porton_sync.sql_connection_string
         #   Valor ejemplo:
-        #   DRIVER={ODBC Driver 17 for SQL Server};SERVER=SERVIDOR\\INSTANCIA;DATABASE=Portones;UID=usuario;PWD=clave;
+        #   DRIVER={ODBC Driver 18 for SQL Server};SERVER=SERVIDOR\\INSTANCIA;DATABASE=Portones;UID=usuario;PWD=clave;
         icp = self.env["ir.config_parameter"].sudo()
         conn_str = icp.get_param("dflex_porton_sync.sql_connection_string")
         if not conn_str:
@@ -220,16 +220,34 @@ class SqlQuotationWizard(models.TransientModel):
 
         conn.close()
 
-        # Forzamos recálculo de totales y creamos el registro de portón
+        # Recalcular totales del pedido
         order._amount_all()
 
+        # ============================
+        # 3) Vincular con x_dflex.porton por nota de venta
+        # ============================
         Porton = self.env["x_dflex.porton"]
-        Porton.create(
-            {
-                "sale_order_id": order.id,
-                "base_value": order.amount_total,
-            }
-        )
+
+        # 'numero' viene de NTASVTAS (nota de venta)
+        nota_venta = None
+        if numero is not None:
+            try:
+                nota_venta = int(numero)
+            except (TypeError, ValueError):
+                nota_venta = None
+
+        if nota_venta is not None:
+            porton = Porton.search(
+                [("x_nota_de_venta", "=", nota_venta)],
+                limit=1,
+            )
+            if porton:
+                porton.write(
+                    {
+                        "x_studio_sale_order_id": order.id,
+                        "base_value": order.amount_total,
+                    }
+                )
 
         action = self.env.ref("sale.action_quotations").read()[0]
         action["res_id"] = order.id
