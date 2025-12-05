@@ -8,14 +8,14 @@ export class PortonFormulaJSField extends CharField {
         await super.onInput(ev);
 
         const formula = ev.target.value;
-        const base = this.props.record.data.base_value;
+        const base = this.props.record.data.x_base_value;
 
         if (!formula || base === undefined || base === null) {
             return;
         }
 
         let result = null;
-        try {
+        try:
             const valor = base;
             // eslint-disable-next-line no-eval
             result = eval(formula);
@@ -25,7 +25,7 @@ export class PortonFormulaJSField extends CharField {
         }
 
         if (typeof result === "number" && !isNaN(result)) {
-            this.props.record.update({ computed_value: result });
+            this.props.record.update({ x_computed_value: result });
         }
     }
 }

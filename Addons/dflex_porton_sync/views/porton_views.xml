@@ -1,15 +1,15 @@
 <odoo>
     <record id="view_porton_tree_dflexsync" model="ir.ui.view">
-        <field name="name">x_dflex.porton.list.dflexsync</field>
+        <field name="name">x_dflex.porton.tree.dflexsync</field>
         <field name="model">x_dflex.porton</field>
         <field name="arch" type="xml">
             <list editable="bottom">
                 <field name="x_studio_sale_order_id"/>
                 <field name="x_name"/>
                 <field name="x_nota_de_venta"/>
-                <field name="base_value"/>
-                <field name="computed_value"/>
-                <field name="formula_js" widget="porton_formula_js"/>
+                <field name="x_base_value"/>
+                <field name="x_computed_value"/>
+                <field name="x_formula_js" widget="porton_formula_js"/>
             </list>
         </field>
     </record>
@@ -24,9 +24,9 @@
                         <field name="x_studio_sale_order_id"/>
                         <field name="x_name"/>
                         <field name="x_nota_de_venta"/>
-                        <field name="base_value"/>
-                        <field name="computed_value"/>
-                        <field name="formula_js" widget="porton_formula_js"/>
+                        <field name="x_base_value"/>
+                        <field name="x_computed_value"/>
+                        <field name="x_formula_js" widget="porton_formula_js"/>
                     </group>
                 </sheet>
             </form>
