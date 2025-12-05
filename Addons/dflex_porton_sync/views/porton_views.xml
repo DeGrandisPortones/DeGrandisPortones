@@ -9,7 +9,7 @@
                 <field name="x_nota_de_venta"/>
                 <field name="x_base_value"/>
                 <field name="x_computed_value"/>
-                <field name="x_formula_js" widget="porton_formula_js"/>
+                <field name="x_formula_js"/>
             </list>
         </field>
     </record>
@@ -26,7 +26,7 @@
                         <field name="x_nota_de_venta"/>
                         <field name="x_base_value"/>
                         <field name="x_computed_value"/>
-                        <field name="x_formula_js" widget="porton_formula_js"/>
+                        <field name="x_formula_js"/>
                     </group>
                 </sheet>
             </form>
