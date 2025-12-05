@@ -1,0 +1,12 @@
+<odoo>
+    <record id="assets_backend_dflex_porton" model="ir.asset">
+        <field name="name">dflex_porton_sync assets</field>
+        <field name="bundle">web.assets_backend</field>
+        <field name="sequence">100</field>
+        <field name="active">True</field>
+        <field name="assets" eval="[
+            ('include', 'dflex_porton_sync/static/src/js/porton_formula_widget.js'),
+            ('include', 'dflex_porton_sync/static/src/xml/porton_formula_widget.xml'),
+        ]"/>
+    </record>
+</odoo>

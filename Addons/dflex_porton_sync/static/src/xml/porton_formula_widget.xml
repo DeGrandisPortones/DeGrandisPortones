@@ -1,0 +1,10 @@
+<odoo>
+    <templates>
+        <t t-name="dflex_porton_sync.PortonFormulaJSField" t-inherit="web.CharField" t-inherit-mode="primary">
+            <xpath expr="//input" position="attributes">
+                <attribute name="t-on-input">onInput</attribute>
+                <attribute name="placeholder">Ej: valor * 1.21 + 300</attribute>
+            </xpath>
+        </t>
+    </templates>
+</odoo>

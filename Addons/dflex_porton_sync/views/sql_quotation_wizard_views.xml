@@ -1,0 +1,37 @@
+<odoo>
+    <record id="view_sql_quotation_wizard" model="ir.ui.view">
+        <field name="name">dflex.sql.quotation.wizard.form</field>
+        <field name="model">dflex.sql.quotation.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Crear cotización desde SQL">
+                <group>
+                    <field name="customer_id"/>
+                    <field name="sql_internal_id"/>
+                </group>
+                <footer>
+                    <button string="Crear Cotización"
+                            type="object"
+                            name="action_create_quotation"
+                            class="btn-primary"/>
+                    <button string="Cancelar" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_sql_quotation_wizard" model="ir.actions.act_window">
+        <field name="name">Cotización desde SQL</field>
+        <field name="res_model">dflex.sql.quotation.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <menuitem id="menu_dflex_sql_root"
+              name="Dflex SQL"
+              parent="sale.sale_menu_root"/>
+
+    <menuitem id="menu_dflex_sql_quotation_wizard"
+              name="Cotización desde SQL"
+              parent="menu_dflex_sql_root"
+              action="action_sql_quotation_wizard"/>
+</odoo>
