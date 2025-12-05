@@ -1,16 +1,16 @@
 <odoo>
     <record id="view_porton_tree_dflexsync" model="ir.ui.view">
-        <field name="name">x_dflex.porton.li.dflexsync</field>
+        <field name="name">x_dflex.porton.list.dflexsync</field>
         <field name="model">x_dflex.porton</field>
         <field name="arch" type="xml">
-            <li editable="bottom">
+            <list editable="bottom">
                 <field name="x_studio_sale_order_id"/>
                 <field name="x_name"/>
                 <field name="x_nota_de_venta"/>
                 <field name="base_value"/>
                 <field name="computed_value"/>
                 <field name="formula_js" widget="porton_formula_js"/>
-            </li>
+            </list>
         </field>
     </record>
 
@@ -36,7 +36,7 @@
     <record id="action_porton_dflexsync" model="ir.actions.act_window">
         <field name="name">Portones Dflex (Sync)</field>
         <field name="res_model">x_dflex.porton</field>
-        <field name="view_mode">li,form</field>
+        <field name="view_mode">list,form</field>
         <field name="view_id" ref="view_porton_tree_dflexsync"/>
     </record>
 
