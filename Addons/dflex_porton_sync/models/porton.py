@@ -1,20 +1,11 @@
 from odoo import models, fields
 
 class DflexPorton(models.Model):
-    _name = "x_dflex.porton"
-    _description = "Portón Dflex"
+    _inherit = "x_dflex.porton"
 
-    sale_order_id = fields.Many2one(
-        "sale.order",
-        string="Pedido de venta",
-        required=True,
-        ondelete="cascade",
-    )
-    name = fields.Char(
-        string="Nombre",
-        related="sale_order_id.name",
-        store=True,
-    )
+    # Valor base tomado de la venta (o cargado a mano)
     base_value = fields.Float(string="Valor base")
+    # Resultado de aplicar la fórmula JS
     computed_value = fields.Float(string="Valor calculado")
+    # Fórmula en JS (usa la variable 'valor' como base_value)
     formula_js = fields.Char(string="Fórmula JS")

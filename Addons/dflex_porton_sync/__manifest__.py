@@ -1,6 +1,6 @@
 {
     "name": "Dflex Porton Sync",
-    "version": "18.0.1.0.0",
+    "version": "18.0.3.0.0",
     "depends": ["sale"],
     "author": "Dflex Argentina SAS",
     "category": "Sales",
@@ -11,6 +11,5 @@
         "views/sql_quotation_wizard_views.xml"
     ],
     "installable": True,
-    "application": False,
-    "author": "Esteban Scalerandi"
+    "application": False
 }
