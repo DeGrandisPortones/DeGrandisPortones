@@ -1,6 +1,6 @@
 {
     "name": "Dflex Porton Sync",
-    "version": "18.0.4.0.0",
+    "version": "18.0.6.0.0",
     "depends": ["sale"],
     "author": "Dflex Argentina SAS",
     "category": "Sales",
@@ -15,6 +15,6 @@
             "dflex_porton_sync/static/src/xml/porton_formula_widget.xml"
         ]
     },
-    "installable": True,
-    "application": False
+    "installable": true,
+    "application": false
 }

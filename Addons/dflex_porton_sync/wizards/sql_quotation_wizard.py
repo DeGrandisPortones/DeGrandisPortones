@@ -32,11 +32,6 @@ class SqlQuotationWizard(models.TransientModel):
                 )
             )
 
-        # String de conexión leído desde parámetros del sistema.
-        # Crear en Ajustes > Técnico > Parámetros del sistema
-        #   Clave: dflex_porton_sync.sql_connection_string
-        #   Valor ejemplo:
-        #   DRIVER={ODBC Driver 18 for SQL Server};SERVER=SERVIDOR\\INSTANCIA;DATABASE=Portones;UID=usuario;PWD=clave;
         icp = self.env["ir.config_parameter"].sudo()
         conn_str = icp.get_param("dflex_porton_sync.sql_connection_string")
         if not conn_str:
@@ -59,9 +54,6 @@ class SqlQuotationWizard(models.TransientModel):
         conn = self._get_sql_connection()
         cursor = conn.cursor()
 
-        # ========================
-        # 1) Leer cabecera NTASVTAS
-        # ========================
         header_sql = """
             SELECT
                 fecha,
@@ -133,9 +125,6 @@ class SqlQuotationWizard(models.TransientModel):
             remito,
         ) = header
 
-        # =====================
-        # 2) Leer líneas IVENTAS
-        # =====================
         lines_sql = """
             SELECT
                 producto,
@@ -162,7 +151,6 @@ class SqlQuotationWizard(models.TransientModel):
         SaleOrderLine = self.env["sale.order.line"]
         Product = self.env["product.product"]
 
-        # Crear pedido de venta en Odoo
         order_vals = {
             "partner_id": self.customer_id.id,
             "origin": "NTASVTAS %s" % self.sql_internal_id,
@@ -178,7 +166,6 @@ class SqlQuotationWizard(models.TransientModel):
 
         order = SaleOrder.create(order_vals)
 
-        # Crear líneas
         for row in line_rows:
             (
                 producto_codigo,
@@ -190,12 +177,9 @@ class SqlQuotationWizard(models.TransientModel):
                 prelista,
             ) = row
 
-            # Elegimos precio neto si existe, si no el precio normal
             price_unit = preneto if preneto not in (None, 0) else precio
             discount = float(bonific or 0.0)
 
-            # Buscamos el producto en Odoo, primero por nombre (descripcion),
-            # luego por default_code (codigo)
             domain = ["|", ("name", "=", descripcion), ("default_code", "=", producto_codigo)]
             product = Product.search(domain, limit=1)
             if not product:
@@ -220,15 +204,10 @@ class SqlQuotationWizard(models.TransientModel):
 
         conn.close()
 
-        # Recalcular totales del pedido
         order._amount_all()
 
-        # ============================
-        # 3) Vincular con x_dflex.porton por nota de venta
-        # ============================
         Porton = self.env["x_dflex.porton"]
 
-        # 'numero' viene de NTASVTAS (nota de venta)
         nota_venta = None
         if numero is not None:
             try:
@@ -245,7 +224,7 @@ class SqlQuotationWizard(models.TransientModel):
                 porton.write(
                     {
                         "x_studio_sale_order_id": order.id,
-                        "base_value": order.amount_total,
+                        "x_base_value": order.amount_total,
                     }
                 )
 
