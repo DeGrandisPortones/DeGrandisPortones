@@ -1,6 +1,6 @@
 <odoo>
-    <record id="view_porton_tree" model="ir.ui.view">
-        <field name="name">x_dflex.porton.li</field>
+    <record id="view_porton_tree_dflexsync" model="ir.ui.view">
+        <field name="name">x_dflex.porton.li.dflexsync</field>
         <field name="model">x_dflex.porton</field>
         <field name="arch" type="xml">
             <li editable="bottom">
@@ -14,11 +14,11 @@
         </field>
     </record>
 
-    <record id="view_porton_form" model="ir.ui.view">
+    <record id="view_porton_form_dflexsync" model="ir.ui.view">
         <field name="name">x_dflex.porton.form.dflexsync</field>
         <field name="model">x_dflex.porton</field>
         <field name="arch" type="xml">
-            <form string="Portón Dflex">
+            <form string="Portón Dflex (Sync)">
                 <sheet>
                     <group>
                         <field name="x_studio_sale_order_id"/>
@@ -33,14 +33,15 @@
         </field>
     </record>
 
-    <record id="action_porton" model="ir.actions.act_window">
-        <field name="name">Portones Dflex</field>
+    <record id="action_porton_dflexsync" model="ir.actions.act_window">
+        <field name="name">Portones Dflex (Sync)</field>
         <field name="res_model">x_dflex.porton</field>
         <field name="view_mode">li,form</field>
+        <field name="view_id" ref="view_porton_tree_dflexsync"/>
     </record>
 
     <menuitem id="menu_dflex_porton_root"
               name="Portones Dflex"
               parent="sale.sale_menu_root"
-              action="action_porton"/>
+              action="action_porton_dflexsync"/>
 </odoo>
