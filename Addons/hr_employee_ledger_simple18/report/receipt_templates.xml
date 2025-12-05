@@ -53,11 +53,9 @@
                     <td style="padding:4px 0;">
                       <span t-esc="o.concept"/>
                     </td>
-                      <td style="padding:4px 0; text-align:right;">
-                       <!-- Monto con símbolo de moneda y 2 decimales, sin usar format_amount -->
-                       <span t-esc="(o.currency_id.symbol or '$') + ' ' + ('%.2f' % o.amount)"/>
-                      </td>
-
+                    <td style="padding:4px 0; text-align:right;">
+                      <span t-esc="(o.currency_id.symbol or '$') + ' ' + ('%.2f' % o.amount)"/>
+                    </td>
                   </tr>
                 </table>
 
@@ -65,12 +63,6 @@
                 <p style="margin-top:12px;">
                   <strong>Tipo:</strong>
                   <span t-esc="dict(o.fields_get(['type'])['type']['selection']).get(o.type, o.type)"/>
-                </p>
-
-                <!-- Observaciones -->
-                <p style="margin-top:6px;">
-                  <strong>Observaciones:</strong>
-                  <span t-esc="o.note or ''"/>
                 </p>
 
                 <!-- Firma / Aclaración / DNI -->
