@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Acción del reporte -->
+    <record id="action_report_account_move_pdf" model="ir.actions.report">
+        <field name="name">Comprobante de asiento</field>
+        <field name="model">account.move</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">mi_modulo_asiento_pdf.report_account_move_pdf</field>
+        <field name="report_file">mi_modulo_asiento_pdf.report_account_move_pdf</field>
+        <field name="binding_model_id" ref="account.model_account_move"/>
+        <field name="binding_type">report</field>
+        <field name="print_report_name">
+            'Comprobante_' + (object.name or 'asiento')
+        </field>
+    </record>
+
+    <!-- Botón opcional en el encabezado del asiento -->
+    <record id="view_move_form_inherit_print_button" model="ir.ui.view">
+        <field name="name">account.move.form.print.comprobante</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_move_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button
+                    name="%(action_report_account_move_pdf)d"
+                    string="Imprimir comprobante"
+                    type="action"
+                    class="btn-secondary"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Template QWeb del reporte -->
+    <template id="report_account_move_pdf">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="move">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <h2 style="text-align:center; margin-bottom: 20px;">
+                            Comprobante de Asiento Contable
+                        </h2>
+
+                        <div>
+                            <p>
+                                <strong>Empresa:</strong>
+                                <span t-esc="move.company_id.display_name"/>
+                            </p>
+                            <p>
+                                <strong>Número de asiento:</strong>
+                                <span t-esc="move.name"/>
+                            </p>
+                            <p>
+                                <strong>Referencia:</strong>
+                                <span t-esc="move.ref or ''"/>
+                            </p>
+                            <p>
+                                <strong>Fecha contable:</strong>
+                                <span t-esc="move.date"/>
+                            </p>
+                            <p>
+                                <strong>Diario:</strong>
+                                <span t-esc="move.journal_id.display_name"/>
+                            </p>
+                        </div>
+
+                        <br/>
+
+                        <h3>Detalle del movimiento</h3>
+                        <table class="table table-sm o_main_table">
+                            <thead>
+                                <tr>
+                                    <th>Cuenta</th>
+                                    <th>Etiqueta</th>
+                                    <th style="text-align:right;">Débito</th>
+                                    <th style="text-align:right;">Crédito</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr t-foreach="move.line_ids" t-as="line">
+                                    <td>
+                                        <span t-esc="line.account_id.code"/> -
+                                        <span t-esc="line.account_id.name"/>
+                                    </td>
+                                    <td>
+                                        <span t-esc="line.name or ''"/>
+                                    </td>
+                                    <td style="text-align:right;">
+                                        <span t-esc="line.debit"/>
+                                    </td>
+                                    <td style="text-align:right;">
+                                        <span t-esc="line.credit"/>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <br/>
+
+                        <h3>Nota interna</h3>
+                        <pre t-esc="move.narration or ''" style="white-space:pre-wrap;"/>
+
+                        <br/><br/>
+
+                        <h3>Confirmación</h3>
+                        <table style="width:100%; margin-top: 20px;">
+                            <tr>
+                                <td style="width:20%;">Firma:</td>
+                                <td>______________________________________________</td>
+                            </tr>
+                            <tr>
+                                <td style="padding-top:10px;">Aclaración:</td>
+                                <td style="padding-top:10px;">______________________________________________</td>
+                            </tr>
+                            <tr>
+                                <td style="padding-top:10px;">Fecha:</td>
+                                <td style="padding-top:10px;">______________________________________________</td>
+                            </tr>
+                        </table>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+</odoo>

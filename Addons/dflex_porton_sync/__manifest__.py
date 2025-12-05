@@ -11,5 +11,6 @@
         "views/sql_quotation_wizard_views.xml"
     ],
     "installable": True,
-    "application": False
+    "application": False,
+    "author": "Esteban Scalerandi"
 }
