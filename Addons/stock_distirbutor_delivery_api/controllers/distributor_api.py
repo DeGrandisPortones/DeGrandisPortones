@@ -35,7 +35,7 @@ class DistributorApiController(http.Controller):
     @http.route(
         "/distributor/api/pickings",
         type="http",
-        auth="public",   # para pruebas; luego se puede pasar a 'userasda'
+        auth="public",  # para pruebas; luego se puede pasar a 'user'
         methods=["GET", "OPTIONS"],
         csrf=False,
     )
@@ -93,6 +93,7 @@ class DistributorApiController(http.Controller):
                     "is_distributor_delivery": picking.is_distributor_delivery,
                     "final_customer_completed": picking.final_customer_completed,
                     "final_customer_name": picking.final_customer_name,
+                    "final_customer_email": picking.final_customer_email,  # 👈 NUEVO EN LA RESPUESTA
                     "lines": lines,
                 }
             )
@@ -102,7 +103,7 @@ class DistributorApiController(http.Controller):
     @http.route(
         "/distributor/api/pickings/<int:picking_id>/final_customer",
         type="http",
-        auth="public",   # para pruebas; luego se puede pasar a 'user'
+        auth="public",  # para pruebas; luego se puede pasar a 'user'
         methods=["POST", "OPTIONS"],
         csrf=False,
     )
@@ -117,6 +118,7 @@ class DistributorApiController(http.Controller):
             "city": "...",
             "vat": "...",
             "phone": "...",
+            "email": "...",   # 👈 NUEVO
             "notes": "..."
         }
         """
@@ -158,6 +160,7 @@ class DistributorApiController(http.Controller):
             "final_customer_city": payload.get("city"),
             "final_customer_vat": payload.get("vat"),
             "final_customer_phone": payload.get("phone"),
+            "final_customer_email": payload.get("email"),  # 👈 NUEVO
             "final_customer_notes": payload.get("notes"),
             "final_customer_completed": True,
         }
