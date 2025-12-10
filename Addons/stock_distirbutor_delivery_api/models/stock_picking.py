@@ -28,6 +28,9 @@ class StockPicking(models.Model):
     final_customer_phone = fields.Char(
         string="Final Customer Phone",
     )
+    final_customer_email = fields.Char(          # 👈 NUEVO
+        string="Final Customer Email",
+    )
     final_customer_notes = fields.Text(
         string="Final Customer Notes",
     )

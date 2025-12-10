@@ -96,7 +96,12 @@
             <tr>
               <th>Email:</th>
               <td>
-                <t t-esc="o.partner_id.email or ''"/>
+                <t t-if="o.final_customer_email">
+                  <t t-esc="o.final_customer_email"/>
+                </t>
+                <t t-else="">
+                  <t t-esc="o.partner_id.email or ''"/>
+                </t>
               </td>
             </tr>
             <tr>
