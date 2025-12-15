@@ -11,6 +11,7 @@ class DistributorApi(http.Controller):
       - GET  /distributor/api/pickings
       - POST /distributor/api/pickings/<id>/final_customer
       - GET  /distributor/api/products
+      - OPTIONS /distributor/api/quotations
       - POST /distributor/api/quotations
     """
 
@@ -53,7 +54,7 @@ class DistributorApi(http.Controller):
         domain = [
             ("picking_type_id.code", "=", "outgoing"),
             ("is_distributor_delivery", "=", True),
-            ("state", "in", ["waiting", "confirmed", "assigned"]),  # pendientes
+            ("state", "in", ["waiting", "confirmed", "assigned"]),
         ]
 
         pickings = StockPicking.search(domain, order="scheduled_date, id", limit=200)
@@ -175,10 +176,9 @@ class DistributorApi(http.Controller):
         if tag_id:
             try:
                 tag_id_int = int(tag_id)
-                # En Odoo 18 las etiquetas están en product.template
                 domain.append(("product_tmpl_id.product_tag_ids", "in", [tag_id_int]))
             except ValueError:
-                # si viene basura en tag_id simplemente lo ignoramos
+                # Si viene algo inválido, ignoramos el filtro
                 pass
 
         products = Product.search(domain, order="default_code, name", limit=300)
@@ -198,14 +198,26 @@ class DistributorApi(http.Controller):
         return self._json_response({"data": data})
 
     # =====================
-    # Creación de cotizaciones / pedidos
+    # Cotizaciones / pedidos
     # =====================
+
+    # Preflight explícito para CORS de /quotations
+    @http.route(
+        "/distributor/api/quotations",
+        type="http",
+        auth="public",
+        methods=["OPTIONS"],
+        csrf=False,
+    )
+    def distributor_quotation_options(self, **kwargs):
+        """Responde al preflight CORS."""
+        return self._json_response({})
 
     @http.route(
         "/distributor/api/quotations",
         type="http",
         auth="public",
-        methods=["POST", "OPTIONS"],
+        methods=["POST"],
         csrf=False,
     )
     def distributor_create_quotation(self, **kwargs):
@@ -222,9 +234,6 @@ class DistributorApi(http.Controller):
           ]
         }
         """
-        if request.httprequest.method == "OPTIONS":
-            return self._json_response({})
-
         try:
             payload = json.loads(request.httprequest.data or "{}")
         except json.JSONDecodeError:
