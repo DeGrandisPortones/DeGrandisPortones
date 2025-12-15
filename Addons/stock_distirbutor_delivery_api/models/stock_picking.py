@@ -1,41 +1,40 @@
-# stock_distributor_delivery_api/models/stock_picking.py
-from odoo import models, fields
+# stock_distirbutor_delivery_api/models/stock_picking.py
+from odoo import fields, models
 
 
 class StockPicking(models.Model):
     _inherit = "stock.picking"
 
-    # Copiamos la marca del pedido de venta
     is_distributor_delivery = fields.Boolean(
         string="Entrega vía distribuidor",
-        related="sale_id.is_distributor_delivery",
-        store=True,
-        readonly=True,
+        help="Si está activo, este remito aparecerá en la app del distribuidor.",
+        default=False,
     )
 
     final_customer_name = fields.Char(
-        string="Final Customer Name",
+        string="Nombre cliente final",
+        help="Nombre o razón social del cliente final informado por el distribuidor.",
     )
     final_customer_street = fields.Char(
-        string="Final Customer Street",
+        string="Calle y número cliente final",
     )
     final_customer_city = fields.Char(
-        string="Final Customer City",
+        string="Localidad cliente final",
     )
     final_customer_vat = fields.Char(
-        string="Final Customer VAT / CUIT/DNI",
+        string="CUIT / DNI cliente final",
     )
     final_customer_phone = fields.Char(
-        string="Final Customer Phone",
+        string="Teléfono cliente final",
     )
-    final_customer_email = fields.Char(          # 👈 NUEVO
-        string="Final Customer Email",
+    final_customer_email = fields.Char(
+        string="Email cliente final",
     )
     final_customer_notes = fields.Text(
-        string="Final Customer Notes",
+        string="Notas cliente final",
     )
-
     final_customer_completed = fields.Boolean(
-        string="Final Customer Data Completed",
+        string="Datos cliente final completos",
+        help="Marcado cuando el distribuidor cargó los datos del cliente final desde la app.",
         default=False,
     )
