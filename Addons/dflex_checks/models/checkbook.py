@@ -4,7 +4,6 @@ from odoo.exceptions import ValidationError
 
 class DflexCheckbook(models.Model):
     _name = "dflex.checkbook"
-    _inherit = ['mail.thread', 'mail.activity.mixin']
     _description = "Chequera de cheques propios"
     _order = "id desc"
 
