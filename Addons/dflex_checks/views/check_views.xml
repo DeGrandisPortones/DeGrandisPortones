@@ -58,11 +58,11 @@
                     type="object"
                     string="Generar cheques"
                     class="oe_highlight"
-                    invisible="state != 'draft'"/>
+                    attrs="{'invisible': [('state', '!=', 'draft')]}"/>
             <button name="action_close"
                     type="object"
                     string="Cerrar chequera"
-                    invisible="state != 'generated'"/>
+                    attrs="{'invisible': [('state', '!=', 'generated')]}"/>
           </group>
           <notebook>
             <page string="Cheques">
