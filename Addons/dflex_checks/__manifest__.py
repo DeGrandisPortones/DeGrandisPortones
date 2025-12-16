@@ -3,7 +3,7 @@
     "name": "DFlex - Cheques Propios",
     "summary": "Gestión de chequeras y cheques propios (físicos y eCheq)",
     "description": "Gestión de chequeras y cheques propios.",
-    "version": "18.0.1.0.5",
+    "version": "18.0.1.0.6",
     "author": "DFLEX Argentina SAS",
     "website": "https://dflex.com.ar",
     "category": "Accounting/Payments",

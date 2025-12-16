@@ -73,10 +73,10 @@
             <button name="%(dflex_checks.action_dflex_checkbook_generate_checks)d" type="action"
                     string="Generar cheques"
                     class="oe_highlight"
-                    attrs="{'invisible': [('state', '!=', 'draft')]}"/>
+                    invisible="state != 'draft'"/>
             <button name="%(dflex_checks.action_dflex_checkbook_close)d" type="action"
                     string="Cerrar chequera"
-                    attrs="{'invisible': [('state', '!=', 'generated')]}"/>
+                    invisible="state != 'generated'"/>
           </group>
           <notebook>
             <page string="Cheques">
