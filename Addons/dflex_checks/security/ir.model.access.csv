@@ -2,3 +2,4 @@ id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_dflex_checkbook_user,access_dflex_checkbook_user,model_dflex_checkbook,base.group_user,1,1,1,0
 access_dflex_check_user,access_dflex_check_user,model_dflex_check,base.group_user,1,1,1,0
 access_dflex_check_manager,access_dflex_check_manager,model_dflex_check,account.group_account_manager,1,1,1,1
+access_account_payment_dflex_check_line_user,access_account_payment_dflex_check_line_user,model_account_payment_dflex_check_line,base.group_user,1,1,1,1
