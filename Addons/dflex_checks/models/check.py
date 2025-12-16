@@ -4,6 +4,7 @@ from odoo.exceptions import ValidationError
 
 class DflexCheck(models.Model):
     _name = "dflex.check"
+    _inherit = ['mail.thread', 'mail.activity.mixin']
     _description = "Cheque propio"
     _order = "issue_date desc, id desc"
     _rec_name = "name"
