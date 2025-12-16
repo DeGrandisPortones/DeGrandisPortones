@@ -60,7 +60,17 @@ class AccountPayment(models.Model):
                         % (check.display_name, selection.get(check.state, check.state))
                     )
 
-                check.write({"state": "delivered", "payment_id": payment.id})
+                vals = {"state": "delivered", "payment_id": payment.id}
+                # Completar datos de operación para reporting (proveedor / importe)
+                if "partner_id" in check._fields and payment.partner_id:
+                    vals["partner_id"] = payment.partner_id.id
+                if "amount" in check._fields:
+                    # El cheque suele representar el valor entregado con el pago
+                    vals["amount"] = abs(payment.amount)
+                if "currency_id" in check._fields and getattr(payment, "currency_id", False):
+                    vals["currency_id"] = payment.currency_id.id
+
+                check.write(vals)
         return res
 
 

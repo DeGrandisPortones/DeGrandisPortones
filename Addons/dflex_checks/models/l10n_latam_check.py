@@ -82,7 +82,10 @@ class L10nLatamCheck(models.Model):
             candidate = self.env["dflex.check"].search(domain, limit=1)
             if candidate:
                 rec.dflex_check_id = candidate
-
+                # Mejor UX: si este detalle pertenece a un pago existente,
+                # reflejamos el cheque también en el encabezado.
+                if rec.payment_id:
+                    rec.payment_id.dflex_check_id = candidate
     @api.constrains("dflex_check_id")
     def _constrains_dflex_check_available(self):
         for rec in self:
@@ -94,3 +97,43 @@ class L10nLatamCheck(models.Model):
                     _("El cheque %s no está disponible (estado actual: %s).")
                     % (rec.dflex_check_id.display_name, selection.get(rec.dflex_check_id.state, rec.dflex_check_id.state))
                 )
+
+    # -------------------------------------------------------------------------
+    # Sincronización con el encabezado del pago
+    # -------------------------------------------------------------------------
+    def _dflex_sync_payment_header(self, payments=None):
+        """Asegura que el campo account.payment.dflex_check_id refleje el cheque
+        elegido en el detalle.
+
+        - Si hay exactamente 1 cheque distinto en los detalles, lo setea en el pago.
+        - Si hay 0 o más de 1, limpia el encabezado (evita ambigüedad).
+        """
+        payments = payments or self.mapped("payment_id")
+        payments = payments.filtered(lambda p: p)
+        if not payments:
+            return
+
+        for payment in payments:
+            details = self.search([("payment_id", "=", payment.id), ("dflex_check_id", "!=", False)])
+            dflex_checks = details.mapped("dflex_check_id")
+            payment.dflex_check_id = dflex_checks[0] if len(dflex_checks) == 1 else False
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        records = super().create(vals_list)
+        records._dflex_sync_payment_header()
+        return records
+
+    def write(self, vals):
+        payments = self.mapped("payment_id")
+        res = super().write(vals)
+        # Si se modificó el vínculo o el pago asociado, re-sincronizamos
+        if any(k in vals for k in ("dflex_check_id", "payment_id")):
+            self._dflex_sync_payment_header(payments=(self.mapped("payment_id") | payments))
+        return res
+
+    def unlink(self):
+        payments = self.mapped("payment_id")
+        res = super().unlink()
+        self._dflex_sync_payment_header(payments=payments)
+        return res
