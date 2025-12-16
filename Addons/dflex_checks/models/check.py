@@ -28,7 +28,13 @@ class DflexCheck(models.Model):
 
     # Estado del ciclo del cheque
     state = fields.Selection(
-        [("available", "Disponible"), ("delivered", "Entregado"), ("debited", "Debitado"), ("cancelled", "Anulado")],
+        [
+            ("available", "Disponible"),
+            ("delivered", "Entregado"),
+            ("returned", "Devuelto"),
+            ("debited", "Debitado"),
+            ("cancelled", "Anulado"),
+        ],
         string="Estado",
         default="available",
         tracking=True,
@@ -40,6 +46,13 @@ class DflexCheck(models.Model):
 
     # Auditoría
     move_id = fields.Many2one("account.move", string="Asiento relacionado", readonly=True)
+    payment_id = fields.Many2one(
+        "account.payment",
+        string="Pago relacionado",
+        readonly=True,
+        copy=False,
+        help="Pago en el que este cheque fue utilizado/entregado.",
+    )
     note = fields.Text(string="Notas")
 
     _sql_constraints = [
@@ -69,11 +82,19 @@ class DflexCheck(models.Model):
                 raise ValidationError(_("No se puede anular un cheque ya debitado."))
             check.state = "cancelled"
 
+    def action_return(self):
+        """Marca el cheque como devuelto/rechazado."""
+        for check in self:
+            if check.state != "delivered":
+                raise ValidationError(_("Solo se pueden marcar como Devueltos cheques en estado Entregado."))
+            check.state = "returned"
+
     def action_reset_available(self):
         for check in self:
             if check.state == "debited":
                 raise ValidationError(_("No se puede volver a Disponible un cheque ya debitado."))
             check.state = "available"
+            check.payment_id = False
 
     # Conveniencia
     @api.onchange("number")

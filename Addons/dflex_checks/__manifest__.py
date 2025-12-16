@@ -10,7 +10,8 @@
     "depends": ["account", "base"],
     "data": [
         "security/ir.model.access.csv",
-        "views/check_views.xml"
+        "views/check_views.xml",
+        "views/account_payment_views.xml"
     ],
     "installable": True,
     "application": False
