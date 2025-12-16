@@ -44,6 +44,14 @@ class DflexCheck(models.Model):
         "res.company", string="Compañía", default=lambda self: self.env.company, required=True
     )
 
+    available_bank_ids = fields.Many2many(
+        "res.bank",
+        string="Bancos disponibles",
+        compute="_compute_available_bank_ids",
+        compute_sudo=True,
+    )
+
+
     # Auditoría
     move_id = fields.Many2one("account.move", string="Asiento relacionado", readonly=True)
     payment_id = fields.Many2one(
@@ -64,6 +72,19 @@ class DflexCheck(models.Model):
     ]
 
     # Acciones de estado
+@api.depends("company_id")
+def _compute_available_bank_ids(self):
+    Journal = self.env["account.journal"].sudo()
+    PartnerBank = self.env["res.partner.bank"].sudo()
+    for rec in self:
+        banks = self.env["res.bank"]
+        if rec.company_id:
+            journals = Journal.search([("company_id", "=", rec.company_id.id), ("type", "=", "bank")])
+            banks |= journals.mapped("bank_account_id.bank_id")
+            banks |= PartnerBank.search([("company_id", "=", rec.company_id.id)]).mapped("bank_id")
+        rec.available_bank_ids = banks or self.env["res.bank"].sudo().search([])
+
+
     def action_deliver(self):
         for check in self:
             if check.state != "available":

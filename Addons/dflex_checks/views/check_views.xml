@@ -26,7 +26,8 @@
     <field name="arch" type="xml">
       <list>
         <field name="name"/>
-        <field name="bank_id"/>
+        <field name="bank_id" domain="[('id', 'in', available_bank_ids)]"/>
+            <field name="available_bank_ids" invisible="1"/>
         <field name="type"/>
         <field name="start_number"/>
         <field name="quantity"/>
@@ -142,7 +143,8 @@
             <field name="name"/>
             <field name="number"/>
             <field name="type"/>
-            <field name="bank_id"/>
+            <field name="bank_id" domain="[('id', 'in', available_bank_ids)]"/>
+            <field name="available_bank_ids" invisible="1"/>
           </group>
           <group>
             <field name="issue_date"/>
