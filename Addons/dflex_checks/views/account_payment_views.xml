@@ -31,9 +31,9 @@
     <field name="model">account.payment</field>
     <field name="inherit_id" ref="account.view_account_payment_tree"/>
     <field name="arch" type="xml">
-      <xpath expr="//field[@name='amount']" position="after">
-        <field name="dflex_check_id"/>
-        <field name="dflex_check_state"/>
+      <xpath expr="(//tree|//list)[1]" position="inside">
+        <field name="dflex_check_id" optional="show"/>
+        <field name="dflex_check_state" optional="show"/>
       </xpath>
     </field>
   </record>
