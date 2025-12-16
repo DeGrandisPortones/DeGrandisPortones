@@ -15,6 +15,42 @@
     <field name="state">code</field>
     <field name="code">records.action_close()</field>
   </record>
+  <!-- Server actions para cheques (evitan validación estricta de botones type="object") -->
+  <record id="action_dflex_check_reset_available" model="ir.actions.server">
+    <field name="name">Volver a disponible</field>
+    <field name="model_id" ref="model_dflex_check"/>
+    <field name="state">code</field>
+    <field name="code">records.action_reset_available()</field>
+  </record>
+
+  <record id="action_dflex_check_deliver" model="ir.actions.server">
+    <field name="name">Entregar</field>
+    <field name="model_id" ref="model_dflex_check"/>
+    <field name="state">code</field>
+    <field name="code">records.action_deliver()</field>
+  </record>
+
+  <record id="action_dflex_check_debit" model="ir.actions.server">
+    <field name="name">Debitar</field>
+    <field name="model_id" ref="model_dflex_check"/>
+    <field name="state">code</field>
+    <field name="code">records.action_debit()</field>
+  </record>
+
+  <record id="action_dflex_check_return" model="ir.actions.server">
+    <field name="name">Marcar devuelto</field>
+    <field name="model_id" ref="model_dflex_check"/>
+    <field name="state">code</field>
+    <field name="code">records.action_return()</field>
+  </record>
+
+  <record id="action_dflex_check_cancel" model="ir.actions.server">
+    <field name="name">Anular</field>
+    <field name="model_id" ref="model_dflex_check"/>
+    <field name="state">code</field>
+    <field name="code">records.action_cancel()</field>
+  </record>
+
 
 <!-- Menú raíz (temporalmente en Administración para evitar conflictos) -->
   <menuitem id="menu_dflex_checks_root"
@@ -72,11 +108,9 @@
             <!-- Odoo 17/18: usar 'invisible' en lugar de attrs/states -->
             <button name="%(dflex_checks.action_dflex_checkbook_generate_checks)d" type="action"
                     string="Generar cheques"
-                    class="oe_highlight"
-                    invisible="state != 'draft'"/>
+                    class="oe_highlight" invisible="state != 'draft'"/>
             <button name="%(dflex_checks.action_dflex_checkbook_close)d" type="action"
-                    string="Cerrar chequera"
-                    invisible="state != 'generated'"/>
+                    string="Cerrar chequera" invisible="state != 'generated'"/>
           </group>
           <notebook>
             <page string="Cheques">
@@ -138,15 +172,15 @@
       <form string="Cheque Propio">
         <header>
           <!-- Reemplazo de attrs/states por 'invisible' -->
-          <button name="action_reset_available" type="object" string="Volver a disponible"
+          <button name="%(dflex_checks.action_dflex_check_reset_available)d" type="action" string="Volver a disponible"
                   invisible="state in ['available','debited']"/>
-          <button name="action_deliver" type="object" string="Entregar" class="oe_highlight"
+          <button name="%(dflex_checks.action_dflex_check_deliver)d" type="action" string="Entregar" class="oe_highlight"
                   invisible="state != 'available'"/>
-          <button name="action_debit" type="object" string="Debitar" class="oe_highlight"
+          <button name="%(dflex_checks.action_dflex_check_debit)d" type="action" string="Debitar" class="oe_highlight"
                   invisible="state != 'delivered'"/>
-          <button name="action_return" type="object" string="Marcar devuelto"
+          <button name="%(dflex_checks.action_dflex_check_return)d" type="action" string="Marcar devuelto"
                   invisible="state != 'delivered'"/>
-          <button name="action_cancel" type="object" string="Anular"
+          <button name="%(dflex_checks.action_dflex_check_cancel)d" type="action" string="Anular"
                   invisible="state == 'debited'"/>
           <field name="state" widget="statusbar"
                  statusbar_visible="available,delivered,returned,debited,cancelled"/>
