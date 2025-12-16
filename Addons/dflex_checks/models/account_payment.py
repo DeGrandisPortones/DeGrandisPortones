@@ -36,10 +36,14 @@ class AccountPayment(models.Model):
         compute="_compute_dflex_has_delivered_checks",
     )
 
-    @api.depends("dflex_check_line_ids.check_id")
+    @api.depends("dflex_check_line_ids.check_id", "check_ids.dflex_check_id")
     def _compute_dflex_check_id(self):
         for payment in self:
             checks = payment.dflex_check_line_ids.mapped("check_id")
+            # Integración con el tablero estándar de cheques (l10n_latam.check) en pagos
+            if "check_ids" in payment._fields:
+                checks |= payment.check_ids.mapped("dflex_check_id")
+            checks = checks.filtered(lambda c: c)
             payment.dflex_check_id = checks[0].id if len(checks) == 1 else False
 
     def _inverse_dflex_check_id(self):
@@ -54,21 +58,38 @@ class AccountPayment(models.Model):
                 # Si se limpia el cheque, limpiar también el detalle
                 payment.dflex_check_line_ids = [(5, 0, 0)]
 
-    @api.depends("dflex_check_line_ids.check_state", "state")
+    @api.depends("dflex_check_line_ids.check_state", "check_ids.dflex_check_state", "state")
     def _compute_dflex_has_delivered_checks(self):
         for payment in self:
-            payment.dflex_has_delivered_checks = any(
-                line.check_state == "delivered" for line in payment.dflex_check_line_ids
-            )
+            delivered = any(line.check_state == "delivered" for line in payment.dflex_check_line_ids)
+            if "check_ids" in payment._fields:
+                delivered = delivered or any(
+                    chk.dflex_check_state == "delivered" for chk in payment.check_ids if chk.dflex_check_id
+                )
+            payment.dflex_has_delivered_checks = delivered
 
     def _dflex_get_checks(self):
-        """Devolver cheques asociados al pago, soportando compatibilidad con encabezado."""
+        """Devolver cheques DFlex asociados al pago.
+
+        Orígenes soportados:
+        - Líneas propias del módulo (dflex_check_line_ids)
+        - Tablero estándar de cheques en pagos (account.payment.check_ids -> l10n_latam.check)
+        - Compatibilidad: dflex_check_id en encabezado (si existiera)
+        """
         self.ensure_one()
         checks = self.dflex_check_line_ids.mapped("check_id")
+
+        # Integración con l10n_latam.check: el usuario carga el número en la pestaña estándar "Cheques".
+        if "check_ids" in self._fields:
+            checks |= self.check_ids.mapped("dflex_check_id")
+
+        checks = checks.filtered(lambda c: c)
+
         # Compatibilidad: si no hay líneas pero hay cheque en encabezado, crear la línea
         if not checks and self.dflex_check_id:
             self.dflex_check_line_ids = [(0, 0, {"check_id": self.dflex_check_id.id})]
             checks = self.dflex_check_line_ids.mapped("check_id")
+
         return checks
 
     def action_post(self):
