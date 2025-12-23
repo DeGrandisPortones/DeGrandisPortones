@@ -4,10 +4,9 @@
        GARDEN
   ========================== -->
   <template id="report_delivery_document_remito_garden">
-    <!-- Use minimal_layout to avoid the company letterhead/header/footer from Odoo -->
-    <t t-call="web.minimal_layout">
-        <t t-set="o" t-value="o"/>
-        <style>
+    <!-- Custom layout without Odoo company letterhead/header/footer -->
+    
+<style>
           .remito-green { color:#1e7d3a; }
           .remito-bar   { height:8px; background:#1e7d3a; }
           .remito-box   { border:1.5px solid #1e7d3a; border-collapse:collapse; }
@@ -58,7 +57,7 @@
               <td>
                 <t t-if="o.final_customer_name">
                   <t t-esc="o.final_customer_name"/>
-                </t>
+
                 <t t-else="">
                   <t t-esc="o.partner_id.display_name"/>
                 </t>
@@ -207,10 +206,9 @@
        MEDITERRANEA (sin membrete)
   ========================== -->
   <template id="report_delivery_document_remito_mediterranea">
-    <!-- Use minimal_layout to avoid the company letterhead/header/footer from Odoo -->
-    <t t-call="web.minimal_layout">
-        <t t-set="o" t-value="o"/>
-        <style>
+    <!-- Custom layout without Odoo company letterhead/header/footer -->
+    
+<style>
           .remito-green { color:#1e7d3a; }
           .remito-bar   { height:8px; background:#1e7d3a; }
           .remito-box   { border:1.5px solid #1e7d3a; border-collapse:collapse; }
@@ -256,7 +254,7 @@
               <td>
                 <t t-if="o.final_customer_name">
                   <t t-esc="o.final_customer_name"/>
-                </t>
+
                 <t t-else="">
                   <t t-esc="o.partner_id.display_name"/>
                 </t>
