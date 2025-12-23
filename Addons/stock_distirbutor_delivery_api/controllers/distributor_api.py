@@ -220,6 +220,7 @@ class DistributorApiController(http.Controller):
 
     # ---------- Productos (solo Vert Deco Cercos) ----------
 
+        # ---------- Productos para presupuestador (Vert Deco + Lista Vip) ----------
     @http.route(
         "/distributor/api/products",
         type="http",
@@ -229,48 +230,80 @@ class DistributorApiController(http.Controller):
     )
     def list_products(self, **kwargs):
         """
-        Devuelve productos vendibles para el presupuestador.
+        Devuelve los productos vendibles de Vert Deco Cercos que tengan
+        precio en la lista de precios 'Lista Vip'.
 
-        - Solo productos de la compañía 'Vert Deco Cercos'.
-        - sale_ok = True
+        La respuesta incluye:
+            - id: ID de product.product
+            - name: nombre a mostrar
+            - default_code: referencia interna
+            - uom_name: unidad de medida
+            - price: precio según Lista Vip
         """
+        # CORS preflight
         if request.httprequest.method == "OPTIONS":
-            return self._json_response({}, status=200)
+            headers = {
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+                "Access-Control-Allow-Headers": "Origin, X-Requested-With, Content-Type, Accept, Authorization",
+            }
+            return request.make_response("", headers=headers)
 
-        user = request.env.user
         company = self._get_vert_company()
 
-        Product = (
-            request.env["product.product"]
-            .sudo()
-            .with_company(company)
-            .with_context(lang=user.lang, allowed_company_ids=[company.id])
-        )
+        Product = request.env["product.product"].with_company(company).sudo()
+        Pricelist = request.env["product.pricelist"].with_company(company).sudo()
 
+        # Buscar la lista 'Lista Vip' de Vert Deco
+        pricelist = Pricelist.search(
+            [("name", "=", "Lista Vip"), ("company_id", "=", company.id)],
+            limit=1,
+        )
+        if not pricelist:
+            # Si no existe, devolvemos vacío y mensaje
+            return self._json_response(
+                {
+                    "data": [],
+                    "message": "No se encontró la lista de precios 'Lista Vip' para Vert Deco Cercos.",
+                }
+            )
+
+        # Productos vendibles de Vert Deco (o compartidos sin compañía)
         domain = [
             ("sale_ok", "=", True),
-            ("product_tmpl_id.company_id", "=", company.id),
+            ("company_id", "in", [False, company.id]),
         ]
 
-        products = Product.search(domain, order="default_code, name", limit=500)
+        products = Product.search(domain)
 
         data = []
+
         for p in products:
+            price = None
+            try:
+                # price_get devuelve un dict {pricelist_id: precio}
+                res = pricelist.price_get(p.id, 1.0, False)
+                price = res.get(pricelist.id)
+            except Exception:
+                price = None
+
+            # Saltar productos sin precio en la lista
+            if price in (None, False):
+                continue
+
             data.append(
                 {
                     "id": p.id,
                     "name": p.display_name,
                     "default_code": p.default_code,
-                    "uom": p.uom_id.name,
-                    "price": p.lst_price,
+                    "uom_name": p.uom_id.name,
+                    "price": price,
                 }
             )
 
         return self._json_response({"data": data})
 
-    # ---------- Crear cotización ----------
-
-    @http.route(
+@http.route(
         "/distributor/api/quotations",
         type="http",
         auth="public",
