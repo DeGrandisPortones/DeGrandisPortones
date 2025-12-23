@@ -1,0 +1,400 @@
+<odoo>
+
+  <!-- =========================
+       GARDEN
+  ========================== -->
+  <template id="report_delivery_document_remito_garden">
+    <!-- Custom layout without Odoo company letterhead/header/footer -->
+    
+<style>
+          .remito-green { color:#1e7d3a; }
+          .remito-bar   { height:8px; background:#1e7d3a; }
+          .remito-box   { border:1.5px solid #1e7d3a; border-collapse:collapse; }
+          .remito-box td, .remito-box th { border:1px solid #1e7d3a; padding:6px; }
+          .remito-muted { color:#4d4d4d; }
+          .remito-grey  { background:#e6e6e6; height:22px; }
+          .remito-center{ text-align:center; }
+          .remito-small { font-size:11px; }
+          .remito-title { font-weight:700; font-size:18px; text-align:center; }
+          .signature-line { border-top:1px solid #1e7d3a; width:80%; margin:24px auto 4px; }
+          .preline { white-space: pre-line; } /* preserve \n as line breaks */
+        </style>
+
+        <div class="page">
+          <table style="width:100%; border-collapse:collapse;">
+            <tr>
+              <td style="width:33%; vertical-align:top;">
+                <t t-set="base_url" t-value="o.env['ir.config_parameter'].sudo().get_param('web.base.url')"/>
+                <img t-att-src="base_url + '/stock_delivery_remito_custom_brands/static/src/img/garden.jpeg'" style="max-height:90px; margin-bottom:6px;"/>
+                <div class="remito-small remito-muted" style="font-size:14px; line-height:1.25; font-weight:600;">
+                  Grdn deco<br/>
+                  Cordoba Argentina
+                </div>
+              </td>
+              <td style="width:34%; vertical-align:middle;">
+                <div class="remito-title">REMITO</div>
+              </td>
+              <td style="width:33%; vertical-align:top;">
+                <table style="width:100%; border-collapse:collapse;">
+                  <tr>
+                    <td class="remito-center remito-box remito-small" style="font-weight:700;">Solicitud de Servicio</td>
+                  </tr>
+                  <tr>
+                    <td class="remito-box remito-small"><b>FECHA:</b>
+                      <t t-esc="(o.scheduled_date or o.date or o.create_date).strftime('%d/%m/%Y') if (o.scheduled_date or o.date or o.create_date) else ''"/>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+
+          <div class="remito-bar" style="margin:10px 0 6px;"></div>
+
+          <!-- ======== BLOQUE MODIFICADO: DATOS DEL CLIENTE / CLIENTE FINAL ======== -->
+          <table class="remito-box" style="width:100%; margin-bottom:6px;">
+            <tr>
+              <th style="width:18%;">Empresa - Sr./a:</th>
+              <td>
+                <t t-if="o.final_customer_name">
+                  <t t-esc="o.final_customer_name"/>
+
+                </t>
+                <t t-else="">
+                  <t t-esc="o.partner_id.display_name"/>
+                </t>
+              </td>
+            </tr>
+            <tr>
+              <th>DNI / CUIT:</th>
+              <td>
+                <t t-if="o.final_customer_vat">
+                  <t t-esc="o.final_customer_vat"/>
+                </t>
+                <t t-else="">
+                  <t t-esc="o.partner_id.vat or ''"/>
+                </t>
+              </td>
+            </tr>
+            <tr>
+              <th>Destino:</th>
+              <td>
+                <t t-if="o.final_customer_street or o.final_customer_city">
+                  <t t-esc="o.final_customer_street or ''"/>
+                  <t t-if="o.final_customer_city">
+                    - <t t-esc="o.final_customer_city"/>
+                  </t>
+                </t>
+                <t t-else="">
+                  <t t-esc="o.partner_id.contact_address or ''"/>
+                </t>
+              </td>
+            </tr>
+            <tr>
+              <th>CP:</th>
+              <td>
+                <t t-esc="o.partner_id.zip or ''"/>
+              </td>
+            </tr>
+            <tr>
+              <th>Email:</th>
+              <td>
+                <t t-if="o.final_customer_email">
+                  <t t-esc="o.final_customer_email"/>
+                </t>
+                <t t-else="">
+                  <t t-esc="o.partner_id.email or ''"/>
+                </t>
+              </td>
+            </tr>
+            <tr>
+              <th>Tel&#233;fono:</th>
+              <td>
+                <t t-if="o.final_customer_phone">
+                  <t t-esc="o.final_customer_phone"/>
+                </t>
+                <t t-else="">
+                  <t t-if="o.partner_id.phone">
+                    <t t-esc="o.partner_id.phone"/>
+                  </t>
+                  <t t-if="o.partner_id.mobile">
+                    / <t t-esc="o.partner_id.mobile"/>
+                  </t>
+                </t>
+              </td>
+            </tr>
+            <tr>
+              <th>Aclaraciones</th>
+              <td>
+                <!-- Primero, notas específicas del cliente final -->
+                <div class="preline" t-if="o.final_customer_notes">
+                  <t t-esc="o.final_customer_notes"/>
+                </div>
+                <!-- Si no hay notas del cliente final, usamos la nota del picking -->
+                <div class="preline" t-if="not o.final_customer_notes and o.note">
+                  <t t-esc="o.note"/>
+                </div>
+                <!-- Si tampoco hay nota, mostramos el origen (pedido) como antes -->
+                <t t-if="not o.final_customer_notes and not o.note">
+                  <t t-esc="o.origin or ''"/>
+                </t>
+              </td>
+            </tr>
+          </table>
+          <!-- ======== FIN BLOQUE MODIFICADO ======== -->
+
+          <table class="remito-box" style="width:100%; margin-top:6px;">
+            <thead>
+              <tr>
+                <th style="width:15%;">Cantidad</th>
+                <th>Descripci&#243;n</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr t-foreach="o.move_ids_without_package" t-as="m">
+                <td class="remito-center">
+                  <t t-esc="m.quantity or m.product_uom_qty"/>
+                </td>
+                <td>
+                  <t t-esc="m.product_id.display_name"/>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="remito-grey" style="margin:10px 0;"></div>
+
+          <table style="width:100%; border-collapse:collapse; margin-top:6px;">
+            <tr>
+              <td style="width:50%; text-align:center;">
+                <div class="signature-line"></div>
+                <div class="remito-small">CONFORMIDAD</div>
+              </td>
+              <td style="width:50%; text-align:center;">
+                <div class="signature-line"></div>
+                <div class="remito-small">Fecha Recepci&#243;n</div>
+              </td>
+            </tr>
+          </table>
+
+          <div class="remito-small remito-center" style="margin-top:14px; font-size:13px; line-height:1.25; font-weight:600;">
+            Grdn deco<br/>
+            Cordoba Argentina
+          </div>
+        </div>
+  </template>
+
+  <template id="report_deliveryslip_remito_garden">
+    <t t-call="web.html_container">
+      <t t-foreach="docs" t-as="o">
+        <t t-call="stock_delivery_remito_custom_brands.report_delivery_document_remito_garden"/>
+      </t>
+    </t>
+  </template>
+
+  <record id="action_report_delivery_remito_garden" model="ir.actions.report">
+    <field name="name">Remito Garden</field>
+    <field name="model">stock.picking</field>
+    <field name="report_type">qweb-pdf</field>
+    <field name="report_name">stock_delivery_remito_custom_brands.report_deliveryslip_remito_garden</field>
+    <field name="report_file">stock_delivery_remito_custom_brands.report_deliveryslip_remito_garden</field>
+    <field name="binding_model_id" ref="stock.model_stock_picking"/>
+    <field name="binding_type">report</field>
+    <field name="print_report_name">'Remito Garden - %s' % (object.name)</field>
+  </record>
+
+  <!-- =========================
+       MEDITERRANEA (sin membrete)
+  ========================== -->
+  <template id="report_delivery_document_remito_mediterranea">
+    <!-- Custom layout without Odoo company letterhead/header/footer -->
+    
+<style>
+          .remito-green { color:#1e7d3a; }
+          .remito-bar   { height:8px; background:#1e7d3a; }
+          .remito-box   { border:1.5px solid #1e7d3a; border-collapse:collapse; }
+          .remito-box td, .remito-box th { border:1px solid #1e7d3a; padding:6px; }
+          .remito-muted { color:#4d4d4d; }
+          .remito-grey  { background:#e6e6e6; height:22px; }
+          .remito-center{ text-align:center; }
+          .remito-small { font-size:11px; }
+          .remito-title { font-weight:700; font-size:18px; text-align:center; }
+          .signature-line { border-top:1px solid #1e7d3a; width:80%; margin:24px auto 4px; }
+          .preline { white-space: pre-line; } /* preserve \n as line breaks */
+        </style>
+
+        <div class="page">
+          <table style="width:100%; border-collapse:collapse;">
+            <tr>
+              <td style="width:33%; vertical-align:top;">
+              </td>
+              <td style="width:34%; vertical-align:middle;">
+                <div class="remito-title">REMITO</div>
+              </td>
+              <td style="width:33%; vertical-align:top;">
+                <table style="width:100%; border-collapse:collapse;">
+                  <tr>
+                    <td class="remito-center remito-box remito-small" style="font-weight:700;">Solicitud de Servicio</td>
+                  </tr>
+                  <tr>
+                    <td class="remito-box remito-small"><b>FECHA:</b>
+                      <t t-esc="(o.scheduled_date or o.date or o.create_date).strftime('%d/%m/%Y') if (o.scheduled_date or o.date or o.create_date) else ''"/>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+
+          <div class="remito-bar" style="margin:10px 0 6px;"></div>
+
+          <!-- ======== BLOQUE MODIFICADO: DATOS DEL CLIENTE / CLIENTE FINAL ======== -->
+          <table class="remito-box" style="width:100%; margin-bottom:6px;">
+            <tr>
+              <th style="width:18%;">Empresa - Sr./a:</th>
+              <td>
+                <t t-if="o.final_customer_name">
+                  <t t-esc="o.final_customer_name"/>
+
+                </t>
+                <t t-else="">
+                  <t t-esc="o.partner_id.display_name"/>
+                </t>
+              </td>
+            </tr>
+            <tr>
+              <th>DNI / CUIT:</th>
+              <td>
+                <t t-if="o.final_customer_vat">
+                  <t t-esc="o.final_customer_vat"/>
+                </t>
+                <t t-else="">
+                  <t t-esc="o.partner_id.vat or ''"/>
+                </t>
+              </td>
+            </tr>
+            <tr>
+              <th>Destino:</th>
+              <td>
+                <t t-if="o.final_customer_street or o.final_customer_city">
+                  <t t-esc="o.final_customer_street or ''"/>
+                  <t t-if="o.final_customer_city">
+                    - <t t-esc="o.final_customer_city"/>
+                  </t>
+                </t>
+                <t t-else="">
+                  <t t-esc="o.partner_id.contact_address or ''"/>
+                </t>
+              </td>
+            </tr>
+            <tr>
+              <th>CP:</th>
+              <td>
+                <t t-esc="o.partner_id.zip or ''"/>
+              </td>
+            </tr>
+            <tr>
+              <th>Email:</th>
+              <td>
+                <t t-if="o.final_customer_email">
+                  <t t-esc="o.final_customer_email"/>
+                </t>
+                <t t-else="">
+                  <t t-esc="o.partner_id.email or ''"/>
+                </t>
+              </td>
+            </tr>
+            <tr>
+              <th>Tel&#233;fono:</th>
+              <td>
+                <t t-if="o.final_customer_phone">
+                  <t t-esc="o.final_customer_phone"/>
+                </t>
+                <t t-else="">
+                  <t t-if="o.partner_id.phone">
+                    <t t-esc="o.partner_id.phone"/>
+                  </t>
+                  <t t-if="o.partner_id.mobile">
+                    / <t t-esc="o.partner_id.mobile"/>
+                  </t>
+                </t>
+              </td>
+            </tr>
+            <tr>
+              <th>Aclaraciones</th>
+              <td>
+                <!-- Primero, notas específicas del cliente final -->
+                <div class="preline" t-if="o.final_customer_notes">
+                  <t t-esc="o.final_customer_notes"/>
+                </div>
+                <!-- Si no hay notas del cliente final, usamos la nota del picking -->
+                <div class="preline" t-if="not o.final_customer_notes and o.note">
+                  <t t-esc="o.note"/>
+                </div>
+                <!-- Si tampoco hay nota, mostramos el origen (pedido) como antes -->
+                <t t-if="not o.final_customer_notes and not o.note">
+                  <t t-esc="o.origin or ''"/>
+                </t>
+              </td>
+            </tr>
+          </table>
+          <!-- ======== FIN BLOQUE MODIFICADO ======== -->
+
+          <table class="remito-box" style="width:100%; margin-top:6px;">
+            <thead>
+              <tr>
+                <th style="width:15%;">Cantidad</th>
+                <th>Descripci&#243;n</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr t-foreach="o.move_ids_without_package" t-as="m">
+                <td class="remito-center">
+                  <t t-esc="m.quantity or m.product_uom_qty"/>
+                </td>
+                <td>
+                  <t t-esc="m.product_id.display_name"/>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="remito-grey" style="margin:10px 0;"></div>
+
+          <table style="width:100%; border-collapse:collapse; margin-top:6px;">
+            <tr>
+              <td style="width:50%; text-align:center;">
+                <div class="signature-line"></div>
+                <div class="remito-small">CONFORMIDAD</div>
+              </td>
+              <td style="width:50%; text-align:center;">
+                <div class="signature-line"></div>
+                <div class="remito-small">Fecha Recepci&#243;n</div>
+              </td>
+            </tr>
+          </table>
+
+          
+        </div>
+  </template>
+
+  <template id="report_deliveryslip_remito_mediterranea">
+    <t t-call="web.html_container">
+      <t t-foreach="docs" t-as="o">
+        <t t-call="stock_delivery_remito_custom_brands.report_delivery_document_remito_mediterranea"/>
+      </t>
+    </t>
+  </template>
+
+  <record id="action_report_delivery_remito_mediterranea" model="ir.actions.report">
+    <field name="name">Remito Mediterranea</field>
+    <field name="model">stock.picking</field>
+    <field name="report_type">qweb-pdf</field>
+    <field name="report_name">stock_delivery_remito_custom_brands.report_deliveryslip_remito_mediterranea</field>
+    <field name="report_file">stock_delivery_remito_custom_brands.report_deliveryslip_remito_mediterranea</field>
+    <field name="binding_model_id" ref="stock.model_stock_picking"/>
+    <field name="binding_type">report</field>
+    <field name="print_report_name">'Remito Mediterranea - %s' % (object.name)</field>
+  </record>
+
+</odoo>
