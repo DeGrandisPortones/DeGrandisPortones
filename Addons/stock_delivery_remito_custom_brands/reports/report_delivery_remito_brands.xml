@@ -58,6 +58,7 @@
                 <t t-if="o.final_customer_name">
                   <t t-esc="o.final_customer_name"/>
 
+                </t>
                 <t t-else="">
                   <t t-esc="o.partner_id.display_name"/>
                 </t>
@@ -180,7 +181,6 @@
             Córdoba Argentina
           </div>
         </div>
-      </t>
   </template>
 
   <template id="report_deliveryslip_remito_garden">
@@ -255,6 +255,7 @@
                 <t t-if="o.final_customer_name">
                   <t t-esc="o.final_customer_name"/>
 
+                </t>
                 <t t-else="">
                   <t t-esc="o.partner_id.display_name"/>
                 </t>
@@ -374,7 +375,6 @@
 
           
         </div>
-      </t>
   </template>
 
   <template id="report_deliveryslip_remito_mediterranea">
