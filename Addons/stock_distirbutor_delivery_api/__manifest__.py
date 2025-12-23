@@ -1,15 +1,14 @@
-# stock_distributor_delivery_api/__manifest__.py
 {
     "name": "Stock Distributor Delivery API",
-    "summary": "Marca pedidos para distribuidor y API para completar datos de cliente final",
-    "version": "18.0.2.0.0",
-    "category": "Inventory/Inventory",
-    "depends": ["stock", "sale_stock"],
-    "data": [
-        "views/sale_order_views.xml",
-    ],
+    "version": "18.0.1.0.0",
+    "summary": "API para entregas vía distribuidor y presupuestador",
+    "category": "Inventory/Delivery",
+    "author": "Dflex / Esteban Scalerandi",
+    "website": "https://degrandisportones.com",
     "license": "LGPL-3",
+    "depends": ["stock", "sale"],
+    "data": [],
     "installable": True,
     "application": False,
-    "author": "Esteban Scalerandi",
+    "auto_install": False
 }
