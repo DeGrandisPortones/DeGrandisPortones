@@ -1,90 +1,85 @@
-
 # -*- coding: utf-8 -*-
+from odoo import http, fields
+from odoo.http import request
 import json
 import logging
-
-from odoo import http
-from odoo.http import request
 
 _logger = logging.getLogger(__name__)
 
 
 class DistributorApiController(http.Controller):
     """
-    API para uso del presupuesto / entregas del distribuidor.
+    API para app de distribuidores.
 
-    Endpoints expuestos (todos con CORS simple y auth="public" + sudo):
+    Endpoints expuestos (todos pensados para usarse via JS desde un front externo):
+      - GET  /distributor/api/pickings
+      - POST /distributor/api/pickings/<id>/final_customer
+      - GET  /distributor/api/distributors
+      - GET  /distributor/api/products
+      - POST /distributor/api/quotations
 
-    - GET/OPTIONS  /distributor/api/pickings
-    - POST/OPTIONS /distributor/api/pickings/<id>/final_customer
-    - GET/OPTIONS  /distributor/api/distributors
-    - GET/OPTIONS  /distributor/api/products
-    - POST/OPTIONS /distributor/api/quotations
+    Todas las respuestas son JSON del tipo {"data": ...} o {"error": "..."}.
     """
 
     # -------------------------------------------------------------------------
-    # Helpers
+    # Utilidades internas (CORS / JSON helpers)
     # -------------------------------------------------------------------------
 
     def _cors_headers(self):
-        """Headers CORS básicos para la SPA del distribuidor."""
-        return {
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type, Authorization",
-        }
+        """Construye los headers CORS que se reutilizan en todas las respuestas."""
+        origin = request.httprequest.headers.get("Origin") or "*"
+        return [
+            ("Access-Control-Allow-Origin", origin),
+            ("Access-Control-Allow-Credentials", "true"),
+            ("Access-Control-Allow-Methods", "GET, POST, OPTIONS"),
+            (
+                "Access-Control-Allow-Headers",
+                "Origin, Content-Type, Accept, Authorization",
+            ),
+        ]
+
+    def _json_default(self, obj):
+        """Soporte para serializar datetime.date/datetime en JSON."""
+        if hasattr(obj, "isoformat"):
+            return obj.isoformat()
+        return str(obj)
 
     def _json_response(self, payload, status=200):
-        """Devuelve respuesta JSON con CORS siempre habilitado."""
-        if not isinstance(payload, (str, bytes)):
-            body = json.dumps(payload, default=str)
-        else:
-            body = payload
-
-        headers = {
-            "Content-Type": "application/json",
-        }
-        headers.update(self._cors_headers())
-
-        response = request.make_response(body, headers=headers)
+        """Devuelve una respuesta JSON con CORS."""
+        body = json.dumps(payload, default=self._json_default, ensure_ascii=False)
+        headers = [("Content-Type", "application/json; charset=utf-8")]
+        headers += self._cors_headers()
+        response = request.make_response(body, headers)
         response.status_code = status
         return response
 
-    def _error(self, message, status=400, **extra):
-        data = {"error": message}
-        if extra:
-            data["details"] = extra
-        return self._json_response(data, status=status)
-
-    def _get_json_body(self):
-        """Parsea el body como JSON o devuelve {}."""
-        raw = ""
-        try:
-            raw = request.httprequest.get_data().decode("utf-8") or ""
-        except Exception:
-            try:
-                raw = (request.httprequest.data or b"").decode("utf-8")
-            except Exception:
-                raw = ""
-
-        if not raw:
-            return {}
-        try:
-            return json.loads(raw)
-        except Exception:
-            _logger.exception("No se pudo parsear JSON en %s", request.httprequest.path)
-            raise
-
-    def _get_vert_company(self):
-        """Devuelve la compañía "Vert Deco Cercos" o, si no existe, la actual."""
-        Company = request.env["res.company"].sudo()
-        company = Company.search([("name", "=", "Vert Deco Cercos")], limit=1)
-        if company:
-            return company
-        return request.env.company
+    def _handle_preflight(self):
+        """Responde OK para las solicitudes OPTIONS (preflight CORS)."""
+        if request.httprequest.method == "OPTIONS":
+            return self._json_response({"ok": True}, status=200)
+        return None
 
     # -------------------------------------------------------------------------
-    # Pickings pendientes de entrega
+    # Helpers de negocio
+    # -------------------------------------------------------------------------
+
+    def _get_distributor_tag(self):
+        """Etiqueta 'Distribuidor' en contactos."""
+        Category = request.env["res.partner.category"].sudo()
+        return Category.search([("name", "=", "Distribuidor")], limit=1)
+
+    def _get_vip_pricelist(self):
+        """
+        Devuelve la lista de precios 'Lista Vip'.
+
+        NO filtramos por compañía para evitar problemas de nombre de empresa.
+        Se toma la primera que coincida por nombre.
+        """
+        Pricelist = request.env["product.pricelist"].sudo()
+        return Pricelist.search([("name", "=", "Lista Vip")], limit=1)
+
+    # -------------------------------------------------------------------------
+    # Listado de entregas (pickings)
     # -------------------------------------------------------------------------
 
     @http.route(
@@ -95,45 +90,53 @@ class DistributorApiController(http.Controller):
         csrf=False,
     )
     def list_pickings(self, **kwargs):
-        """Lista de entregas pendientes para distribuidor.
+        """
+        Devuelve los remitos de salida del día (y próximos) para distribuidores.
 
         Criterios:
-        - picking_type_id.code = outgoing
-        - state in (confirmed, assigned)
-        - is_distributor_delivery = True
-        - final_customer_completed = False
+          - picking_type_id.code = 'outgoing'
+          - state in ('confirmed', 'assigned')
+          - partner_id con etiqueta 'Distribuidor'
         """
-        # Preflight CORS
-        if request.httprequest.method == "OPTIONS":
-            return self._json_response({"ok": True}, status=200)
+        preflight = self._handle_preflight()
+        if preflight:
+            return preflight
 
-        user = request.env.user
+        env = request.env
+        StockPicking = env["stock.picking"].sudo()
+        PartnerCategory = env["res.partner.category"].sudo()
 
-        Picking = (
-            request.env["stock.picking"]
-            .sudo()
-            .with_context(lang=user.lang)
-        )
+        distributor_tag = self._get_distributor_tag()
+        if not distributor_tag:
+            _logger.warning("No existe la etiqueta 'Distribuidor' en res.partner.category")
+            return self._json_response({"data": []})
 
         domain = [
             ("picking_type_id.code", "=", "outgoing"),
             ("state", "in", ["confirmed", "assigned"]),
-            ("is_distributor_delivery", "=", True),
-            ("final_customer_completed", "=", False),
+            ("partner_id.category_id", "in", distributor_tag.ids),
         ]
 
-        pickings = Picking.search(domain, order="scheduled_date, id")
+        pickings = StockPicking.search(domain, order="scheduled_date asc, id desc")
 
         data = []
         for picking in pickings:
             lines = []
             for move in picking.move_ids_without_package:
+                product = move.product_id
+                if not product:
+                    continue
+                qty = move.product_uom_qty
+                if qty <= 0:
+                    continue
+
                 lines.append(
                     {
                         "id": move.id,
-                        "product_name": move.product_id.display_name,
-                        "quantity": move.product_uom_qty,
-                        "uom": move.product_uom.name,
+                        "product_id": product.id,
+                        "product_name": product.display_name,
+                        "quantity": qty,
+                        "uom": move.product_uom.name or "",
                     }
                 )
 
@@ -141,13 +144,16 @@ class DistributorApiController(http.Controller):
                 {
                     "id": picking.id,
                     "name": picking.name,
-                    "origin": picking.origin,
-                    "scheduled_date": picking.scheduled_date,
+                    "origin": picking.origin or "",
+                    "partner_name": picking.partner_id.name or "",
+                    "scheduled_date": fields.Datetime.to_string(picking.scheduled_date)
+                    if picking.scheduled_date
+                    else None,
                     "state": picking.state,
-                    "partner_name": picking.partner_id.name,
-                    "is_distributor_delivery": picking.is_distributor_delivery,
-                    "final_customer_completed": picking.final_customer_completed,
-                    "final_customer_name": picking.final_customer_name,
+                    "final_customer_completed": bool(
+                        getattr(picking, "final_customer_completed", False)
+                    ),
+                    "final_customer_name": getattr(picking, "final_customer_name", "") or "",
                     "lines": lines,
                 }
             )
@@ -155,7 +161,7 @@ class DistributorApiController(http.Controller):
         return self._json_response({"data": data})
 
     # -------------------------------------------------------------------------
-    # Final customer para picking
+    # Guardar datos del cliente final en el picking
     # -------------------------------------------------------------------------
 
     @http.route(
@@ -166,34 +172,49 @@ class DistributorApiController(http.Controller):
         csrf=False,
     )
     def set_final_customer(self, picking_id, **kwargs):
-        """Guarda los datos del cliente final en el picking."""
-        # Preflight CORS
-        if request.httprequest.method == "OPTIONS":
-            return self._json_response({"ok": True}, status=200)
+        """
+        Actualiza los campos de cliente final del picking
+        (nombre, dirección, contacto, etc.) y marca final_customer_completed.
+        """
+        preflight = self._handle_preflight()
+        if preflight:
+            return preflight
 
-        picking = (
-            request.env["stock.picking"]
-            .sudo()
-            .browse(picking_id)
-        )
+        StockPicking = request.env["stock.picking"].sudo()
+
+        picking = StockPicking.browse(picking_id)
         if not picking.exists():
-            return self._error("Picking no encontrado", status=404)
+            return self._json_response(
+                {"error": "Picking no encontrado"}, status=404
+            )
 
-        data = self._get_json_body()
+        # Leer JSON del body
+        try:
+            raw = request.httprequest.data or b"{}"
+            payload = json.loads(raw.decode("utf-8"))
+        except Exception as exc:
+            _logger.exception("Error parseando JSON de final_customer: %s", exc)
+            return self._json_response(
+                {"error": "JSON inválido en el cuerpo de la petición"}, status=400
+            )
 
-        picking.final_customer_name = data.get("name") or ""
-        picking.final_customer_street = data.get("street") or ""
-        picking.final_customer_city = data.get("city") or ""
-        picking.final_customer_vat = data.get("vat") or ""
-        picking.final_customer_phone = data.get("phone") or ""
-        picking.final_customer_email = data.get("email") or ""
-        picking.final_customer_notes = data.get("notes") or ""
-        picking.final_customer_completed = True
+        vals = {
+            "final_customer_name": payload.get("name"),
+            "final_customer_street": payload.get("street"),
+            "final_customer_city": payload.get("city"),
+            "final_customer_vat": payload.get("vat"),
+            "final_customer_phone": payload.get("phone"),
+            "final_customer_email": payload.get("email"),
+            "final_customer_notes": payload.get("notes"),
+            "final_customer_completed": True,
+        }
 
-        return self._json_response({"success": True})
+        picking.write(vals)
+
+        return self._json_response({"data": {"id": picking.id, "updated": True}})
 
     # -------------------------------------------------------------------------
-    # Distribuidores (partners con etiqueta "Distribuidor")
+    # Listado de distribuidores (contactos)
     # -------------------------------------------------------------------------
 
     @http.route(
@@ -204,35 +225,31 @@ class DistributorApiController(http.Controller):
         csrf=False,
     )
     def list_distributors(self, **kwargs):
-        """Devuelve los partners que actúan como distribuidores.
+        """
+        Devuelve los contactos marcados como 'Distribuidor'.
 
         Criterios:
-        - customer_rank > 0
-        - active = True
-        - company_id in (False, Vert Deco)
-        - categoría (etiqueta) "Distribuidor"
+          - active = True
+          - categoría (etiqueta) 'Distribuidor'
         """
-        # Preflight
-        if request.httprequest.method == "OPTIONS":
-            return self._json_response({"ok": True}, status=200)
+        preflight = self._handle_preflight()
+        if preflight:
+            return preflight
 
-        company = self._get_vert_company()
+        env = request.env
+        Partner = env["res.partner"].sudo()
 
-        Partner = (
-            request.env["res.partner"]
-            .sudo()
-            .with_company(company)
-            .with_context(allowed_company_ids=[company.id])
-        )
+        distributor_tag = self._get_distributor_tag()
+        if not distributor_tag:
+            _logger.warning("No existe la etiqueta 'Distribuidor' para listar distribuidores")
+            return self._json_response({"data": []})
 
         domain = [
-            ("customer_rank", ">", 0),
             ("active", "=", True),
-            ("category_id.name", "=", "Distribuidor"),
-            ("company_id", "in", [False, company.id]),
+            ("category_id", "in", distributor_tag.ids),
         ]
 
-        partners = Partner.search(domain, order="name")
+        partners = Partner.search(domain, order="name asc")
 
         data = []
         for partner in partners:
@@ -251,7 +268,7 @@ class DistributorApiController(http.Controller):
         return self._json_response({"data": data})
 
     # -------------------------------------------------------------------------
-    # Productos (Vert Deco + Lista Vip)
+    # Productos de la lista de precios VIP
     # -------------------------------------------------------------------------
 
     @http.route(
@@ -262,80 +279,86 @@ class DistributorApiController(http.Controller):
         csrf=False,
     )
     def list_products(self, **kwargs):
-        """Lista de productos de Vert Deco Cercos que tienen precio en la
-        lista de precios 'Lista Vip'.
-
-        Solo se incluyen los productos con una regla en esa lista y se
-        devuelve el precio definido en la misma (fixed_price).
         """
-        # Preflight CORS
-        if request.httprequest.method == "OPTIONS":
-            return self._json_response({"ok": True}, status=200)
+        Devuelve SOLO los productos que tienen precio explícito
+        en la lista de precios 'Lista Vip'.
+
+        Para cada producto se envía:
+          - id
+          - name
+          - default_code
+          - uom_name
+          - list_price  (precio de la lista VIP)
+        """
+        preflight = self._handle_preflight()
+        if preflight:
+            return preflight
 
         env = request.env
-        company = self._get_vert_company()
-        if not company:
-            return self._error("Company Vert Deco Cercos not found", status=404)
+        PricelistItem = env["product.pricelist.item"].sudo()
+        ProductProduct = env["product.product"].sudo()
 
-        # Lista de precios 'Lista Vip' de esa compañía
-        Pricelist = env["product.pricelist"].sudo().with_company(company.id)
-        pricelist = Pricelist.search(
-            [("name", "=", "Lista Vip"), ("company_id", "=", company.id)],
-            limit=1,
-        )
+        pricelist = self._get_vip_pricelist()
         if not pricelist:
-            return self._error("Pricelist 'Lista Vip' not found", status=404)
+            _logger.warning("No se encontró la lista de precios 'Lista Vip'")
+            return self._json_response({"data": []})
 
-        # Reglas de lista de precios aplicadas a productos concretos
-        Item = env["product.pricelist.item"].sudo().with_company(company.id)
-        items = Item.search(
+        # Ítems de tarifa que aplican a productos concretos
+        items = PricelistItem.search(
             [
                 ("pricelist_id", "=", pricelist.id),
-                ("product_id", "!=", False),
+                ("applied_on", "in", ["0_product_variant", "1_product"]),
             ]
         )
-        product_ids = items.mapped("product_id").ids
+
+        if not items:
+            return self._json_response({"data": []})
+
+        product_ids = set()
+        price_by_product = {}
+
+        for item in items:
+            # Línea a nivel de variante
+            if item.product_id:
+                prod = item.product_id
+                product_ids.add(prod.id)
+                price = item.fixed_price if item.fixed_price not in (False, None) else prod.list_price
+                price_by_product[prod.id] = float(price or 0.0)
+            # Línea a nivel de plantilla: se aplica a todas las variantes
+            elif item.product_tmpl_id:
+                for prod in item.product_tmpl_id.product_variant_ids:
+                    product_ids.add(prod.id)
+                    price = item.fixed_price if item.fixed_price not in (False, None) else prod.list_price
+                    price_by_product[prod.id] = float(price or 0.0)
+
         if not product_ids:
             return self._json_response({"data": []})
 
-        # Productos vendibles de Vert Deco que tienen precio en la lista
-        Product = env["product.product"].sudo().with_company(company.id)
-        products = Product.search(
+        products = ProductProduct.search(
             [
-                ("id", "in", product_ids),
+                ("id", "in", list(product_ids)),
                 ("sale_ok", "=", True),
-                ("company_id", "in", [False, company.id]),
             ],
-            order="default_code, name",
+            order="name asc",
         )
-
-        # Index rápido de item por producto
-        items_by_product = {}
-        for item in items:
-            pid = item.product_id.id
-            if pid and pid not in items_by_product:
-                items_by_product[pid] = item
 
         data = []
         for product in products:
-            item = items_by_product.get(product.id)
-            # Para Lista Vip esperamos precio fijo; si no hay, caemos a list_price
-            fixed_price = getattr(item, "fixed_price", False) if item else False
-            price = fixed_price if fixed_price not in (False, None) else product.list_price
-
+            price = price_by_product.get(product.id, float(product.list_price or 0.0))
             data.append(
                 {
                     "id": product.id,
-                    "name": product.display_name or product.name,
+                    "name": product.display_name,
                     "default_code": product.default_code or "",
                     "uom_name": product.uom_id.name or "",
-                    "list_price": float(price or 0.0),
+                    "list_price": price,
                 }
             )
 
         return self._json_response({"data": data})
+
     # -------------------------------------------------------------------------
-    # Crear presupuesto (sale.order) para Vert Deco + Lista Vip
+    # Crear presupuesto (sale.order) para un distribuidor
     # -------------------------------------------------------------------------
 
     @http.route(
@@ -346,135 +369,145 @@ class DistributorApiController(http.Controller):
         csrf=False,
     )
     def create_quotation(self, **kwargs):
-        """Crea un sale.order en Vert Deco Cercos a partir de líneas de productos.
+        """
+        Crea un sale.order para un distribuidor usando la lista
+        de precios 'Lista Vip'.
 
-        Body esperado (JSON):
+        Request JSON:
         {
-            "partner_id": <ID del distribuidor (res.partner)>,
-            "client_reference": "Texto libre para referencia del cliente",
-            "lines": [
-                {"product_id": <ID product.product>, "quantity": <float>},
-                ...
-            ]
+          "distributor_id": <id de res.partner con etiqueta Distribuidor>,
+          "customer": {
+            "name": "...",
+            "phone": "...",
+            "email": "...",
+            "street": "...",
+            "city": "..."
+          },
+          "notes": "texto libre",
+          "lines": [
+            {"product_id": 123, "quantity": 2, "price": 1000.0}, ...
+          ]
         }
         """
-        # Preflight
-        if request.httprequest.method == "OPTIONS":
-            return self._json_response({"ok": True}, status=200)
+        preflight = self._handle_preflight()
+        if preflight:
+            return preflight
 
-        data = self._get_json_body() or {}
+        env = request.env
+        Partner = env["res.partner"].sudo()
+        SaleOrder = env["sale.order"].sudo()
+        SaleOrderLine = env["sale.order.line"].sudo()
+        ProductProduct = env["product.product"].sudo()
 
-        partner_id = data.get("partner_id")
-        lines_data = data.get("lines") or []
-        client_reference = data.get("client_reference") or ""
+        # Leer y validar body JSON
+        try:
+            raw = request.httprequest.data or b"{}"
+            payload = json.loads(raw.decode("utf-8"))
+        except Exception as exc:
+            _logger.exception("Error parseando JSON de create_quotation: %s", exc)
+            return self._json_response(
+                {"error": "JSON inválido en el cuerpo de la petición"}, status=400
+            )
 
-        if not partner_id:
-            return self._error("Falta 'partner_id' (distribuidor).", status=400)
-        if not lines_data:
-            return self._error("No se recibió ninguna línea de producto.", status=400)
+        distributor_id = payload.get("distributor_id")
+        customer = payload.get("customer") or {}
+        notes = payload.get("notes") or ""
+        lines = payload.get("lines") or []
 
-        company = self._get_vert_company()
+        if not distributor_id:
+            return self._json_response(
+                {"error": "Falta distributor_id en el pedido"}, status=400
+            )
 
-        Partner = (
-            request.env["res.partner"]
-            .sudo()
-            .with_company(company)
-            .with_context(allowed_company_ids=[company.id])
-        )
-        SaleOrder = (
-            request.env["sale.order"]
-            .sudo()
-            .with_company(company)
-            .with_context(allowed_company_ids=[company.id])
-        )
-        Product = (
-            request.env["product.product"]
-            .sudo()
-            .with_company(company)
-            .with_context(allowed_company_ids=[company.id])
-        )
-        Pricelist = (
-            request.env["product.pricelist"]
-            .sudo()
-            .with_company(company)
-            .with_context(allowed_company_ids=[company.id])
-        )
+        distributor = Partner.browse(int(distributor_id))
+        if not distributor.exists():
+            return self._json_response(
+                {"error": "Distribuidor no encontrado"}, status=404
+            )
 
-        partner = Partner.browse(partner_id)
-        if not partner.exists():
-            return self._error("Distribuidor no encontrado.", status=404)
+        if not lines:
+            return self._json_response(
+                {"error": "Debe enviar al menos una línea de producto"}, status=400
+            )
 
-        # Usamos la lista VIP siempre que exista, si no la propia del partner.
-        vip_pricelist = Pricelist.search(
-            [
-                ("name", "=", "Lista Vip"),
-                ("company_id", "in", [False, company.id]),
-            ],
-            limit=1,
-        )
-        pricelist = vip_pricelist or partner.property_product_pricelist
+        pricelist = self._get_vip_pricelist()
+        if not pricelist:
+            return self._json_response(
+                {"error": "No se encontró la lista de precios 'Lista Vip'"},
+                status=400,
+            )
 
-        order_line_commands = []
+        # Armamos nota interna con datos del cliente final
+        customer_name = customer.get("name") or ""
+        customer_phone = customer.get("phone") or ""
+        customer_email = customer.get("email") or ""
+        customer_street = customer.get("street") or ""
+        customer_city = customer.get("city") or ""
 
-        for line in lines_data:
+        note_lines = []
+        if customer_name:
+            note_lines.append("Cliente final: %s" % customer_name)
+        if customer_phone:
+            note_lines.append("Teléfono: %s" % customer_phone)
+        if customer_email:
+            note_lines.append("Email: %s" % customer_email)
+        if customer_street or customer_city:
+            note_lines.append("Dirección: %s %s" % (customer_street, customer_city))
+        if notes:
+            note_lines.append("")
+            note_lines.append("Notas distribuidor:")
+            note_lines.append(notes)
+
+        internal_note = "\n".join(note_lines)
+
+        # Crear presupuesto
+        order_vals = {
+            "partner_id": distributor.id,
+            "partner_invoice_id": distributor.id,
+            "partner_shipping_id": distributor.id,
+            "pricelist_id": pricelist.id,
+            "note": internal_note,
+        }
+
+        order = SaleOrder.create(order_vals)
+
+        for line in lines:
             product_id = line.get("product_id")
             qty = line.get("quantity") or 0.0
-
-            try:
-                qty = float(qty)
-            except Exception:
-                qty = 0.0
+            price = line.get("price")  # viene desde el front, calculado con la VIP
 
             if not product_id or qty <= 0:
                 continue
 
-            product = Product.browse(product_id)
+            product = ProductProduct.browse(int(product_id))
             if not product.exists():
                 continue
 
-            price = 0.0
-            if pricelist:
-                try:
-                    prices = pricelist.price_get(product.id, qty, partner) or {}
-                    price = prices.get(pricelist.id, 0.0)
-                except Exception:
-                    _logger.exception(
-                        "Error calculando precio en Lista Vip para producto %s", product.id
-                    )
-                    price = 0.0
+            # Si no viene precio desde el front, usamos el de la lista VIP
+            if price in (None, False):
+                item = pricelist.item_ids.filtered(
+                    lambda i: i.product_id == product
+                    or i.product_tmpl_id == product.product_tmpl_id
+                )[:1]
+                if item and item.fixed_price not in (False, None):
+                    price = item.fixed_price
+                else:
+                    price = product.list_price
 
             line_vals = {
+                "order_id": order.id,
                 "product_id": product.id,
                 "product_uom_qty": qty,
-                "name": product.display_name or product.name,
+                "price_unit": float(price or 0.0),
             }
-            if product.uom_id:
-                line_vals["product_uom"] = product.uom_id.id
-            if price:
-                line_vals["price_unit"] = price
-
-            order_line_commands.append((0, 0, line_vals))
-
-        if not order_line_commands:
-            return self._error("No hay líneas válidas para crear el presupuesto.", status=400)
-
-        order_vals = {
-            "partner_id": partner.id,
-            "company_id": company.id,
-            "order_line": order_line_commands,
-        }
-        if pricelist:
-            order_vals["pricelist_id"] = pricelist.id
-        if client_reference:
-            order_vals["client_order_ref"] = client_reference
-
-        order = SaleOrder.create(order_vals)
+            SaleOrderLine.create(line_vals)
 
         return self._json_response(
             {
-                "success": True,
-                "order_id": order.id,
-                "order_name": order.name,
+                "data": {
+                    "order_id": order.id,
+                    "name": order.name,
+                }
             },
             status=200,
         )
