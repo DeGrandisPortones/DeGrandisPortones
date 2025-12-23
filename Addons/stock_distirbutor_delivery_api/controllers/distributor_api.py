@@ -361,153 +361,208 @@ class DistributorApiController(http.Controller):
     # Crear presupuesto (sale.order) para un distribuidor
     # -------------------------------------------------------------------------
 
-    @http.route(
-        "/distributor/api/quotations",
-        type="http",
-        auth="public",
-        methods=["POST", "OPTIONS"],
-        csrf=False,
-    )
-    def create_quotation(self, **kwargs):
-        """
-        Crea un sale.order para un distribuidor usando la lista
-        de precios 'Lista Vip'.
 
-        Request JSON:
+    @http.route('/distributor/api/quotations', type="http", auth="public", methods=['POST', 'OPTIONS'], csrf=False)
+    def create_quotation(self, **kwargs):
+        """Crear un presupuesto (sale.order) en Odoo a partir de la app.
+
+        Body JSON esperado:
         {
-          "distributor_id": <id de res.partner con etiqueta Distribuidor>,
-          "customer": {
-            "name": "...",
-            "phone": "...",
-            "email": "...",
-            "street": "...",
-            "city": "..."
-          },
-          "notes": "texto libre",
-          "lines": [
-            {"product_id": 123, "quantity": 2, "price": 1000.0}, ...
-          ]
+            "distributor_id": 123,
+            "customer": {
+                "name": "...",
+                "phone": "...",
+                "email": "...",
+                "street": "...",
+                "city": "..."
+            },
+            "notes": "...",
+            "lines": [
+                {"product_id": 1, "quantity": 3},
+                ...
+            ]
         }
         """
+        # Preflight CORS
         preflight = self._handle_preflight()
-        if preflight:
+        if preflight is not None:
             return preflight
 
-        env = request.env
-        Partner = env["res.partner"].sudo()
-        SaleOrder = env["sale.order"].sudo()
-        SaleOrderLine = env["sale.order.line"].sudo()
-        ProductProduct = env["product.product"].sudo()
-
-        # Leer y validar body JSON
         try:
-            raw = request.httprequest.data or b"{}"
-            payload = json.loads(raw.decode("utf-8"))
-        except Exception as exc:
-            _logger.exception("Error parseando JSON de create_quotation: %s", exc)
-            return self._json_response(
-                {"error": "JSON inválido en el cuerpo de la petición"}, status=400
+            # Leer JSON del body
+            raw = request.httprequest.data or b'{}'
+            if isinstance(raw, bytes):
+                raw = raw.decode('utf-8') or '{}'
+            payload = json.loads(raw or '{}')
+
+            distributor_id = payload.get('distributor_id')
+            customer = payload.get('customer') or {}
+            lines = payload.get('lines') or []
+            notes = payload.get('notes') or ''
+
+            if not distributor_id:
+                return self._json_response(
+                    {
+                        'error': 'missing_distributor',
+                        'message': 'Debe indicar el distribuidor (distributor_id).',
+                    },
+                    status=400,
+                )
+
+            if not lines:
+                return self._json_response(
+                    {
+                        'error': 'no_lines',
+                        'message': 'Debe enviar al menos una línea de producto.',
+                    },
+                    status=400,
+                )
+
+            # Contexto de empresa Vert Deco Cercos
+            Company = request.env['res.company'].sudo()
+            company = Company.search([('name', '=', 'Vert Deco Cercos')], limit=1)
+            if not company:
+                # fallback a empresa actual
+                company = request.env.company
+
+            env = request.env.with_context(
+                force_company=company.id,
+                allowed_company_ids=[company.id],
+            ).sudo()
+
+            Partner = env['res.partner']
+            Pricelist = env['product.pricelist']
+            PricelistItem = env['product.pricelist.item']
+            Product = env['product.product']
+            SaleOrder = env['sale.order']
+
+            distributor = Partner.browse(int(distributor_id))
+            if not distributor.exists():
+                return self._json_response(
+                    {
+                        'error': 'invalid_distributor',
+                        'message': 'El distribuidor indicado no existe.',
+                    },
+                    status=400,
+                )
+
+            # Buscar lista de precios VIP
+            vip_pricelist = Pricelist.search(
+                [
+                    ('name', '=', 'Lista Vip'),
+                    ('company_id', '=', company.id),
+                ],
+                limit=1,
             )
+            if not vip_pricelist:
+                return self._json_response(
+                    {
+                        'error': 'no_pricelist',
+                        'message': "No se encontró la lista de precios 'Lista Vip' para la empresa Vert Deco Cercos.",
+                    },
+                    status=400,
+                )
 
-        distributor_id = payload.get("distributor_id")
-        customer = payload.get("customer") or {}
-        notes = payload.get("notes") or ""
-        lines = payload.get("lines") or []
+            # Armar nota interna con datos del cliente final
+            note_lines = []
+            name = (customer.get('name') or '').strip()
+            if name:
+                note_lines.append(f"Cliente final: {name}")
+            phone = (customer.get('phone') or '').strip()
+            if phone:
+                note_lines.append(f"Teléfono cliente final: {phone}")
+            email = (customer.get('email') or '').strip()
+            if email:
+                note_lines.append(f"Email cliente final: {email}")
+            street = (customer.get('street') or '').strip()
+            city = (customer.get('city') or '').strip()
+            if street or city:
+                direccion = ' - '.join(filter(None, [street, city]))
+                note_lines.append(f"Dirección cliente final: {direccion}")
+            if notes:
+                note_lines.append('')
+                note_lines.append('Notas del distribuidor:')
+                note_lines.append(notes)
+            internal_note = '\n'.join(note_lines) if note_lines else False
 
-        if not distributor_id:
-            return self._json_response(
-                {"error": "Falta distributor_id en el pedido"}, status=400
-            )
+            order_lines = []
 
-        distributor = Partner.browse(int(distributor_id))
-        if not distributor.exists():
-            return self._json_response(
-                {"error": "Distribuidor no encontrado"}, status=404
-            )
+            for line in lines:
+                product_id = line.get('product_id')
+                qty = float(line.get('quantity') or 0.0)
 
-        if not lines:
-            return self._json_response(
-                {"error": "Debe enviar al menos una línea de producto"}, status=400
-            )
+                if not product_id or qty <= 0:
+                    continue
 
-        pricelist = self._get_vip_pricelist()
-        if not pricelist:
-            return self._json_response(
-                {"error": "No se encontró la lista de precios 'Lista Vip'"},
-                status=400,
-            )
+                product = Product.browse(int(product_id))
+                if not product.exists():
+                    continue
 
-        # Armamos nota interna con datos del cliente final
-        customer_name = customer.get("name") or ""
-        customer_phone = customer.get("phone") or ""
-        customer_email = customer.get("email") or ""
-        customer_street = customer.get("street") or ""
-        customer_city = customer.get("city") or ""
+                # Buscar precio de la lista VIP para este producto
+                price = product.list_price
 
-        note_lines = []
-        if customer_name:
-            note_lines.append("Cliente final: %s" % customer_name)
-        if customer_phone:
-            note_lines.append("Teléfono: %s" % customer_phone)
-        if customer_email:
-            note_lines.append("Email: %s" % customer_email)
-        if customer_street or customer_city:
-            note_lines.append("Dirección: %s %s" % (customer_street, customer_city))
-        if notes:
-            note_lines.append("")
-            note_lines.append("Notas distribuidor:")
-            note_lines.append(notes)
+                # Intentar encontrar una regla específica en la lista VIP
+                item_domain = [
+                    ('pricelist_id', '=', vip_pricelist.id),
+                    ('company_id', '=', company.id),
+                    ('applied_on', 'in', ['0_product_variant', '1_product']),
+                    '|',
+                    ('product_id', '=', product.id),
+                    ('product_tmpl_id', '=', product.product_tmpl_id.id),
+                ]
+                item = PricelistItem.search(item_domain, limit=1)
+                if item:
+                    # Usamos el precio fijo si está definido, si no, fallback al precio de lista del producto
+                    price = item.fixed_price or price
 
-        internal_note = "\n".join(note_lines)
+                order_lines.append(
+                    (
+                        0,
+                        0,
+                        {
+                            'product_id': product.id,
+                            'product_uom_qty': qty,
+                            'price_unit': price,
+                        },
+                    )
+                )
 
-        # Crear presupuesto
-        order_vals = {
-            "partner_id": distributor.id,
-            "partner_invoice_id": distributor.id,
-            "partner_shipping_id": distributor.id,
-            "pricelist_id": pricelist.id,
-            "note": internal_note,
-        }
+            if not order_lines:
+                return self._json_response(
+                    {
+                        'error': 'no_valid_lines',
+                        'message': 'No se pudo generar ninguna línea de pedido (verificar productos y cantidades).',
+                    },
+                    status=400,
+                )
 
-        order = SaleOrder.create(order_vals)
-
-        for line in lines:
-            product_id = line.get("product_id")
-            qty = line.get("quantity") or 0.0
-            price = line.get("price")  # viene desde el front, calculado con la VIP
-
-            if not product_id or qty <= 0:
-                continue
-
-            product = ProductProduct.browse(int(product_id))
-            if not product.exists():
-                continue
-
-            # Si no viene precio desde el front, usamos el de la lista VIP
-            if price in (None, False):
-                item = pricelist.item_ids.filtered(
-                    lambda i: i.product_id == product
-                    or i.product_tmpl_id == product.product_tmpl_id
-                )[:1]
-                if item and item.fixed_price not in (False, None):
-                    price = item.fixed_price
-                else:
-                    price = product.list_price
-
-            line_vals = {
-                "order_id": order.id,
-                "product_id": product.id,
-                "product_uom_qty": qty,
-                "price_unit": float(price or 0.0),
+            order_vals = {
+                'partner_id': distributor.id,
+                'company_id': company.id,
+                'pricelist_id': vip_pricelist.id,
+                'note': internal_note,
+                # El cliente final no se crea como contacto separado por simplicidad.
             }
-            SaleOrderLine.create(line_vals)
 
-        return self._json_response(
-            {
-                "data": {
-                    "order_id": order.id,
-                    "name": order.name,
-                }
-            },
-            status=200,
-        )
+            order = SaleOrder.create({**order_vals, 'order_line': order_lines})
+
+            return self._json_response(
+                {
+                    'success': True,
+                    'order_id': order.id,
+                    'name': order.name,
+                },
+                status=200,
+            )
+
+        except Exception as e:
+            _logger.exception('Error al crear la cotización desde la API de distribuidores')
+            return self._json_response(
+                {
+                    'error': 'internal_error',
+                    'message': 'Error interno al crear la cotización en Odoo.',
+                    'detail': str(e),
+                },
+                status=500,
+            )
+
