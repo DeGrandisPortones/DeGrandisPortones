@@ -4,7 +4,8 @@
        GARDEN
   ========================== -->
   <template id="report_delivery_document_remito_garden">
-    <t t-call="web.external_layout">
+    <!-- Use minimal_layout to avoid the company letterhead/header/footer from Odoo -->
+    <t t-call="web.minimal_layout">
         <t t-set="o" t-value="o"/>
         <style>
           .remito-green { color:#1e7d3a; }
@@ -206,7 +207,8 @@
        MEDITERRANEA (sin membrete)
   ========================== -->
   <template id="report_delivery_document_remito_mediterranea">
-    <t t-call="web.external_layout">
+    <!-- Use minimal_layout to avoid the company letterhead/header/footer from Odoo -->
+    <t t-call="web.minimal_layout">
         <t t-set="o" t-value="o"/>
         <style>
           .remito-green { color:#1e7d3a; }
