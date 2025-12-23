@@ -262,55 +262,66 @@ class DistributorApiController(http.Controller):
         csrf=False,
     )
     def list_products(self, **kwargs):
-        """Lista de productos vendibles de Vert Deco con precio en Lista Vip."""
-        # Preflight
+        """Lista de productos de Vert Deco Cercos que tienen precio en la
+        lista de precios 'Lista Vip'.
+
+        Solo se incluyen los productos con una regla en esa lista y se
+        devuelve el precio definido en la misma (fixed_price).
+        """
+        # Preflight CORS
         if request.httprequest.method == "OPTIONS":
             return self._json_response({"ok": True}, status=200)
 
+        env = request.env
         company = self._get_vert_company()
+        if not company:
+            return self._error("Company Vert Deco Cercos not found", status=404)
 
-        Pricelist = (
-            request.env["product.pricelist"]
-            .sudo()
-            .with_company(company)
-            .with_context(allowed_company_ids=[company.id])
-        )
-
+        # Lista de precios 'Lista Vip' de esa compañía
+        Pricelist = env["product.pricelist"].sudo().with_company(company.id)
         pricelist = Pricelist.search(
-            [
-                ("name", "=", "Lista Vip"),
-                ("company_id", "in", [False, company.id]),
-            ],
+            [("name", "=", "Lista Vip"), ("company_id", "=", company.id)],
             limit=1,
         )
         if not pricelist:
-            return self._error('No se encontró la lista de precios "Lista Vip".', status=404)
+            return self._error("Pricelist 'Lista Vip' not found", status=404)
 
-        Product = (
-            request.env["product.product"]
-            .sudo()
-            .with_company(company)
-            .with_context(allowed_company_ids=[company.id])
+        # Reglas de lista de precios aplicadas a productos concretos
+        Item = env["product.pricelist.item"].sudo().with_company(company.id)
+        items = Item.search(
+            [
+                ("pricelist_id", "=", pricelist.id),
+                ("product_id", "!=", False),
+            ]
+        )
+        product_ids = items.mapped("product_id").ids
+        if not product_ids:
+            return self._json_response({"data": []})
+
+        # Productos vendibles de Vert Deco que tienen precio en la lista
+        Product = env["product.product"].sudo().with_company(company.id)
+        products = Product.search(
+            [
+                ("id", "in", product_ids),
+                ("sale_ok", "=", True),
+                ("company_id", "in", [False, company.id]),
+            ],
+            order="default_code, name",
         )
 
-        domain = [
-            ("sale_ok", "=", True),
-            ("company_id", "in", [False, company.id]),
-        ]
-        products = Product.search(domain, order="default_code, name")
+        # Index rápido de item por producto
+        items_by_product = {}
+        for item in items:
+            pid = item.product_id.id
+            if pid and pid not in items_by_product:
+                items_by_product[pid] = item
 
         data = []
         for product in products:
-            try:
-                prices = pricelist.price_get(product.id, 1.0, False) or {}
-                price = prices.get(pricelist.id)
-            except Exception:
-                _logger.exception("Error calculando precio para producto %s", product.id)
-                price = None
-
-            # Solo productos con precio definido en Lista Vip
-            if price is None:
-                continue
+            item = items_by_product.get(product.id)
+            # Para Lista Vip esperamos precio fijo; si no hay, caemos a list_price
+            fixed_price = getattr(item, "fixed_price", False) if item else False
+            price = fixed_price if fixed_price not in (False, None) else product.list_price
 
             data.append(
                 {
@@ -318,12 +329,11 @@ class DistributorApiController(http.Controller):
                     "name": product.display_name or product.name,
                     "default_code": product.default_code or "",
                     "uom_name": product.uom_id.name or "",
-                    "price": price,
+                    "list_price": float(price or 0.0),
                 }
             )
 
         return self._json_response({"data": data})
-
     # -------------------------------------------------------------------------
     # Crear presupuesto (sale.order) para Vert Deco + Lista Vip
     # -------------------------------------------------------------------------
