@@ -425,13 +425,11 @@ class DistributorApiController(http.Controller):
                 # fallback a empresa actual
                 company = request.env.company
 
-            env = request.env.sudo()
-
-            Partner = env['res.partner'].with_company(company)
-            Pricelist = env['product.pricelist'].with_company(company)
-            PricelistItem = env['product.pricelist.item'].with_company(company)
-            Product = env['product.product'].with_company(company)
-            SaleOrder = env['sale.order'].with_company(company)
+            Partner = request.env['res.partner'].with_company(company).sudo()
+            Pricelist = request.env['product.pricelist'].with_company(company).sudo()
+            PricelistItem = request.env['product.pricelist.item'].with_company(company).sudo()
+            Product = request.env['product.product'].with_company(company).sudo()
+            SaleOrder = request.env['sale.order'].with_company(company).sudo()
 
             distributor = Partner.browse(int(distributor_id))
             if not distributor.exists():
