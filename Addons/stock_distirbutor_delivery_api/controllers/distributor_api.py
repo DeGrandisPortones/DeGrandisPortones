@@ -179,7 +179,7 @@ class DistributorApiController(http.Controller):
                 # Never break the API if manufacturing logic fails
                 ready_to_pick = False
                 ready_label = _("Pendiente")
-data.append(
+        data.append(
                 {
                     "id": picking.id,
                     "name": picking.name,
@@ -601,4 +601,3 @@ data.append(
                 },
                 status=500,
             )
-
