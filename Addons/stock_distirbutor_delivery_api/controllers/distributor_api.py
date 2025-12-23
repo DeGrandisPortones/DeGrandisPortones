@@ -140,7 +140,46 @@ class DistributorApiController(http.Controller):
                     }
                 )
 
-            data.append(
+            
+            # Compute manufacturing / stock readiness for the picking
+            ready_to_pick = False
+            ready_label = _("Pendiente")
+            try:
+                sale_order = False
+                if picking.origin:
+                    sale_order = env["sale.order"].sudo().search(
+                        [("name", "=", picking.origin)],
+                        limit=1,
+                    )
+                mos_model = env["mrp.production"].sudo()
+                if sale_order:
+                    mos = mos_model.search(
+                        [
+                            ("origin", "=", sale_order.name),
+                            ("company_id", "=", picking.company_id.id),
+                        ]
+                    )
+                else:
+                    mos = mos_model.browse()
+                if mos:
+                    done_states = {"done", "to_close"}
+                    mo_states = set(mos.mapped("state"))
+                    ready_from_mo = mo_states.issubset(done_states)
+                    if ready_from_mo:
+                        ready_label = _("Fabricado")
+                    else:
+                        ready_label = _("En fabricación")
+                    ready_to_pick = ready_from_mo
+                else:
+                    # No manufacturing order: consider stock availability
+                    if picking.state in ("assigned", "done"):
+                        ready_to_pick = True
+                        ready_label = _("En stock")
+            except Exception:
+                # Never break the API if manufacturing logic fails
+                ready_to_pick = False
+                ready_label = _("Pendiente")
+data.append(
                 {
                     "id": picking.id,
                     "name": picking.name,
@@ -150,6 +189,8 @@ class DistributorApiController(http.Controller):
                     if picking.scheduled_date
                     else None,
                     "state": picking.state,
+                    "ready_to_pick": ready_to_pick,
+                    "ready_label": ready_label,
                     "final_customer_completed": bool(
                         getattr(picking, "final_customer_completed", False)
                     ),
