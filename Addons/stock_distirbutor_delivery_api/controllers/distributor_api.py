@@ -92,7 +92,7 @@ class DistributorApiController(http.Controller):
     def list_pickings(self, **kwargs):
         """Listado de entregas para distribuidores.
 
-        Devuelve TODOS los pickings pendientes (states: assigned / confirmed / waiting)
+        Devuelve pickings pendientes (NO incluye 'Hecho' / done)
         cuyo partner tenga la etiqueta 'Distribuidor'.
         """
         preflight = self._handle_preflight()
@@ -109,6 +109,9 @@ class DistributorApiController(http.Controller):
 
         domain = [
             ("picking_type_id.code", "=", "outgoing"),
+            # Blindado: nunca devolver "Hecho" (done) ni cancelado
+            ("state", "not in", ["done", "cancel"]),
+            # Estados pendientes que queremos devolver
             ("state", "in", ["assigned", "confirmed", "waiting"]),
             ("partner_id.category_id", "in", distributor_tag.ids),
         ]
@@ -117,6 +120,10 @@ class DistributorApiController(http.Controller):
 
         data = []
         for picking in pickings:
+            # Doble seguro: por si alguna customización cambiara el domain
+            if picking.state in ("done", "cancel"):
+                continue
+
             ready_to_pick = picking.state == "assigned"
             ready_label = _("En stock") if ready_to_pick else _("Pendiente")
 
@@ -404,6 +411,7 @@ class DistributorApiController(http.Controller):
             return preflight
 
         try:
+            # Leer JSON del body
             raw = request.httprequest.data or b"{}"
             if isinstance(raw, bytes):
                 raw = raw.decode("utf-8") or "{}"
@@ -436,6 +444,7 @@ class DistributorApiController(http.Controller):
             Company = request.env["res.company"].sudo()
             company = Company.search([("name", "=", "Vert Deco Cercos")], limit=1)
             if not company:
+                # fallback a empresa actual
                 company = request.env.company
 
             Partner = request.env["res.partner"].with_company(company).sudo()
@@ -506,7 +515,7 @@ class DistributorApiController(http.Controller):
                 if not product.exists():
                     continue
 
-                # Precio fallback
+                # Buscar precio de la lista VIP para este producto
                 price = product.list_price
 
                 # Intentar encontrar una regla específica en la lista VIP
