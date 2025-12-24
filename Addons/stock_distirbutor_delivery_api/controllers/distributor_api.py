@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from odoo import http, fields
+from odoo import http, fields, _
 from odoo.http import request
 import json
 import logging
