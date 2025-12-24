@@ -78,123 +78,139 @@ class DistributorApiController(http.Controller):
         Pricelist = request.env["product.pricelist"].sudo()
         return Pricelist.search([("name", "=", "Lista Vip")], limit=1)
 
+    def _get_distributor_from_request(self, env, **kwargs):
+        """Detecta el distribuidor para el request.
+
+        Implementación flexible:
+          1) Param/querystring distributor_id
+          2) Header X-Distributor-Id
+          3) Usuario logueado (partner_id) si NO es el public_user
+
+        Además valida que el partner tenga la etiqueta 'Distribuidor' (si existe).
+        """
+        Partner = env["res.partner"].sudo()
+
+        distributor_id = (
+            kwargs.get("distributor_id")
+            or request.httprequest.args.get("distributor_id")
+            or request.httprequest.headers.get("X-Distributor-Id")
+        )
+
+        distributor = False
+        if distributor_id:
+            try:
+                distributor = Partner.browse(int(distributor_id))
+                if not distributor.exists():
+                    distributor = False
+            except Exception:
+                distributor = False
+
+        if not distributor:
+            public_user = env.ref("base.public_user", raise_if_not_found=False)
+            if not public_user or env.user.id != public_user.id:
+                distributor = env.user.partner_id.sudo() if env.user.partner_id else False
+
+        if not distributor:
+            return False
+
+        # Validación opcional: que sea distribuidor por etiqueta
+        distributor_tag = self._get_distributor_tag()
+        if distributor_tag and distributor_tag.id not in distributor.category_id.ids:
+            return False
+
+        return distributor
+
     # -------------------------------------------------------------------------
-    # Listado de entregas (pickings)
+    # Listado de entregas (pickings)  [REEMPLAZADO]
     # -------------------------------------------------------------------------
 
     @http.route(
         "/distributor/api/pickings",
         type="http",
         auth="public",
-        methods=["GET", "OPTIONS"],
+        methods=["GET"],
         csrf=False,
+        cors="*",
     )
     def list_pickings(self, **kwargs):
-        """
-        Devuelve los remitos de salida del día (y próximos) para distribuidores.
+        """Listado de entregas para el distribuidor.
 
-        Criterios:
-          - picking_type_id.code = 'outgoing'
-          - state in ('confirmed', 'assigned')
-          - partner_id con etiqueta 'Distribuidor'
+        Devuelve TODOS los pickings pendientes (states: assigned / confirmed / waiting)
+        para el distribuidor detectado, y marca si están listos para retirar.
         """
-        preflight = self._handle_preflight()
-        if preflight:
-            return preflight
-
         env = request.env
-        StockPicking = env["stock.picking"].sudo()
-        PartnerCategory = env["res.partner.category"].sudo()
 
-        distributor_tag = self._get_distributor_tag()
-        if not distributor_tag:
-            _logger.warning("No existe la etiqueta 'Distribuidor' en res.partner.category")
-            return self._json_response({"data": []})
+        # Usa tu lógica actual para obtener el distribuidor
+        # (según cabecera, token, usuario portal, etc.)
+        distributor = self._get_distributor_from_request(env, **kwargs)
+        if not distributor:
+            return self._json_response(
+                {
+                    "error": "no_distributor",
+                    "message": "Distribuidor no identificado.",
+                },
+                status=400,
+            )
 
+        # Dominio: todos los OUT pickings del distribuidor, pendientes de operación
         domain = [
             ("picking_type_id.code", "=", "outgoing"),
-            ("state", "not in", ["done", "cancel"]),
-            ("partner_id.category_id", "in", distributor_tag.ids),
+            ("state", "in", ["assigned", "confirmed", "waiting"]),
+            ("company_id", "=", distributor.company_id.id or env.user.company_id.id),
+            # si en tu implementación original filtrabas de otra forma por partner,
+            # podés ajustar esta línea:
+            ("partner_id", "child_of", distributor.id),
         ]
 
-        pickings = StockPicking.search(domain, order="scheduled_date asc, id desc")
+        pickings = (
+            env["stock.picking"]
+            .sudo()
+            .search(domain, order="scheduled_date asc, id asc")
+        )
 
         data = []
         for picking in pickings:
+            # ===== Cálculo de estado "listo para retirar" =====
+            # Por ahora: listo si el picking está en 'assigned' y
+            # no tiene movimientos esperando fabricación.
+            ready_to_pick = picking.state == "assigned"
+            ready_label = _("En stock") if ready_to_pick else _("Pendiente")
+
+            # Si tenés lógica adicional de fabricación, la podés injertar aquí
+            # sin tocar el dominio ni filtrar pickings por este flag.
+
+            # ===== Líneas =====
             lines = []
             for move in picking.move_ids_without_package:
-                product = move.product_id
-                if not product:
-                    continue
-                qty = move.product_uom_qty
-                if qty <= 0:
-                    continue
-
                 lines.append(
                     {
                         "id": move.id,
-                        "product_id": product.id,
-                        "product_name": product.display_name,
-                        "quantity": qty,
-                        "uom": move.product_uom.name or "",
+                        "product_id": move.product_id.id,
+                        "product_name": move.product_id.display_name,
+                        "quantity": move.product_uom_qty,
+                        "uom": move.product_uom.name,
                     }
                 )
 
-            
-            # Compute manufacturing / stock readiness for the picking
-            ready_to_pick = False
-            ready_label = _("Pendiente")
-            try:
-                sale_order = False
-                if picking.origin:
-                    sale_order = env["sale.order"].sudo().search(
-                        [("name", "=", picking.origin)],
-                        limit=1,
-                    )
-                mos_model = env["mrp.production"].sudo()
-                if sale_order:
-                    mos = mos_model.search(
-                        [
-                            ("origin", "=", sale_order.name),
-                            ("company_id", "=", picking.company_id.id),
-                        ]
-                    )
-                else:
-                    mos = mos_model.browse()
-                if mos:
-                    done_states = {"done", "to_close"}
-                    mo_states = set(mos.mapped("state"))
-                    ready_from_mo = mo_states.issubset(done_states)
-                    if ready_from_mo:
-                        ready_label = _("Fabricado")
-                    else:
-                        ready_label = _("En fabricación")
-                    ready_to_pick = ready_from_mo
-                else:
-                    # No manufacturing order: consider stock availability
-                    if picking.state in ("assigned", "done"):
-                        ready_to_pick = True
-                        ready_label = _("En stock")
-            except Exception:
-                # Never break the API if manufacturing logic fails
-                ready_to_pick = False
-                ready_label = _("Pendiente")
-        data.append(
+            # ===== Cliente final =====
+            final_customer = getattr(picking, "x_final_customer_id", False)
+            final_customer_completed = bool(final_customer)
+            final_customer_name = final_customer.name if final_customer else False
+
+            data.append(
                 {
                     "id": picking.id,
                     "name": picking.name,
-                    "origin": picking.origin or "",
-                    "partner_name": picking.partner_id.name or "",
+                    "origin": picking.origin,
+                    "partner_name": picking.partner_id.display_name,
                     "scheduled_date": fields.Datetime.to_string(picking.scheduled_date)
                     if picking.scheduled_date
-                    else None,
+                    else False,
                     "state": picking.state,
                     "ready_to_pick": ready_to_pick,
                     "ready_label": ready_label,
-                    "final_customer_completed": bool(
-                        getattr(picking, "final_customer_completed", False)
-                    ),
-                    "final_customer_name": getattr(picking, "final_customer_name", "") or "",
+                    "final_customer_completed": final_customer_completed,
+                    "final_customer_name": final_customer_name,
                     "lines": lines,
                 }
             )
@@ -225,9 +241,7 @@ class DistributorApiController(http.Controller):
 
         picking = StockPicking.browse(picking_id)
         if not picking.exists():
-            return self._json_response(
-                {"error": "Picking no encontrado"}, status=404
-            )
+            return self._json_response({"error": "Picking no encontrado"}, status=404)
 
         # Leer JSON del body
         try:
@@ -282,7 +296,9 @@ class DistributorApiController(http.Controller):
 
         distributor_tag = self._get_distributor_tag()
         if not distributor_tag:
-            _logger.warning("No existe la etiqueta 'Distribuidor' para listar distribuidores")
+            _logger.warning(
+                "No existe la etiqueta 'Distribuidor' para listar distribuidores"
+            )
             return self._json_response({"data": []})
 
         domain = [
@@ -363,13 +379,21 @@ class DistributorApiController(http.Controller):
             if item.product_id:
                 prod = item.product_id
                 product_ids.add(prod.id)
-                price = item.fixed_price if item.fixed_price not in (False, None) else prod.list_price
+                price = (
+                    item.fixed_price
+                    if item.fixed_price not in (False, None)
+                    else prod.list_price
+                )
                 price_by_product[prod.id] = float(price or 0.0)
             # Línea a nivel de plantilla: se aplica a todas las variantes
             elif item.product_tmpl_id:
                 for prod in item.product_tmpl_id.product_variant_ids:
                     product_ids.add(prod.id)
-                    price = item.fixed_price if item.fixed_price not in (False, None) else prod.list_price
+                    price = (
+                        item.fixed_price
+                        if item.fixed_price not in (False, None)
+                        else prod.list_price
+                    )
                     price_by_product[prod.id] = float(price or 0.0)
 
         if not product_ids:
@@ -402,8 +426,13 @@ class DistributorApiController(http.Controller):
     # Crear presupuesto (sale.order) para un distribuidor
     # -------------------------------------------------------------------------
 
-
-    @http.route('/distributor/api/quotations', type="http", auth="public", methods=['POST', 'OPTIONS'], csrf=False)
+    @http.route(
+        "/distributor/api/quotations",
+        type="http",
+        auth="public",
+        methods=["POST", "OPTIONS"],
+        csrf=False,
+    )
     def create_quotation(self, **kwargs):
         """Crear un presupuesto (sale.order) en Odoo a partir de la app.
 
@@ -431,21 +460,21 @@ class DistributorApiController(http.Controller):
 
         try:
             # Leer JSON del body
-            raw = request.httprequest.data or b'{}'
+            raw = request.httprequest.data or b"{}"
             if isinstance(raw, bytes):
-                raw = raw.decode('utf-8') or '{}'
-            payload = json.loads(raw or '{}')
+                raw = raw.decode("utf-8") or "{}"
+            payload = json.loads(raw or "{}")
 
-            distributor_id = payload.get('distributor_id')
-            customer = payload.get('customer') or {}
-            lines = payload.get('lines') or []
-            notes = payload.get('notes') or ''
+            distributor_id = payload.get("distributor_id")
+            customer = payload.get("customer") or {}
+            lines = payload.get("lines") or []
+            notes = payload.get("notes") or ""
 
             if not distributor_id:
                 return self._json_response(
                     {
-                        'error': 'missing_distributor',
-                        'message': 'Debe indicar el distribuidor (distributor_id).',
+                        "error": "missing_distributor",
+                        "message": "Debe indicar el distribuidor (distributor_id).",
                     },
                     status=400,
                 )
@@ -453,31 +482,33 @@ class DistributorApiController(http.Controller):
             if not lines:
                 return self._json_response(
                     {
-                        'error': 'no_lines',
-                        'message': 'Debe enviar al menos una línea de producto.',
+                        "error": "no_lines",
+                        "message": "Debe enviar al menos una línea de producto.",
                     },
                     status=400,
                 )
 
             # Contexto de empresa Vert Deco Cercos
-            Company = request.env['res.company'].sudo()
-            company = Company.search([('name', '=', 'Vert Deco Cercos')], limit=1)
+            Company = request.env["res.company"].sudo()
+            company = Company.search([("name", "=", "Vert Deco Cercos")], limit=1)
             if not company:
                 # fallback a empresa actual
                 company = request.env.company
 
-            Partner = request.env['res.partner'].with_company(company).sudo()
-            Pricelist = request.env['product.pricelist'].with_company(company).sudo()
-            PricelistItem = request.env['product.pricelist.item'].with_company(company).sudo()
-            Product = request.env['product.product'].with_company(company).sudo()
-            SaleOrder = request.env['sale.order'].with_company(company).sudo()
+            Partner = request.env["res.partner"].with_company(company).sudo()
+            Pricelist = request.env["product.pricelist"].with_company(company).sudo()
+            PricelistItem = (
+                request.env["product.pricelist.item"].with_company(company).sudo()
+            )
+            Product = request.env["product.product"].with_company(company).sudo()
+            SaleOrder = request.env["sale.order"].with_company(company).sudo()
 
             distributor = Partner.browse(int(distributor_id))
             if not distributor.exists():
                 return self._json_response(
                     {
-                        'error': 'invalid_distributor',
-                        'message': 'El distribuidor indicado no existe.',
+                        "error": "invalid_distributor",
+                        "message": "El distribuidor indicado no existe.",
                     },
                     status=400,
                 )
@@ -485,47 +516,47 @@ class DistributorApiController(http.Controller):
             # Buscar lista de precios VIP
             vip_pricelist = Pricelist.search(
                 [
-                    ('name', '=', 'Lista Vip'),
-                    ('company_id', '=', company.id),
+                    ("name", "=", "Lista Vip"),
+                    ("company_id", "=", company.id),
                 ],
                 limit=1,
             )
             if not vip_pricelist:
                 return self._json_response(
                     {
-                        'error': 'no_pricelist',
-                        'message': "No se encontró la lista de precios 'Lista Vip' para la empresa Vert Deco Cercos.",
+                        "error": "no_pricelist",
+                        "message": "No se encontró la lista de precios 'Lista Vip' para la empresa Vert Deco Cercos.",
                     },
                     status=400,
                 )
 
             # Armar nota interna con datos del cliente final
             note_lines = []
-            name = (customer.get('name') or '').strip()
+            name = (customer.get("name") or "").strip()
             if name:
                 note_lines.append(f"Cliente final: {name}")
-            phone = (customer.get('phone') or '').strip()
+            phone = (customer.get("phone") or "").strip()
             if phone:
                 note_lines.append(f"Teléfono cliente final: {phone}")
-            email = (customer.get('email') or '').strip()
+            email = (customer.get("email") or "").strip()
             if email:
                 note_lines.append(f"Email cliente final: {email}")
-            street = (customer.get('street') or '').strip()
-            city = (customer.get('city') or '').strip()
+            street = (customer.get("street") or "").strip()
+            city = (customer.get("city") or "").strip()
             if street or city:
-                direccion = ' - '.join(filter(None, [street, city]))
+                direccion = " - ".join(filter(None, [street, city]))
                 note_lines.append(f"Dirección cliente final: {direccion}")
             if notes:
-                note_lines.append('')
-                note_lines.append('Notas del distribuidor:')
+                note_lines.append("")
+                note_lines.append("Notas del distribuidor:")
                 note_lines.append(notes)
-            internal_note = '\n'.join(note_lines) if note_lines else False
+            internal_note = "\n".join(note_lines) if note_lines else False
 
             order_lines = []
 
             for line in lines:
-                product_id = line.get('product_id')
-                qty = float(line.get('quantity') or 0.0)
+                product_id = line.get("product_id")
+                qty = float(line.get("quantity") or 0.0)
 
                 if not product_id or qty <= 0:
                     continue
@@ -539,12 +570,12 @@ class DistributorApiController(http.Controller):
 
                 # Intentar encontrar una regla específica en la lista VIP
                 item_domain = [
-                    ('pricelist_id', '=', vip_pricelist.id),
-                    ('company_id', '=', company.id),
-                    ('applied_on', 'in', ['0_product_variant', '1_product']),
-                    '|',
-                    ('product_id', '=', product.id),
-                    ('product_tmpl_id', '=', product.product_tmpl_id.id),
+                    ("pricelist_id", "=", vip_pricelist.id),
+                    ("company_id", "=", company.id),
+                    ("applied_on", "in", ["0_product_variant", "1_product"]),
+                    "|",
+                    ("product_id", "=", product.id),
+                    ("product_tmpl_id", "=", product.product_tmpl_id.id),
                 ]
                 item = PricelistItem.search(item_domain, limit=1)
                 if item:
@@ -556,9 +587,9 @@ class DistributorApiController(http.Controller):
                         0,
                         0,
                         {
-                            'product_id': product.id,
-                            'product_uom_qty': qty,
-                            'price_unit': price,
+                            "product_id": product.id,
+                            "product_uom_qty": qty,
+                            "price_unit": price,
                         },
                     )
                 )
@@ -566,38 +597,38 @@ class DistributorApiController(http.Controller):
             if not order_lines:
                 return self._json_response(
                     {
-                        'error': 'no_valid_lines',
-                        'message': 'No se pudo generar ninguna línea de pedido (verificar productos y cantidades).',
+                        "error": "no_valid_lines",
+                        "message": "No se pudo generar ninguna línea de pedido (verificar productos y cantidades).",
                     },
                     status=400,
                 )
 
             order_vals = {
-                'partner_id': distributor.id,
-                'company_id': company.id,
-                'pricelist_id': vip_pricelist.id,
-                'note': internal_note,
+                "partner_id": distributor.id,
+                "company_id": company.id,
+                "pricelist_id": vip_pricelist.id,
+                "note": internal_note,
                 # El cliente final no se crea como contacto separado por simplicidad.
             }
 
-            order = SaleOrder.create({**order_vals, 'order_line': order_lines})
+            order = SaleOrder.create({**order_vals, "order_line": order_lines})
 
             return self._json_response(
                 {
-                    'success': True,
-                    'order_id': order.id,
-                    'name': order.name,
+                    "success": True,
+                    "order_id": order.id,
+                    "name": order.name,
                 },
                 status=200,
             )
 
         except Exception as e:
-            _logger.exception('Error al crear la cotización desde la API de distribuidores')
+            _logger.exception("Error al crear la cotización desde la API de distribuidores")
             return self._json_response(
                 {
-                    'error': 'internal_error',
-                    'message': 'Error interno al crear la cotización en Odoo.',
-                    'detail': str(e),
+                    "error": "internal_error",
+                    "message": "Error interno al crear la cotización en Odoo.",
+                    "detail": str(e),
                 },
                 status=500,
             )
