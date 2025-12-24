@@ -113,7 +113,7 @@ class DistributorApiController(http.Controller):
 
         domain = [
             ("picking_type_id.code", "=", "outgoing"),
-            ("state", "in", ["waiting", "confirmed", "assigned"]),
+            ("state", "not in", ["done", "cancel"]),
             ("partner_id.category_id", "in", distributor_tag.ids),
         ]
 
