@@ -34,7 +34,7 @@ class DistributorApiController(http.Controller):
             ("Access-Control-Allow-Methods", "GET, POST, OPTIONS"),
             (
                 "Access-Control-Allow-Headers",
-                "Origin, Content-Type, Accept, Authorization",
+                "Origin, Content-Type, Accept, Authorization, X-Distributor-Id",
             ),
         ]
 
@@ -121,16 +121,15 @@ class DistributorApiController(http.Controller):
         return distributor
 
     # -------------------------------------------------------------------------
-    # Listado de entregas (pickings)  [REEMPLAZADO]
+    # Listado de entregas (pickings)  [REEMPLAZADO + CORS FIX]
     # -------------------------------------------------------------------------
 
     @http.route(
         "/distributor/api/pickings",
         type="http",
         auth="public",
-        methods=["GET"],
+        methods=["GET", "OPTIONS"],
         csrf=False,
-        cors="*",
     )
     def list_pickings(self, **kwargs):
         """Listado de entregas para el distribuidor.
@@ -138,10 +137,12 @@ class DistributorApiController(http.Controller):
         Devuelve TODOS los pickings pendientes (states: assigned / confirmed / waiting)
         para el distribuidor detectado, y marca si están listos para retirar.
         """
+        preflight = self._handle_preflight()
+        if preflight is not None:
+            return preflight
+
         env = request.env
 
-        # Usa tu lógica actual para obtener el distribuidor
-        # (según cabecera, token, usuario portal, etc.)
         distributor = self._get_distributor_from_request(env, **kwargs)
         if not distributor:
             return self._json_response(
@@ -152,34 +153,22 @@ class DistributorApiController(http.Controller):
                 status=400,
             )
 
-        # Dominio: todos los OUT pickings del distribuidor, pendientes de operación
         domain = [
             ("picking_type_id.code", "=", "outgoing"),
             ("state", "in", ["assigned", "confirmed", "waiting"]),
             ("company_id", "=", distributor.company_id.id or env.user.company_id.id),
-            # si en tu implementación original filtrabas de otra forma por partner,
-            # podés ajustar esta línea:
             ("partner_id", "child_of", distributor.id),
         ]
 
         pickings = (
-            env["stock.picking"]
-            .sudo()
-            .search(domain, order="scheduled_date asc, id asc")
+            env["stock.picking"].sudo().search(domain, order="scheduled_date asc, id asc")
         )
 
         data = []
         for picking in pickings:
-            # ===== Cálculo de estado "listo para retirar" =====
-            # Por ahora: listo si el picking está en 'assigned' y
-            # no tiene movimientos esperando fabricación.
             ready_to_pick = picking.state == "assigned"
             ready_label = _("En stock") if ready_to_pick else _("Pendiente")
 
-            # Si tenés lógica adicional de fabricación, la podés injertar aquí
-            # sin tocar el dominio ni filtrar pickings por este flag.
-
-            # ===== Líneas =====
             lines = []
             for move in picking.move_ids_without_package:
                 lines.append(
@@ -192,7 +181,6 @@ class DistributorApiController(http.Controller):
                     }
                 )
 
-            # ===== Cliente final =====
             final_customer = getattr(picking, "x_final_customer_id", False)
             final_customer_completed = bool(final_customer)
             final_customer_name = final_customer.name if final_customer else False
@@ -360,7 +348,6 @@ class DistributorApiController(http.Controller):
             _logger.warning("No se encontró la lista de precios 'Lista Vip'")
             return self._json_response({"data": []})
 
-        # Ítems de tarifa que aplican a productos concretos
         items = PricelistItem.search(
             [
                 ("pricelist_id", "=", pricelist.id),
@@ -375,7 +362,6 @@ class DistributorApiController(http.Controller):
         price_by_product = {}
 
         for item in items:
-            # Línea a nivel de variante
             if item.product_id:
                 prod = item.product_id
                 product_ids.add(prod.id)
@@ -385,7 +371,6 @@ class DistributorApiController(http.Controller):
                     else prod.list_price
                 )
                 price_by_product[prod.id] = float(price or 0.0)
-            # Línea a nivel de plantilla: se aplica a todas las variantes
             elif item.product_tmpl_id:
                 for prod in item.product_tmpl_id.product_variant_ids:
                     product_ids.add(prod.id)
@@ -453,13 +438,11 @@ class DistributorApiController(http.Controller):
             ]
         }
         """
-        # Preflight CORS
         preflight = self._handle_preflight()
         if preflight is not None:
             return preflight
 
         try:
-            # Leer JSON del body
             raw = request.httprequest.data or b"{}"
             if isinstance(raw, bytes):
                 raw = raw.decode("utf-8") or "{}"
@@ -488,18 +471,14 @@ class DistributorApiController(http.Controller):
                     status=400,
                 )
 
-            # Contexto de empresa Vert Deco Cercos
             Company = request.env["res.company"].sudo()
             company = Company.search([("name", "=", "Vert Deco Cercos")], limit=1)
             if not company:
-                # fallback a empresa actual
                 company = request.env.company
 
             Partner = request.env["res.partner"].with_company(company).sudo()
             Pricelist = request.env["product.pricelist"].with_company(company).sudo()
-            PricelistItem = (
-                request.env["product.pricelist.item"].with_company(company).sudo()
-            )
+            PricelistItem = request.env["product.pricelist.item"].with_company(company).sudo()
             Product = request.env["product.product"].with_company(company).sudo()
             SaleOrder = request.env["sale.order"].with_company(company).sudo()
 
@@ -513,7 +492,6 @@ class DistributorApiController(http.Controller):
                     status=400,
                 )
 
-            # Buscar lista de precios VIP
             vip_pricelist = Pricelist.search(
                 [
                     ("name", "=", "Lista Vip"),
@@ -530,7 +508,6 @@ class DistributorApiController(http.Controller):
                     status=400,
                 )
 
-            # Armar nota interna con datos del cliente final
             note_lines = []
             name = (customer.get("name") or "").strip()
             if name:
@@ -565,10 +542,8 @@ class DistributorApiController(http.Controller):
                 if not product.exists():
                     continue
 
-                # Buscar precio de la lista VIP para este producto
                 price = product.list_price
 
-                # Intentar encontrar una regla específica en la lista VIP
                 item_domain = [
                     ("pricelist_id", "=", vip_pricelist.id),
                     ("company_id", "=", company.id),
@@ -579,7 +554,6 @@ class DistributorApiController(http.Controller):
                 ]
                 item = PricelistItem.search(item_domain, limit=1)
                 if item:
-                    # Usamos el precio fijo si está definido, si no, fallback al precio de lista del producto
                     price = item.fixed_price or price
 
                 order_lines.append(
@@ -608,7 +582,6 @@ class DistributorApiController(http.Controller):
                 "company_id": company.id,
                 "pricelist_id": vip_pricelist.id,
                 "note": internal_note,
-                # El cliente final no se crea como contacto separado por simplicidad.
             }
 
             order = SaleOrder.create({**order_vals, "order_line": order_lines})
