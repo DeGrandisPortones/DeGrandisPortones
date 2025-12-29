@@ -8,25 +8,11 @@ _logger = logging.getLogger(__name__)
 
 
 class DistributorApiController(http.Controller):
-    """
-    API para app de distribuidores.
-
-    Endpoints expuestos (todos pensados para usarse via JS desde un front externo):
-      - GET  /distributor/api/pickings
-      - POST /distributor/api/pickings/<id>/final_customer
-      - GET  /distributor/api/distributors
-      - GET  /distributor/api/products
-      - POST /distributor/api/quotations
-
-    Todas las respuestas son JSON del tipo {"data": ...} o {"error": "..."}.
-    """
-
     # -------------------------------------------------------------------------
     # Utilidades internas (CORS / JSON helpers)
     # -------------------------------------------------------------------------
 
     def _cors_headers(self):
-        """Construye los headers CORS que se reutilizan en todas las respuestas."""
         origin = request.httprequest.headers.get("Origin") or "*"
         return [
             ("Access-Control-Allow-Origin", origin),
@@ -39,13 +25,11 @@ class DistributorApiController(http.Controller):
         ]
 
     def _json_default(self, obj):
-        """Soporte para serializar datetime.date/datetime en JSON."""
         if hasattr(obj, "isoformat"):
             return obj.isoformat()
         return str(obj)
 
     def _json_response(self, payload, status=200):
-        """Devuelve una respuesta JSON con CORS."""
         body = json.dumps(payload, default=self._json_default, ensure_ascii=False)
         headers = [("Content-Type", "application/json; charset=utf-8")]
         headers += self._cors_headers()
@@ -54,32 +38,75 @@ class DistributorApiController(http.Controller):
         return response
 
     def _handle_preflight(self):
-        """Responde OK para las solicitudes OPTIONS (preflight CORS)."""
         if request.httprequest.method == "OPTIONS":
             return self._json_response({"ok": True}, status=200)
         return None
 
     # -------------------------------------------------------------------------
-    # Helpers de negocio
+    # Helpers: header obligatorio + resolución de etiqueta
     # -------------------------------------------------------------------------
 
-    def _get_distributor_tag(self):
-        """Etiqueta 'Distribuidor' en contactos."""
+    def _get_request_odoo_distributor_id_required(self):
+        """Header obligatorio. Devuelve int o lanza error 403."""
+        raw = request.httprequest.headers.get("X-Distributor-Id")
+        if not raw:
+            return None
+
+        try:
+            val = int(str(raw).strip())
+            if val <= 0:
+                return None
+            return val
+        except Exception:
+            return None
+
+    def _get_distributor_tag_required(self):
+        """Resuelve la etiqueta a partir del X-Distributor-Id (obligatorio).
+
+        Regla:
+          - 1 => 'Distribuidor'
+          - N => 'DistribuidorN' (ej: 2 -> Distribuidor2)
+        """
+        odoo_distributor_id = self._get_request_odoo_distributor_id_required()
+        if not odoo_distributor_id:
+            return None, self._json_response(
+                {
+                    "error": "forbidden",
+                    "message": "Falta header X-Distributor-Id o es inválido.",
+                },
+                status=403,
+            )
+
         Category = request.env["res.partner.category"].sudo()
-        return Category.search([("name", "=", "Distribuidor")], limit=1)
+
+        if odoo_distributor_id == 1:
+            tag_name = "Distribuidor"
+            tag = Category.search([("name", "=", tag_name)], limit=1)
+        else:
+            # Nombre exacto pedido: Distribuidor2, Distribuidor3, etc.
+            tag_name = f"Distribuidor{odoo_distributor_id}"
+            tag = Category.search([("name", "=", tag_name)], limit=1)
+            if not tag:
+                # tolerancia: "Distribuidor 2"
+                tag = Category.search([("name", "=", f"Distribuidor {odoo_distributor_id}")], limit=1)
+
+        if not tag:
+            return None, self._json_response(
+                {
+                    "error": "forbidden",
+                    "message": f"No existe la etiqueta requerida: {tag_name}",
+                },
+                status=403,
+            )
+
+        return tag, None
 
     def _get_vip_pricelist(self):
-        """
-        Devuelve la lista de precios 'Lista Vip'.
-
-        NO filtramos por compañía para evitar problemas de nombre de empresa.
-        Se toma la primera que coincida por nombre.
-        """
         Pricelist = request.env["product.pricelist"].sudo()
         return Pricelist.search([("name", "=", "Lista Vip")], limit=1)
 
     # -------------------------------------------------------------------------
-    # Listado de entregas (pickings)  [OPCIÓN B: NO requiere distribuidor]
+    # GET /distributor/api/pickings
     # -------------------------------------------------------------------------
 
     @http.route(
@@ -90,28 +117,19 @@ class DistributorApiController(http.Controller):
         csrf=False,
     )
     def list_pickings(self, **kwargs):
-        """Listado de entregas para distribuidores.
-
-        Devuelve pickings pendientes (NO incluye 'Hecho' / done)
-        cuyo partner tenga la etiqueta 'Distribuidor'.
-        """
         preflight = self._handle_preflight()
         if preflight is not None:
             return preflight
 
-        env = request.env
-        StockPicking = env["stock.picking"].sudo()
+        distributor_tag, err = self._get_distributor_tag_required()
+        if err:
+            return err
 
-        distributor_tag = self._get_distributor_tag()
-        if not distributor_tag:
-            _logger.warning("No existe la etiqueta 'Distribuidor' en res.partner.category")
-            return self._json_response({"data": []})
+        StockPicking = request.env["stock.picking"].sudo()
 
         domain = [
             ("picking_type_id.code", "=", "outgoing"),
-            # Blindado: nunca devolver "Hecho" (done) ni cancelado
             ("state", "not in", ["done", "cancel"]),
-            # Estados pendientes que queremos devolver
             ("state", "in", ["assigned", "confirmed", "waiting"]),
             ("partner_id.category_id", "in", distributor_tag.ids),
         ]
@@ -120,10 +138,6 @@ class DistributorApiController(http.Controller):
 
         data = []
         for picking in pickings:
-            # Doble seguro: por si alguna customización cambiara el domain
-            if picking.state in ("done", "cancel"):
-                continue
-
             ready_to_pick = picking.state == "assigned"
             ready_label = _("En stock") if ready_to_pick else _("Pendiente")
 
@@ -171,7 +185,7 @@ class DistributorApiController(http.Controller):
         return self._json_response({"data": data})
 
     # -------------------------------------------------------------------------
-    # Guardar datos del cliente final en el picking
+    # POST /distributor/api/pickings/<id>/final_customer
     # -------------------------------------------------------------------------
 
     @http.route(
@@ -182,21 +196,29 @@ class DistributorApiController(http.Controller):
         csrf=False,
     )
     def set_final_customer(self, picking_id, **kwargs):
-        """
-        Actualiza los campos de cliente final del picking
-        (nombre, dirección, contacto, etc.) y marca final_customer_completed.
-        """
         preflight = self._handle_preflight()
         if preflight:
             return preflight
 
-        StockPicking = request.env["stock.picking"].sudo()
+        distributor_tag, err = self._get_distributor_tag_required()
+        if err:
+            return err
 
+        StockPicking = request.env["stock.picking"].sudo()
         picking = StockPicking.browse(picking_id)
         if not picking.exists():
             return self._json_response({"error": "Picking no encontrado"}, status=404)
 
-        # Leer JSON del body
+        # Validación: el picking debe pertenecer a esa etiqueta
+        if distributor_tag not in picking.partner_id.category_id:
+            return self._json_response(
+                {
+                    "error": "forbidden",
+                    "message": "No tiene permisos para modificar este picking.",
+                },
+                status=403,
+            )
+
         try:
             raw = request.httprequest.data or b"{}"
             payload = json.loads(raw.decode("utf-8"))
@@ -218,11 +240,10 @@ class DistributorApiController(http.Controller):
         }
 
         picking.write(vals)
-
         return self._json_response({"data": {"id": picking.id, "updated": True}})
 
     # -------------------------------------------------------------------------
-    # Listado de distribuidores (contactos)
+    # GET /distributor/api/distributors
     # -------------------------------------------------------------------------
 
     @http.route(
@@ -233,33 +254,23 @@ class DistributorApiController(http.Controller):
         csrf=False,
     )
     def list_distributors(self, **kwargs):
-        """
-        Devuelve los contactos marcados como 'Distribuidor'.
-
-        Criterios:
-          - active = True
-          - categoría (etiqueta) 'Distribuidor'
-        """
         preflight = self._handle_preflight()
         if preflight:
             return preflight
 
-        env = request.env
-        Partner = env["res.partner"].sudo()
+        distributor_tag, err = self._get_distributor_tag_required()
+        if err:
+            return err
 
-        distributor_tag = self._get_distributor_tag()
-        if not distributor_tag:
-            _logger.warning(
-                "No existe la etiqueta 'Distribuidor' para listar distribuidores"
-            )
-            return self._json_response({"data": []})
+        Partner = request.env["res.partner"].sudo()
 
-        domain = [
-            ("active", "=", True),
-            ("category_id", "in", distributor_tag.ids),
-        ]
-
-        partners = Partner.search(domain, order="name asc")
+        partners = Partner.search(
+            [
+                ("active", "=", True),
+                ("category_id", "in", distributor_tag.ids),
+            ],
+            order="name asc",
+        )
 
         data = []
         for partner in partners:
@@ -278,7 +289,7 @@ class DistributorApiController(http.Controller):
         return self._json_response({"data": data})
 
     # -------------------------------------------------------------------------
-    # Productos de la lista de precios VIP
+    # GET /distributor/api/products
     # -------------------------------------------------------------------------
 
     @http.route(
@@ -289,31 +300,23 @@ class DistributorApiController(http.Controller):
         csrf=False,
     )
     def list_products(self, **kwargs):
-        """
-        Devuelve SOLO los productos que tienen precio explícito
-        en la lista de precios 'Lista Vip'.
-
-        Para cada producto se envía:
-          - id
-          - name
-          - default_code
-          - uom_name
-          - list_price  (precio de la lista VIP)
-        """
         preflight = self._handle_preflight()
         if preflight:
             return preflight
 
-        env = request.env
-        PricelistItem = env["product.pricelist.item"].sudo()
-        ProductProduct = env["product.product"].sudo()
+        # Header obligatorio también acá (mantiene consistencia de seguridad)
+        distributor_tag, err = self._get_distributor_tag_required()
+        if err:
+            return err
+
+        PricelistItem = request.env["product.pricelist.item"].sudo()
+        ProductProduct = request.env["product.product"].sudo()
 
         pricelist = self._get_vip_pricelist()
         if not pricelist:
             _logger.warning("No se encontró la lista de precios 'Lista Vip'")
             return self._json_response({"data": []})
 
-        # Ítems de tarifa que aplican a productos concretos
         items = PricelistItem.search(
             [
                 ("pricelist_id", "=", pricelist.id),
@@ -328,7 +331,6 @@ class DistributorApiController(http.Controller):
         price_by_product = {}
 
         for item in items:
-            # Línea a nivel de variante
             if item.product_id:
                 prod = item.product_id
                 product_ids.add(prod.id)
@@ -338,7 +340,6 @@ class DistributorApiController(http.Controller):
                     else prod.list_price
                 )
                 price_by_product[prod.id] = float(price or 0.0)
-            # Línea a nivel de plantilla: se aplica a todas las variantes
             elif item.product_tmpl_id:
                 for prod in item.product_tmpl_id.product_variant_ids:
                     product_ids.add(prod.id)
@@ -376,7 +377,7 @@ class DistributorApiController(http.Controller):
         return self._json_response({"data": data})
 
     # -------------------------------------------------------------------------
-    # Crear presupuesto (sale.order) para un distribuidor
+    # POST /distributor/api/quotations
     # -------------------------------------------------------------------------
 
     @http.route(
@@ -387,38 +388,21 @@ class DistributorApiController(http.Controller):
         csrf=False,
     )
     def create_quotation(self, **kwargs):
-        """Crear un presupuesto (sale.order) en Odoo a partir de la app.
-
-        Body JSON esperado:
-        {
-            "distributor_id": 123,
-            "customer": {
-                "name": "...",
-                "phone": "...",
-                "email": "...",
-                "street": "...",
-                "city": "..."
-            },
-            "notes": "...",
-            "lines": [
-                {"product_id": 1, "quantity": 3},
-                ...
-            ]
-        }
-        """
         preflight = self._handle_preflight()
         if preflight is not None:
             return preflight
 
+        distributor_tag, err = self._get_distributor_tag_required()
+        if err:
+            return err
+
         try:
-            # Leer JSON del body
             raw = request.httprequest.data or b"{}"
             if isinstance(raw, bytes):
                 raw = raw.decode("utf-8") or "{}"
             payload = json.loads(raw or "{}")
 
             distributor_id = payload.get("distributor_id")
-            customer = payload.get("customer") or {}
             lines = payload.get("lines") or []
             notes = payload.get("notes") or ""
 
@@ -440,11 +424,9 @@ class DistributorApiController(http.Controller):
                     status=400,
                 )
 
-            # Contexto de empresa Vert Deco Cercos
             Company = request.env["res.company"].sudo()
             company = Company.search([("name", "=", "Vert Deco Cercos")], limit=1)
             if not company:
-                # fallback a empresa actual
                 company = request.env.company
 
             Partner = request.env["res.partner"].with_company(company).sudo()
@@ -463,7 +445,16 @@ class DistributorApiController(http.Controller):
                     status=400,
                 )
 
-            # Buscar lista de precios VIP
+            # Validación: el distribuidor debe pertenecer a esa etiqueta
+            if distributor_tag not in distributor.category_id:
+                return self._json_response(
+                    {
+                        "error": "forbidden",
+                        "message": "El distribuidor no pertenece a su etiqueta asignada.",
+                    },
+                    status=403,
+                )
+
             vip_pricelist = Pricelist.search(
                 [
                     ("name", "=", "Lista Vip"),
@@ -480,34 +471,12 @@ class DistributorApiController(http.Controller):
                     status=400,
                 )
 
-            # Armar nota interna con datos del cliente final
-            note_lines = []
-            name = (customer.get("name") or "").strip()
-            if name:
-                note_lines.append(f"Cliente final: {name}")
-            phone = (customer.get("phone") or "").strip()
-            if phone:
-                note_lines.append(f"Teléfono cliente final: {phone}")
-            email = (customer.get("email") or "").strip()
-            if email:
-                note_lines.append(f"Email cliente final: {email}")
-            street = (customer.get("street") or "").strip()
-            city = (customer.get("city") or "").strip()
-            if street or city:
-                direccion = " - ".join(filter(None, [street, city]))
-                note_lines.append(f"Dirección cliente final: {direccion}")
-            if notes:
-                note_lines.append("")
-                note_lines.append("Notas del distribuidor:")
-                note_lines.append(notes)
-            internal_note = "\n".join(note_lines) if note_lines else False
+            internal_note = notes.strip() if notes else False
 
             order_lines = []
-
             for line in lines:
                 product_id = line.get("product_id")
                 qty = float(line.get("quantity") or 0.0)
-
                 if not product_id or qty <= 0:
                     continue
 
@@ -515,10 +484,7 @@ class DistributorApiController(http.Controller):
                 if not product.exists():
                     continue
 
-                # Buscar precio de la lista VIP para este producto
                 price = product.list_price
-
-                # Intentar encontrar una regla específica en la lista VIP
                 item_domain = [
                     ("pricelist_id", "=", vip_pricelist.id),
                     ("company_id", "=", company.id),
@@ -532,15 +498,7 @@ class DistributorApiController(http.Controller):
                     price = item.fixed_price or price
 
                 order_lines.append(
-                    (
-                        0,
-                        0,
-                        {
-                            "product_id": product.id,
-                            "product_uom_qty": qty,
-                            "price_unit": price,
-                        },
-                    )
+                    (0, 0, {"product_id": product.id, "product_uom_qty": qty, "price_unit": price})
                 )
 
             if not order_lines:
@@ -552,21 +510,18 @@ class DistributorApiController(http.Controller):
                     status=400,
                 )
 
-            order_vals = {
-                "partner_id": distributor.id,
-                "company_id": company.id,
-                "pricelist_id": vip_pricelist.id,
-                "note": internal_note,
-            }
-
-            order = SaleOrder.create({**order_vals, "order_line": order_lines})
+            order = SaleOrder.create(
+                {
+                    "partner_id": distributor.id,
+                    "company_id": company.id,
+                    "pricelist_id": vip_pricelist.id,
+                    "note": internal_note,
+                    "order_line": order_lines,
+                }
+            )
 
             return self._json_response(
-                {
-                    "success": True,
-                    "order_id": order.id,
-                    "name": order.name,
-                },
+                {"success": True, "order_id": order.id, "name": order.name},
                 status=200,
             )
 
