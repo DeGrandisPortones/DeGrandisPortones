@@ -63,9 +63,53 @@ class DistributorApiController(http.Controller):
     # Helpers de negocio
     # -------------------------------------------------------------------------
 
-    def _get_distributor_tag(self):
-        """Etiqueta 'Distribuidor' en contactos."""
+    def _get_request_odoo_distributor_id(self):
+        """Lee el ID lógico de distribuidor desde el header.
+
+        El front lo envía como:
+          X-Distributor-Id: <odoo_distributor_id>
+
+        Si no viene o es inválido, devuelve None.
+        """
+        raw = request.httprequest.headers.get("X-Distributor-Id")
+        if not raw:
+            return None
+        try:
+            return int(str(raw).strip())
+        except Exception:
+            return None
+
+    def _get_distributor_tag(self, odoo_distributor_id=None):
+        """Devuelve la etiqueta (res.partner.category) para filtrar.
+
+        - Si odoo_distributor_id es None -> etiqueta base 'Distribuidor'
+        - Si odoo_distributor_id = 2      -> etiqueta 'Distribuidor2'
+
+        Nota: En esta BD, la etiqueta "Distribuidor" es la base y
+        "DistribuidorN" segmenta por distribuidor.
+        """
         Category = request.env["res.partner.category"].sudo()
+
+        if odoo_distributor_id:
+            # Primero: match exacto (lo más seguro)
+            exact_candidates = [
+                f"Distribuidor{odoo_distributor_id}",
+                f"Distribuidor {odoo_distributor_id}",
+            ]
+            for name in exact_candidates:
+                cat = Category.search([("name", "=", name)], limit=1)
+                if cat:
+                    return cat
+
+            # Fallback: búsqueda flexible
+            cat = Category.search(
+                [("name", "ilike", f"Distribuidor%{odoo_distributor_id}%")],
+                limit=1,
+            )
+            if cat:
+                return cat
+
+        # Default: comportamiento actual
         return Category.search([("name", "=", "Distribuidor")], limit=1)
 
     def _get_vip_pricelist(self):
@@ -102,9 +146,12 @@ class DistributorApiController(http.Controller):
         env = request.env
         StockPicking = env["stock.picking"].sudo()
 
-        distributor_tag = self._get_distributor_tag()
+        odoo_distributor_id = self._get_request_odoo_distributor_id()
+        distributor_tag = self._get_distributor_tag(odoo_distributor_id)
         if not distributor_tag:
-            _logger.warning("No existe la etiqueta 'Distribuidor' en res.partner.category")
+            _logger.warning(
+                "No existe una etiqueta de distribuidor válida (Distribuidor / DistribuidorN)"
+            )
             return self._json_response({"data": []})
 
         domain = [
@@ -196,6 +243,20 @@ class DistributorApiController(http.Controller):
         if not picking.exists():
             return self._json_response({"error": "Picking no encontrado"}, status=404)
 
+        # Seguridad: si el front envía X-Distributor-Id, validamos que el picking
+        # pertenezca al distribuidor (por etiqueta) antes de permitir modificaciones.
+        odoo_distributor_id = self._get_request_odoo_distributor_id()
+        if odoo_distributor_id:
+            distributor_tag = self._get_distributor_tag(odoo_distributor_id)
+            if distributor_tag and distributor_tag not in picking.partner_id.category_id:
+                return self._json_response(
+                    {
+                        "error": "forbidden",
+                        "message": "No tiene permisos para modificar este picking.",
+                    },
+                    status=403,
+                )
+
         # Leer JSON del body
         try:
             raw = request.httprequest.data or b"{}"
@@ -247,10 +308,11 @@ class DistributorApiController(http.Controller):
         env = request.env
         Partner = env["res.partner"].sudo()
 
-        distributor_tag = self._get_distributor_tag()
+        odoo_distributor_id = self._get_request_odoo_distributor_id()
+        distributor_tag = self._get_distributor_tag(odoo_distributor_id)
         if not distributor_tag:
             _logger.warning(
-                "No existe la etiqueta 'Distribuidor' para listar distribuidores"
+                "No existe una etiqueta de distribuidor válida (Distribuidor / DistribuidorN)"
             )
             return self._json_response({"data": []})
 
@@ -462,6 +524,20 @@ class DistributorApiController(http.Controller):
                     },
                     status=400,
                 )
+
+            # Seguridad: si el front envía X-Distributor-Id, validamos que el
+            # distribuidor seleccionado pertenezca a la etiqueta correspondiente.
+            odoo_distributor_id = self._get_request_odoo_distributor_id()
+            if odoo_distributor_id:
+                distributor_tag = self._get_distributor_tag(odoo_distributor_id)
+                if distributor_tag and distributor_tag not in distributor.category_id:
+                    return self._json_response(
+                        {
+                            "error": "forbidden",
+                            "message": "El distribuidor no pertenece a su etiqueta asignada.",
+                        },
+                        status=403,
+                    )
 
             # Buscar lista de precios VIP
             vip_pricelist = Pricelist.search(
