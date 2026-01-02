@@ -9,5 +9,5 @@ pdf2image>=1.16
 Pillow
 Unidecode
 
-# --- SDK MercadoLibre (si lo estás usando en el código) ---
+
 git+https://github.com/ctmil/python-sdk-2025.git
