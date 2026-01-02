@@ -38,7 +38,7 @@
         "views/account_payment_view.xml",
         "views/l10n_latam_check_view.xml",
         "views/account_journal_view.xml",
-        "views/report_payment_receipt_templates.xml",
+        # "views/report_payment_receipt_templates.xml",
         "views/res_partner_view.xml",
         "wizards/l10n_latam_payment_mass_transfer.xml",
         "reports/report_account_transfer.xml",
