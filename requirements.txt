@@ -3,7 +3,7 @@ git+https://github.com/reingart/pyafipws.git@py3k#egg=PyAfipWs
 git+https://github.com/pysimplesoap/pysimplesoap.git@stable_py3k#egg=PySimpleSOAP
 git+https://github.com/reingart/pyfpdf.git@master#egg=pyfpdf
 
-# --- Tus dependencias actuales ---
+# --- Dependencias del proyecto ---
 pdf2image>=1.16
 Pillow
 Unidecode
