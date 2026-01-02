@@ -10,6 +10,7 @@
     "depends": [
         "l10n_ar",
         "account_internal_transfer",
+        "account_ux",
     ],
     "data": [
         "data/res_currency_data.xml",
@@ -30,8 +31,7 @@
         "data/res_groups_data.xml",
         "views/account_fiscal_position_view.xml",
         "views/account_account_views.xml",
-        "account_ux",
-    ],
+         ],
     "demo": [
         "demo/res_partner_demo.xml",
     ],
