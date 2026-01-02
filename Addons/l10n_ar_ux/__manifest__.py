@@ -31,7 +31,7 @@
         "data/res_groups_data.xml",
         "views/account_fiscal_position_view.xml",
         "views/account_account_views.xml",
-         ],
+    ],
     "demo": [
         "demo/res_partner_demo.xml",
     ],

@@ -1,5 +1,9 @@
-pdf2image
+pdf2image>=1.16
 git+https://github.com/ctmil/python-sdk-2025.git
 unidecode
-pdf2image>=1.16
 Pillow
+
+git+https://github.com/ingadhoc/pyafipws.git@odoo18
+pysimplesoap
+httplib2
+openupgradelib
