@@ -1,10 +1,13 @@
 # --- AFIP / Argentina (requerido por l10n_ar_tax) ---
-git+https://github.com/reingart/pyafipws.git@py3k#egg=PyAfipWs
-git+https://github.com/pysimplesoap/pysimplesoap.git@stable_py3k#egg=PySimpleSOAP
-git+https://github.com/reingart/pyfpdf.git@master#egg=pyfpdf
+# Instalación desde ZIP (evita depender de 'git' en el entorno de build)
+https://github.com/reingart/pyafipws/archive/refs/heads/py3k.zip#egg=PyAfipWs
+https://github.com/pysimplesoap/pysimplesoap/archive/refs/heads/stable_py3k.zip#egg=PySimpleSOAP
+https://github.com/reingart/pyfpdf/archive/refs/heads/master.zip#egg=pyfpdf
 
 # --- Dependencias del proyecto ---
 pdf2image>=1.16
 Pillow
 Unidecode
+
+# --- SDK MercadoLibre (si lo estás usando en el código) ---
 git+https://github.com/ctmil/python-sdk-2025.git
