@@ -11,7 +11,7 @@
    :alt: License: AGPL-3
 
 ==========
-Account UX
+Account UXs
 ==========
 
 Several Improvements to accounting:
