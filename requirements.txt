@@ -3,7 +3,7 @@ PyAfipWs @ https://github.com/reingart/pyafipws/archive/refs/heads/py3k.zip
 fpdf @ https://github.com/reingart/pyfpdf/archive/refs/heads/master.zip
 
 # PySimpleSOAP: instalar desde copia local parchada
-./third_party/pysimplesoap
+./src/user/third_party/pysimplesoap
 pdf2image>=1.16
 Pillow
 Unidecode
