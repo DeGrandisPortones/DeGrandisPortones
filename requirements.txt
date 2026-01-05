@@ -3,7 +3,7 @@ PyAfipWs @ https://github.com/reingart/pyafipws/archive/refs/heads/py3k.zip
 fpdf @ https://github.com/reingart/pyfpdf/archive/refs/heads/master.zip
 
 # PySimpleSOAP desde copia local parchada (Odoo.sh)
-PySimpleSOAP @ file:///home/odoo/src/user/third_party/pysimplesoap
+PySimpleSOAP @ file:///home/odoo/src/user/third_party/pysimplesoap-stable_py3k
 
 pdf2image>=1.16
 Pillow
