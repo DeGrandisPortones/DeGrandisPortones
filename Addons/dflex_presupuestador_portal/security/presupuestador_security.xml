@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+
+        <record id="seq_presupuestador_pedido" model="ir.sequence">
+            <field name="name">Presupuestador Pedido</field>
+            <field name="code">presupuestador.pedido</field>
+            <field name="prefix">PRES-%(year)s-</field>
+            <field name="padding">5</field>
+        </record>
+
+        <record id="rule_presupuestador_pedido_portal" model="ir.rule">
+            <field name="name">Presupuestador: pedidos portal (solo propios)</field>
+            <field name="model_id" ref="model_presupuestador_pedido"/>
+            <field name="domain_force">[('partner_id', 'child_of', user.partner_id.id)]</field>
+            <field name="groups" eval="[(4, ref('base.group_portal'))]"/>
+        </record>
+
+        <record id="rule_presupuestador_linea_portal" model="ir.rule">
+            <field name="name">Presupuestador: líneas portal (solo de pedidos propios)</field>
+            <field name="model_id" ref="model_presupuestador_linea"/>
+            <field name="domain_force">[('pedido_id.partner_id', 'child_of', user.partner_id.id)]</field>
+            <field name="groups" eval="[(4, ref('base.group_portal'))]"/>
+        </record>
+
+        <record id="rule_presupuestador_pedido_internal" model="ir.rule">
+            <field name="name">Presupuestador: pedidos internos (todo)</field>
+            <field name="model_id" ref="model_presupuestador_pedido"/>
+            <field name="domain_force">[(1,'=',1)]</field>
+            <field name="groups" eval="[(4, ref('base.group_user'))]"/>
+        </record>
+
+        <record id="rule_presupuestador_linea_internal" model="ir.rule">
+            <field name="name">Presupuestador: líneas internas (todo)</field>
+            <field name="model_id" ref="model_presupuestador_linea"/>
+            <field name="domain_force">[(1,'=',1)]</field>
+            <field name="groups" eval="[(4, ref('base.group_user'))]"/>
+        </record>
+
+    </data>
+</odoo>
