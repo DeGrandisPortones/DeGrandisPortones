@@ -1,7 +1,0 @@
-id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_presup_rubro_user,presupuestador.rubro user,model_presupuestador_rubro,base.group_user,1,1,1,1
-access_presup_pedido_user,presupuestador.pedido user,model_presupuestador_pedido,base.group_user,1,1,1,1
-access_presup_linea_user,presupuestador.linea user,model_presupuestador_linea,base.group_user,1,1,1,1
-access_presup_rubro_portal,presupuestador.rubro portal,model_presupuestador_rubro,base.group_portal,1,0,0,0
-access_presup_pedido_portal,presupuestador.pedido portal,model_presupuestador_pedido,base.group_portal,1,1,1,1
-access_presup_linea_portal,presupuestador.linea portal,model_presupuestador_linea,base.group_portal,1,1,1,1
