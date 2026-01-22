@@ -9,11 +9,11 @@
                 <group string="Financiación" colspan="2">
                     <field name="financing_plan_id" options="{'no_create': False}"/>
                     <field name="financing_card_type"
-                           attrs="{'invisible': [('financing_plan_id','=',False)], 'required':[('financing_plan_id','!=',False)]}"/>
+                           invisible="not financing_plan_id" required="financing_plan_id"/>
                     <field name="financing_rate_id"
-                           attrs="{'invisible': [('financing_card_type','=',False)], 'required':[('financing_card_type','!=',False)]}"
+                           invisible="not financing_card_type" required="financing_card_type"
                            domain="[('active','=',True), ('plan_id','=',financing_plan_id), ('card_type','=',financing_card_type)]"/>
-                    <field name="financing_rate_percent" attrs="{'invisible': [('financing_rate_id','=',False)]}"/>
+                    <field name="financing_rate_percent" invisible="not financing_rate_id"/>
                 </group>
             </xpath>
 
