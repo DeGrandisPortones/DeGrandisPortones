@@ -18,7 +18,7 @@
             </xpath>
 
             <!-- Mostrar precio base opcional en líneas -->
-            <xpath expr="//field[@name='order_line']/li/field[@name='price_unit']" position="after">
+            <xpath expr="//field[@name='order_line']//field[@name='price_unit'][ancestor::tree or ancestor::list]" position="after">
                 <field name="financing_base_price_unit" optional="hide"/>
             </xpath>
         </field>
