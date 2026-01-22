@@ -25,6 +25,8 @@ class SaleOrder(models.Model):
     )
     financing_rate_percent = fields.Float(related="financing_rate_id.rate_percent", string="Recargo %", readonly=True)
 
+    financing_allowed = fields.Boolean(string="Financiación habilitada", compute="_compute_financing_allowed")
+
     @api.onchange("financing_plan_id")
     def _onchange_financing_plan_id(self):
         for order in self:
@@ -44,6 +46,11 @@ class SaleOrder(models.Model):
     @api.onchange("financing_rate_id", "pricelist_id")
     def _onchange_financing_rate_or_pricelist(self):
         for order in self:
+            # Si la lista no habilita financiación, limpiar selección y recalcular sin recargo
+            if not order.financing_allowed:
+                order.financing_plan_id = False
+                order.financing_card_type = False
+                order.financing_rate_id = False
             order._recompute_financing_prices()
 
     def _recompute_financing_prices(self):
