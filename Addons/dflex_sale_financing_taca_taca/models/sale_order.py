@@ -27,6 +27,29 @@ class SaleOrder(models.Model):
 
     financing_allowed = fields.Boolean(string="Financiación habilitada", compute="_compute_financing_allowed")
 
+    @api.depends("pricelist_id")
+    def _compute_financing_allowed(self):
+        """Habilita financiación solo para pricelists permitidas.
+
+        Se controla por parámetro del sistema: dflex_sale_financing.allowed_pricelist_ids
+        Valor esperado: lista separada por comas de IDs (ej: '2,5,8').
+        """
+        param = self.env["ir.config_parameter"].sudo().get_param(
+            "dflex_sale_financing.allowed_pricelist_ids", default=""
+        )
+        allowed_ids = set()
+        for token in (param or "").split(","):
+            token = (token or "").strip()
+            if not token:
+                continue
+            try:
+                allowed_ids.add(int(token))
+            except ValueError:
+                # Ignorar basura en el parámetro
+                continue
+        for order in self:
+            order.financing_allowed = bool(order.pricelist_id and order.pricelist_id.id in allowed_ids)
+
     @api.onchange("financing_plan_id")
     def _onchange_financing_plan_id(self):
         for order in self:

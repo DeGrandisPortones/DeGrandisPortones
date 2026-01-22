@@ -7,6 +7,7 @@
         <field name="arch" type="xml">
                         <xpath expr="//group[@name='order_details']//div[@class='o_row'][field[@name='pricelist_id']]" position="after">
                 <group invisible="not financing_allowed">
+                    <field name="financing_allowed" invisible="1"/>
                     <separator string="Financiación"/>
                     <field name="financing_plan_id" options="{'no_create': False}"/>
                     <field name="financing_card_type"
