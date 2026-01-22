@@ -5,11 +5,11 @@
         <field name="name">sale.financing.plan.li</field>
         <field name="model">sale.financing.plan</field>
         <field name="arch" type="xml">
-            <li>
+            <list>
                 <field name="name"/>
                 <field name="company_id"/>
                 <field name="active"/>
-            </li>
+            </list>
         </field>
     </record>
 
@@ -27,12 +27,12 @@
                     <notebook>
                         <page string="Tarifas">
                             <field name="rate_ids">
-                                <li editable="bottom">
+                                <list editable="bottom">
                                     <field name="card_type"/>
                                     <field name="installments"/>
                                     <field name="rate_percent"/>
                                     <field name="active"/>
-                                </li>
+                                </list>
                             </field>
                         </page>
                     </notebook>
