@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="financing_plan_taca_taca" model="sale.financing.plan">
+        <field name="name">Taca Taca</field>
+        <field name="company_id" eval="False"/>
+        <field name="active">True</field>
+    </record>
+
+    <!-- Tarjeta Cordobesa -->
+    <record id="rate_taca_taca_cordobesa_4" model="sale.financing.rate">
+        <field name="plan_id" ref="financing_plan_taca_taca"/>
+        <field name="card_type">cordobesa</field>
+        <field name="installments">4</field>
+        <field name="rate_percent">12.00</field>
+        <field name="active">True</field>
+    </record>
+    <record id="rate_taca_taca_cordobesa_6" model="sale.financing.rate">
+        <field name="plan_id" ref="financing_plan_taca_taca"/>
+        <field name="card_type">cordobesa</field>
+        <field name="installments">6</field>
+        <field name="rate_percent">15.00</field>
+        <field name="active">True</field>
+    </record>
+    <record id="rate_taca_taca_cordobesa_10" model="sale.financing.rate">
+        <field name="plan_id" ref="financing_plan_taca_taca"/>
+        <field name="card_type">cordobesa</field>
+        <field name="installments">10</field>
+        <field name="rate_percent">24.00</field>
+        <field name="active">True</field>
+    </record>
+    <record id="rate_taca_taca_cordobesa_14" model="sale.financing.rate">
+        <field name="plan_id" ref="financing_plan_taca_taca"/>
+        <field name="card_type">cordobesa</field>
+        <field name="installments">14</field>
+        <field name="rate_percent">30.00</field>
+        <field name="active">True</field>
+    </record>
+    <record id="rate_taca_taca_cordobesa_18" model="sale.financing.rate">
+        <field name="plan_id" ref="financing_plan_taca_taca"/>
+        <field name="card_type">cordobesa</field>
+        <field name="installments">18</field>
+        <field name="rate_percent">37.00</field>
+        <field name="active">True</field>
+    </record>
+
+    <!-- Tarjeta Naranja -->
+    <record id="rate_taca_taca_naranja_3" model="sale.financing.rate">
+        <field name="plan_id" ref="financing_plan_taca_taca"/>
+        <field name="card_type">naranja</field>
+        <field name="installments">3</field>
+        <field name="rate_percent">15.00</field>
+        <field name="active">True</field>
+    </record>
+    <record id="rate_taca_taca_naranja_6" model="sale.financing.rate">
+        <field name="plan_id" ref="financing_plan_taca_taca"/>
+        <field name="card_type">naranja</field>
+        <field name="installments">6</field>
+        <field name="rate_percent">25.00</field>
+        <field name="active">True</field>
+    </record>
+    <record id="rate_taca_taca_naranja_12" model="sale.financing.rate">
+        <field name="plan_id" ref="financing_plan_taca_taca"/>
+        <field name="card_type">naranja</field>
+        <field name="installments">12</field>
+        <field name="rate_percent">38.00</field>
+        <field name="active">True</field>
+    </record>
+
+    <!-- Otras tarjetas bancarizadas -->
+    <record id="rate_taca_taca_otras_3" model="sale.financing.rate">
+        <field name="plan_id" ref="financing_plan_taca_taca"/>
+        <field name="card_type">otras</field>
+        <field name="installments">3</field>
+        <field name="rate_percent">15.00</field>
+        <field name="active">True</field>
+    </record>
+    <record id="rate_taca_taca_otras_6" model="sale.financing.rate">
+        <field name="plan_id" ref="financing_plan_taca_taca"/>
+        <field name="card_type">otras</field>
+        <field name="installments">6</field>
+        <field name="rate_percent">21.00</field>
+        <field name="active">True</field>
+    </record>
+</odoo>

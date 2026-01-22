@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_sale_order_form_financing" model="ir.ui.view">
+        <field name="name">sale.order.form.financing</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+                        <xpath expr="//group[@name='order_details']//div[@class='o_row'][field[@name='pricelist_id']]" position="after">
+                <newline/>
+                <group invisible="not financing_allowed" colspan="2" col="2">
+                    <field name="financing_allowed" invisible="1"/>
+                    <separator string="Financiación"/>
+                    <field name="financing_plan_id" options="{'no_create': False}"/>
+                    <field name="financing_card_type"
+                           invisible="not financing_plan_id" required="financing_plan_id"/>
+                    <field name="financing_rate_id"
+                           invisible="not financing_card_type" required="financing_card_type"
+                           domain="[('active','=',True), ('plan_id','=',financing_plan_id), ('card_type','=',financing_card_type)]"/>
+                    <field name="financing_rate_percent" invisible="not financing_rate_id"/>
+                </group>
+            </xpath>
+
+            <!-- Mostrar precio base opcional en líneas -->
+            <xpath expr="//field[@name='order_line']//field[@name='price_unit'][ancestor::tree or ancestor::list]" position="after">
+                <field name="financing_base_price_unit" optional="hide"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

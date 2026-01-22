@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <data>
+
+    <template id="presupuestador_spa_index" name="Presupuestador SPA">
+      <t t-call="website.layout">
+        <div class="container my-4">
+          <div id="dflex-presupuestador-root"></div>
+
+          <t t-if="assets.get('entry_js')">
+            <t t-foreach="assets.get('entry_css', [])" t-as="css_file">
+              <link rel="stylesheet" t-att-href="'/dflex_presupuestador_spa/static/app/' + css_file"/>
+            </t>
+            <script type="module" t-att-src="'/dflex_presupuestador_spa/static/app/' + assets.get('entry_js')"></script>
+          </t>
+          <t t-else="">
+            <div class="alert alert-warning mt-3">
+              No se encontró el build de Vite (static/app/.vite/manifest.json). Ejecutá el build del frontend.
+            </div>
+          </t>
+        </div>
+      </t>
+    </template>
+
+  </data>
+</odoo>
