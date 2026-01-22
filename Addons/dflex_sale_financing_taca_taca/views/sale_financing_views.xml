@@ -44,12 +44,12 @@
     <record id="action_sale_financing_plan" model="ir.actions.act_window">
         <field name="name">Planes de financiación</field>
         <field name="res_model">sale.financing.plan</field>
-        <field name="view_mode">li,form</field>
+        <field name="view_mode">list,form</field>
     </record>
 
     <menuitem id="menu_sale_financing_root"
               name="Financiación"
-              parent="sale.sale_menu_config"
+              parent="sale.sale_menu_root"
               sequence="80"/>
 
     <menuitem id="menu_sale_financing_plan"
