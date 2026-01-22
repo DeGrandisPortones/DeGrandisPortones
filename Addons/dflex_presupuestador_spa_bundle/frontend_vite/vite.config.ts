@@ -15,7 +15,7 @@ export default defineConfig(({
   plugins: [react()],
   build: {
     manifest: true,
-    outDir: path.resolve(__dirname, "../odoo_addons/dflex_presupuestador_spa/static/app"),
+    outDir: "C:/Users/teten/OneDrive/Escritorio/odoo18/addons/dflex_presupuestador_spa/static/app",
     emptyOutDir: true,
     rollupOptions: {
       input: path.resolve(__dirname, "src/main.tsx"),
