@@ -85,7 +85,7 @@ class SaleOrderLine(models.Model):
         if not self.order_id.pricelist_id:
             return self.product_id.lst_price
         # _get_display_price suele ser el método estándar en sale.order.line
-        return self._get_display_price(self.product_id)
+        return self._get_display_price()
 
     def _apply_financing_rate(self, rate_percent):
         """Aplica recargo al precio unitario de la línea, recalculando desde precio base de lista."""
