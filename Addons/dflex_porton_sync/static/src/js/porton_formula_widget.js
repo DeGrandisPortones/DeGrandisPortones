@@ -15,7 +15,7 @@ export class PortonFormulaJSField extends CharField {
         }
 
         let result = null;
-        try:
+        try {
             const valor = base;
             // eslint-disable-next-line no-eval
             result = eval(formula);

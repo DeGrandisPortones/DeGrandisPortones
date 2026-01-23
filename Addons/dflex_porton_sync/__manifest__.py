@@ -6,6 +6,7 @@
     "category": "Sales",
     "data": [
         "security/ir.model.access.csv",
+        "views/assets.xml",
         "views/porton_views.xml",
         "views/sql_quotation_wizard_views.xml"
     ],
