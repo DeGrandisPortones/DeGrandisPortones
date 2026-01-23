@@ -1,4 +1,4 @@
-from odoo import api, fields, models
+from odoo import fields, models
 
 class DflexPorton(models.Model):
     _inherit = "x_dflex.porton"
@@ -14,22 +14,13 @@ class DflexPorton(models.Model):
     # Fórmula en JS (usa la variable 'valor' como base)
     x_formula_js = fields.Char(string="Fórmula JS")
 
-    # Alias compatible con versiones previas del módulo:
-    # la relación real suele llamarse sale_order_id (creada en Studio).
-    # La vista y el wizard referencian x_studio_sale_order_id.
+    # Relación a la cotización creada en Odoo.
+    # Importante: NO dependemos de campos Studio preexistentes (sale_order_id, etc.)
+    # porque el modelo x_dflex.porton vive en la BD y puede variar por instancia.
+    # Este campo lo crea el módulo y es el que usa el backend (JSON-RPC) para vincular.
     x_studio_sale_order_id = fields.Many2one(
         comodel_name="sale.order",
         string="Cotización Odoo",
-        compute="_compute_x_studio_sale_order_id",
-        inverse="_inverse_x_studio_sale_order_id",
-        store=True,
+        ondelete="set null",
+        index=True,
     )
-
-    @api.depends("sale_order_id")
-    def _compute_x_studio_sale_order_id(self):
-        for rec in self:
-            rec.x_studio_sale_order_id = rec.sale_order_id
-
-    def _inverse_x_studio_sale_order_id(self):
-        for rec in self:
-            rec.sale_order_id = rec.x_studio_sale_order_id

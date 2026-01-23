@@ -5,6 +5,6 @@ class SaleOrder(models.Model):
 
     porton_ids = fields.One2many(
         "x_dflex.porton",
-        "sale_order_id",
+        "x_studio_sale_order_id",
         string="Portones Dflex",
     )
