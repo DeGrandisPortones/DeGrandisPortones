@@ -82,6 +82,13 @@ class ArLibroIvaWizard(models.TransientModel):
         tname_norm = tname.replace("_", " ")
         needles = ("no grav", "nograv", "no gravado")
         return any(n in gname_norm for n in needles) or any(n in tname_norm for n in needles)
+    @staticmethod
+    def _cbte_sin_alicuotas(tipo_cbte):
+        """True si el tipo de comprobante es letra B o C (ARCA no acepta alícuotas)."""
+        tipo = str(tipo_cbte or "").rjust(3, "0")
+        # B: 006-009 ; C: 011-015 (códigos AFIP más comunes)
+        return tipo in {"006", "007", "008", "009", "011", "012", "013", "015"}
+
 
     @staticmethod
     def _ali_code_from_tax(tax):
@@ -213,7 +220,7 @@ class ArLibroIvaWizard(models.TransientModel):
                     imp_perc_muni += amount
                 elif "interno" in group_name:
                     imp_internos += amount
-                elif "iva" in group_name and not self._is_no_grav_tax(tax):
+                elif "iva" in group_name and not self._is_no_grav_tax(tax) and not self._cbte_sin_alicuotas(tipo_cbte):
                     code = self._ali_code_from_tax(tax)
                     vat_taxes[code] = vat_taxes.get(code, 0.0) + amount
                     base = fabs(line.tax_base_amount or 0.0)
@@ -235,6 +242,26 @@ class ArLibroIvaWizard(models.TransientModel):
 
             # Crédito fiscal computable = suma IVA de alícuotas
             credito_fiscal = sum(vat_taxes.values())
+            if self._cbte_sin_alicuotas(tipo_cbte):
+                # En comprobantes B/C ARCA no acepta alícuotas y exige coherencia de montos.
+                # Como no discrimina IVA, forzamos crédito fiscal = 0 y ajustamos Exento para balancear.
+                credito_fiscal = 0.0
+                vat_bases = {}
+                vat_taxes = {}
+                otros = (
+                    imp_no_grav
+                    + imp_perc_iva
+                    + imp_perc_otros
+                    + imp_perc_iibb
+                    + imp_perc_muni
+                    + imp_internos
+                    + otros_tributos
+                )
+                rem = total - otros
+                if rem < 0:
+                    rem = 0.0
+                imp_exento = rem
+
 
             # Moneda y tipo de cambio
             cod_moneda = "PES"
@@ -249,7 +276,10 @@ class ArLibroIvaWizard(models.TransientModel):
                 rate_int = int(round(rate * 10**6))
                 tipo_cambio = str(rate_int).rjust(10, "0")
 
-            cant_alicuotas = max(len(vat_bases) or 1, 1)
+            if self._cbte_sin_alicuotas(tipo_cbte):
+                cant_alicuotas = 0
+            else:
+                cant_alicuotas = max(len(vat_bases) or 1, 1)
             cod_operacion = " "  # en blanco como en los ejemplos
 
             # Emisor/corredor (normalmente vacío)
@@ -293,6 +323,8 @@ class ArLibroIvaWizard(models.TransientModel):
             # -----------------------------------------------------------------
             # ALICUOTAS COMPRAS (84 caracteres)
             # -----------------------------------------------------------------
+            if self._cbte_sin_alicuotas(tipo_cbte):
+                continue
             if not vat_bases:
                 code = "0003"  # Exento / sin IVA
                 ali_line = (
