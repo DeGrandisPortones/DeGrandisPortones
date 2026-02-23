@@ -73,6 +73,17 @@ class ArLibroIvaWizard(models.TransientModel):
         return s.ljust(length, " ")
 
     @staticmethod
+    def _is_no_grav_tax(tax):
+        """Detecta impuestos de 'No Gravado' por nombre de impuesto / grupo."""
+        gname = (getattr(tax.tax_group_id, "name", "") or "").lower()
+        tname = (getattr(tax, "name", "") or "").lower()
+        # normalizaciones simples
+        gname_norm = gname.replace("_", " ")
+        tname_norm = tname.replace("_", " ")
+        needles = ("no grav", "nograv", "no gravado")
+        return any(n in gname_norm for n in needles) or any(n in tname_norm for n in needles)
+
+    @staticmethod
     def _ali_code_from_tax(tax):
         """Código de alícuota AFIP (4 dígitos)."""
         for field_name in ("l10n_ar_vat_afip_code", "l10n_ar_afip_code", "afip_code"):
@@ -83,7 +94,7 @@ class ArLibroIvaWizard(models.TransientModel):
 
         amount = fabs(tax.amount or 0.0)
         mapping = {
-            0.0: "0003",    # Exento / 0 %
+            0.0: "0003",  # Exento / 0 %
             10.5: "0004",
             21.0: "0005",
             27.0: "0006",
@@ -135,16 +146,22 @@ class ArLibroIvaWizard(models.TransientModel):
             tipo_cbte = str(tipo_cbte).rjust(3, "0")
 
             # Punto de venta / Número de comprobante
-            doc_number = move.l10n_latam_document_number or move.name or ""
-            only_digits = "".join(ch for ch in doc_number if ch.isdigit())
-            if len(only_digits) >= 5:
-                pto_venta = only_digits[:5]
-                nro_cbte = only_digits[5:]
+            # Nota: si viene como '0003-00000091' el parseo por dígitos puede correrse.
+            doc_number = (move.l10n_latam_document_number or move.name or "").strip()
+            pto_venta = "00000"
+            nro_cbte = "0"
+            if "-" in doc_number:
+                pv, num = doc_number.split("-", 1)
+                pto_venta = self._num_raw(pv, 5)
+                nro_cbte = self._num_raw(num, 20)
             else:
-                pto_venta = "00000"
-                nro_cbte = only_digits
-            pto_venta = pto_venta.rjust(5, "0")
-            nro_cbte = nro_cbte.rjust(20, "0")
+                only_digits = "".join(ch for ch in doc_number if ch.isdigit())
+                if len(only_digits) >= 5:
+                    pto_venta = only_digits[:5].rjust(5, "0")
+                    nro_cbte = only_digits[5:].rjust(20, "0")
+                else:
+                    pto_venta = "00000"
+                    nro_cbte = only_digits.rjust(20, "0")
 
             # Documento vendedor
             id_type = partner.l10n_latam_identification_type_id
@@ -186,13 +203,17 @@ class ArLibroIvaWizard(models.TransientModel):
 
                 if "percep" in group_name and "iva" in group_name:
                     imp_perc_iva += amount
-                elif "percep" in group_name and ("iibb" in group_name or "ingresos brutos" in group_name):
+                elif "percep" in group_name and (
+                    "iibb" in group_name or "ingresos brutos" in group_name
+                ):
                     imp_perc_iibb += amount
-                elif "percep" in group_name and ("munic" in group_name or "municip" in group_name):
+                elif "percep" in group_name and (
+                    "munic" in group_name or "municip" in group_name
+                ):
                     imp_perc_muni += amount
                 elif "interno" in group_name:
                     imp_internos += amount
-                elif "iva" in group_name:
+                elif "iva" in group_name and not self._is_no_grav_tax(tax):
                     code = self._ali_code_from_tax(tax)
                     vat_taxes[code] = vat_taxes.get(code, 0.0) + amount
                     base = fabs(line.tax_base_amount or 0.0)
@@ -200,13 +221,17 @@ class ArLibroIvaWizard(models.TransientModel):
                 else:
                     otros_tributos += amount
 
-            # Exentos: líneas sin IVA (aproximación)
-            for line in move.invoice_line_ids:
-                if not line.tax_ids:
-                    imp_exento += fabs(line.price_subtotal or 0.0)
-
-            # Conceptos no gravados (si no distinguís, lo dejamos en 0)
+            # Exentos / No gravado desde líneas de factura
             imp_no_grav = 0.0
+            for line in move.invoice_line_ids:
+                taxes = line.tax_ids
+                if not taxes:
+                    # Aproximación histórica del módulo: sin impuestos => exento
+                    imp_exento += fabs(line.price_subtotal or 0.0)
+                    continue
+
+                if any(self._is_no_grav_tax(t) for t in taxes):
+                    imp_no_grav += fabs(line.price_subtotal or 0.0)
 
             # Crédito fiscal computable = suma IVA de alícuotas
             credito_fiscal = sum(vat_taxes.values())
@@ -221,7 +246,7 @@ class ArLibroIvaWizard(models.TransientModel):
                     )
                 except ZeroDivisionError:
                     rate = 1.0
-                rate_int = int(round(rate * 10 ** 6))
+                rate_int = int(round(rate * 10**6))
                 tipo_cambio = str(rate_int).rjust(10, "0")
 
             cant_alicuotas = max(len(vat_bases) or 1, 1)
@@ -327,13 +352,9 @@ class ArLibroIvaWizard(models.TransientModel):
 
         self.write(
             {
-                "file_cbte": base64.b64encode(
-                    txt_cbte.encode("latin1", "ignore")
-                ),
+                "file_cbte": base64.b64encode(txt_cbte.encode("latin1", "ignore")),
                 "file_cbte_name": fname1,
-                "file_ali": base64.b64encode(
-                    txt_ali.encode("latin1", "ignore")
-                ),
+                "file_ali": base64.b64encode(txt_ali.encode("latin1", "ignore")),
                 "file_ali_name": fname2,
                 "state": "download",
             }
