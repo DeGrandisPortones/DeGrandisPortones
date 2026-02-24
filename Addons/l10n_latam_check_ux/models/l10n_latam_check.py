@@ -13,7 +13,16 @@ class l10nLatamAccountPaymentCheck(models.Model):
         readonly=True,
     )
 
-    # Origen (recibo que generó el cheque)
+    # -------------------------------------------------------------------------
+    # Origen (recibo/pago que creó el cheque)
+    # -------------------------------------------------------------------------
+    # Compat: algunos XML usan `payment_move_id`, otros `origin_move_id`
+    payment_move_id = fields.Many2one(
+        comodel_name="account.move",
+        related="payment_id.move_id",
+        string="Asiento Origen",
+        readonly=True,
+    )
     origin_move_id = fields.Many2one(
         comodel_name="account.move",
         related="payment_id.move_id",
@@ -21,7 +30,9 @@ class l10nLatamAccountPaymentCheck(models.Model):
         readonly=True,
     )
 
-    # Destino (última operación del cheque: depósito / pago proveedor / transferencia / etc.)
+    # -------------------------------------------------------------------------
+    # Destino (última operación del cheque: depósito / pago proveedor / transf. / etc.)
+    # -------------------------------------------------------------------------
     last_operation_id = fields.Many2one(
         "account.payment",
         compute="_compute_last_operation_id",
@@ -68,8 +79,13 @@ class l10nLatamAccountPaymentCheck(models.Model):
     )
     def _compute_last_operation_id(self):
         for rec in self:
-            last_op = rec._get_last_operation() or rec.payment_id
-            rec.last_operation_id = last_op[:1].id if last_op else False
+            ops = (rec.payment_id + rec.operation_ids).filtered(lambda p: p.state not in ["draft", "canceled"])
+            ops_with_date = ops.filtered(lambda p: p.l10n_latam_move_check_ids_operation_date)
+            if ops_with_date:
+                last = ops_with_date.sorted(key=lambda p: (p.l10n_latam_move_check_ids_operation_date, p.id))[-1:]
+            else:
+                last = ops.sorted(key=lambda p: (p.date, p.id))[-1:] if ops else self.env["account.payment"]
+            rec.last_operation_id = last[:1].id if last else False
 
     @api.depends("operation_ids.state", "payment_id.state")
     def _compute_company_id(self):
@@ -130,22 +146,32 @@ class l10nLatamAccountPaymentCheck(models.Model):
         self.ensure_one()
         return self._action_open_form("l10n_latam.check", self.id)
 
-    def action_open_origin_payment(self):
+    # Compat (v2)
+    def action_open_payment(self):
         self.ensure_one()
+        if not self.payment_id:
+            return False
         return self._action_open_form("account.payment", self.payment_id.id)
 
-    def action_open_origin_move(self):
+    def action_open_payment_move(self):
         self.ensure_one()
         move = self.payment_id.move_id
-        if move:
-            return self._action_open_form("account.move", move.id)
-        return self.action_open_origin_payment()
+        if not move:
+            return self.action_open_payment()
+        return self._action_open_form("account.move", move.id)
+
+    # Nombres nuevos (v3)
+    def action_open_origin_payment(self):
+        return self.action_open_payment()
+
+    def action_open_origin_move(self):
+        return self.action_open_payment_move()
 
     def action_open_destination_payment(self):
         self.ensure_one()
         if self.last_operation_id:
             return self._action_open_form("account.payment", self.last_operation_id.id)
-        return self.action_open_origin_payment()
+        return self.action_open_payment()
 
     def action_open_destination_move(self):
         self.ensure_one()
