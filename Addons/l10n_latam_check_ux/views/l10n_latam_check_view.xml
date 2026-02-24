@@ -60,32 +60,37 @@
         </field>
     </record>
 
-    <!-- Asegurar que el action tenga form disponible al hacer click -->
+    <!-- Acción: aseguramos list + form -->
     <record id="l10n_latam_check.action_third_party_check" model="ir.actions.act_window">
         <field name="view_mode">list,form</field>
         <field name="domain">[('payment_method_code', '=', 'new_third_party_checks'), ('payment_state', '!=', 'draft')]</field>
     </record>
 
-    <!-- En Odoo 18, si el list está editable, el click entra en edición y no abre. Además agregamos accesos directos. -->
-    <record id="view_account_third_party_check_list_open_links" model="ir.ui.view">
+    <!-- Listado cheques de terceros: links + botones a Origen/Destino -->
+    <record id="view_account_third_party_check_tree_open_links" model="ir.ui.view">
         <field name="name">l10n_latam.check.third.party.list.open.links</field>
         <field name="model">l10n_latam.check</field>
-        <field name="priority" eval="120"/>
         <field name="inherit_id" ref="l10n_latam_check.view_account_third_party_check_tree"/>
+        <field name="priority" eval="120"/>
         <field name="arch" type="xml">
+            <!-- importante: que no quede editable, sino el click entra en edición -->
             <xpath expr="//list" position="attributes">
                 <attribute name="editable" remove="1"/>
             </xpath>
 
+            <!-- agregamos accesos sin depender del nombre de campos existentes -->
             <xpath expr="//list" position="inside">
-                <!-- Botones para navegar aunque el click en fila no abra -->
-                <button name="action_open_check_form" type="object" icon="fa-external-link" title="Abrir cheque"/>
-                <button name="action_open_payment" type="object" icon="fa-receipt" title="Abrir recibo" invisible="not payment_id"/>
-                <button name="action_open_payment_move" type="object" icon="fa-book" title="Abrir asiento" invisible="not payment_move_id"/>
+                <!-- Botones por fila -->
+                <button name="action_open_origin_payment" type="object" string="Origen" icon="fa-arrow-left" optional="hide"/>
+                <button name="action_open_dest_payment" type="object" string="Destino" icon="fa-arrow-right" optional="hide"/>
+                <button name="action_open_origin_move" type="object" string="Asiento Origen" icon="fa-book" optional="hide"/>
+                <button name="action_open_dest_move" type="object" string="Asiento Destino" icon="fa-book" optional="hide"/>
 
-                <!-- Columnas clickeables -->
-                <field name="payment_id" string="Recibo" optional="hide"/>
-                <field name="payment_move_id" string="Asiento" optional="hide"/>
+                <!-- Columnas clickeables (Many2one) -->
+                <field name="payment_id" string="Recibo Origen" optional="hide"/>
+                <field name="origin_move_id" optional="hide"/>
+                <field name="last_operation_id" optional="hide"/>
+                <field name="last_operation_move_id" optional="hide"/>
             </xpath>
         </field>
     </record>
