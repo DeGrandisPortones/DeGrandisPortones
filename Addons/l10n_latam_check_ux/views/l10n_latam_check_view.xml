@@ -60,37 +60,36 @@
         </field>
     </record>
 
-    <!-- Acción: aseguramos list + form -->
+    <!-- Acción: asegurar list + form para que la fila pueda abrir el registro cuando corresponda -->
     <record id="l10n_latam_check.action_third_party_check" model="ir.actions.act_window">
-        <field name="view_mode">list,form</field>
         <field name="domain">[('payment_method_code', '=', 'new_third_party_checks'), ('payment_state', '!=', 'draft')]</field>
+        <field name="view_mode">list,form</field>
     </record>
 
-    <!-- Listado cheques de terceros: links + botones a Origen/Destino -->
+    <!-- Cheques de terceros: links/botones para Origen y Destino (última operación) -->
     <record id="view_account_third_party_check_tree_open_links" model="ir.ui.view">
         <field name="name">l10n_latam.check.third.party.list.open.links</field>
         <field name="model">l10n_latam.check</field>
+        <field name="priority" eval="130"/>
         <field name="inherit_id" ref="l10n_latam_check.view_account_third_party_check_tree"/>
-        <field name="priority" eval="120"/>
         <field name="arch" type="xml">
-            <!-- importante: que no quede editable, sino el click entra en edición -->
-            <xpath expr="//list" position="attributes">
-                <attribute name="editable" remove="1"/>
-            </xpath>
-
-            <!-- agregamos accesos sin depender del nombre de campos existentes -->
-            <xpath expr="//list" position="inside">
-                <!-- Botones por fila -->
-                <button name="action_open_origin_payment" type="object" string="Origen" icon="fa-arrow-left" optional="hide"/>
-                <button name="action_open_dest_payment" type="object" string="Destino" icon="fa-arrow-right" optional="hide"/>
-                <button name="action_open_origin_move" type="object" string="Asiento Origen" icon="fa-book" optional="hide"/>
-                <button name="action_open_dest_move" type="object" string="Asiento Destino" icon="fa-book" optional="hide"/>
-
-                <!-- Columnas clickeables (Many2one) -->
-                <field name="payment_id" string="Recibo Origen" optional="hide"/>
+            <xpath expr="//field[@name='name']" position="after">
+                <!-- Origen -->
+                <field name="payment_id" string="Origen" optional="hide"/>
                 <field name="origin_move_id" optional="hide"/>
-                <field name="last_operation_id" optional="hide"/>
+
+                <!-- Destino / última operación -->
+                <field name="last_operation_id" string="Destino" optional="show"/>
+                <field name="last_operation_partner_id" optional="hide"/>
+                <field name="last_operation_journal_id" optional="hide"/>
                 <field name="last_operation_move_id" optional="hide"/>
+
+                <!-- Botones (type=object) -->
+                <button name="action_open_check_form" type="object" icon="fa-external-link" title="Abrir cheque"/>
+                <button name="action_open_origin_payment" type="object" icon="fa-sign-in" title="Abrir origen"/>
+                <button name="action_open_origin_move" type="object" icon="fa-book" title="Abrir asiento origen"/>
+                <button name="action_open_destination_payment" type="object" icon="fa-sign-out" title="Abrir destino"/>
+                <button name="action_open_destination_move" type="object" icon="fa-book" title="Abrir asiento destino"/>
             </xpath>
         </field>
     </record>

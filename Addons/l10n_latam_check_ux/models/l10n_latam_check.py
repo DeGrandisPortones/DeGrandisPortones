@@ -1,13 +1,10 @@
 from odoo import _, api, fields, models
-from odoo.exceptions import UserError
 
 
 class l10nLatamAccountPaymentCheck(models.Model):
     _inherit = "l10n_latam.check"
 
-    check_add_debit_button = fields.Boolean(
-        related="original_journal_id.check_add_debit_button", readonly=True
-    )
+    check_add_debit_button = fields.Boolean(related="original_journal_id.check_add_debit_button", readonly=True)
 
     first_operation = fields.Many2one(
         "account.payment",
@@ -15,9 +12,8 @@ class l10nLatamAccountPaymentCheck(models.Model):
         store=True,
         readonly=True,
     )
-    # Origen (de dónde vino el cheque)
-    date = fields.Date(related="first_operation.date")
-    memo = fields.Char(related="payment_id.memo")
+
+    # Origen (recibo que generó el cheque)
     origin_move_id = fields.Many2one(
         comodel_name="account.move",
         related="payment_id.move_id",
@@ -25,13 +21,13 @@ class l10nLatamAccountPaymentCheck(models.Model):
         readonly=True,
     )
 
-    # Destino (última operación del cheque: depósito, pago a proveedor, transferencia, etc.)
+    # Destino (última operación del cheque: depósito / pago proveedor / transferencia / etc.)
     last_operation_id = fields.Many2one(
-        comodel_name="account.payment",
-        string="Operación Destino",
+        "account.payment",
         compute="_compute_last_operation_id",
         store=True,
         readonly=True,
+        string="Operación Destino",
     )
     last_operation_move_id = fields.Many2one(
         comodel_name="account.move",
@@ -39,6 +35,21 @@ class l10nLatamAccountPaymentCheck(models.Model):
         string="Asiento Destino",
         readonly=True,
     )
+    last_operation_partner_id = fields.Many2one(
+        comodel_name="res.partner",
+        related="last_operation_id.partner_id",
+        string="Partner Destino",
+        readonly=True,
+    )
+    last_operation_journal_id = fields.Many2one(
+        comodel_name="account.journal",
+        related="last_operation_id.journal_id",
+        string="Diario Destino",
+        readonly=True,
+    )
+
+    date = fields.Date(related="first_operation.date")
+    memo = fields.Char(related="payment_id.memo")
 
     company_id = fields.Many2one(
         compute="_compute_company_id", store=True, compute_sudo=True, comodel_name="res.company"
@@ -57,9 +68,8 @@ class l10nLatamAccountPaymentCheck(models.Model):
     )
     def _compute_last_operation_id(self):
         for rec in self:
-            last_op = rec._get_last_operation()
-            # _get_last_operation devuelve recordset (0 o 1). Si no hay, usamos payment_id como fallback.
-            rec.last_operation_id = (last_op and last_op.id) or rec.payment_id.id or False
+            last_op = rec._get_last_operation() or rec.payment_id
+            rec.last_operation_id = last_op[:1].id if last_op else False
 
     @api.depends("operation_ids.state", "payment_id.state")
     def _compute_company_id(self):
@@ -104,51 +114,56 @@ class l10nLatamAccountPaymentCheck(models.Model):
             .sorted(key=lambda payment: (payment.l10n_latam_move_check_ids_operation_date))[-1:]
         )
 
-    # ---------- Acciones para botones de grilla ----------
-    def action_open_origin_payment(self):
-        self.ensure_one()
-        if not self.payment_id:
-            raise UserError(_("No hay recibo/origen para este cheque."))
+    # -------------------------------------------------------------------------
+    # Acciones para navegar desde el listado (type="object")
+    # -------------------------------------------------------------------------
+    def _action_open_form(self, res_model, res_id):
         return {
             "type": "ir.actions.act_window",
-            "res_model": "account.payment",
-            "view_mode": "form",
-            "res_id": self.payment_id.id,
+            "res_model": res_model,
+            "res_id": res_id,
+            "views": [(False, "form")],
             "target": "current",
         }
+
+    def action_open_check_form(self):
+        self.ensure_one()
+        return self._action_open_form("l10n_latam.check", self.id)
+
+    def action_open_origin_payment(self):
+        self.ensure_one()
+        return self._action_open_form("account.payment", self.payment_id.id)
 
     def action_open_origin_move(self):
         self.ensure_one()
-        if not self.origin_move_id:
-            raise UserError(_("El recibo/origen no tiene asiento contable."))
-        return {
-            "type": "ir.actions.act_window",
-            "res_model": "account.move",
-            "view_mode": "form",
-            "res_id": self.origin_move_id.id,
-            "target": "current",
-        }
+        move = self.payment_id.move_id
+        if move:
+            return self._action_open_form("account.move", move.id)
+        return self.action_open_origin_payment()
 
-    def action_open_dest_payment(self):
+    def action_open_destination_payment(self):
         self.ensure_one()
-        if not self.last_operation_id:
-            raise UserError(_("No se encontró una operación destino para este cheque."))
-        return {
-            "type": "ir.actions.act_window",
-            "res_model": "account.payment",
-            "view_mode": "form",
-            "res_id": self.last_operation_id.id,
-            "target": "current",
-        }
+        if self.last_operation_id:
+            return self._action_open_form("account.payment", self.last_operation_id.id)
+        return self.action_open_origin_payment()
 
-    def action_open_dest_move(self):
+    def action_open_destination_move(self):
         self.ensure_one()
-        if not self.last_operation_move_id:
-            raise UserError(_("La operación destino no tiene asiento contable."))
-        return {
-            "type": "ir.actions.act_window",
-            "res_model": "account.move",
-            "view_mode": "form",
-            "res_id": self.last_operation_move_id.id,
-            "target": "current",
-        }
+        move = self.last_operation_move_id
+        if move:
+            return self._action_open_form("account.move", move.id)
+        return self.action_open_destination_payment()
+
+    @api.depends("payment_method_line_id.code", "payment_id.partner_id")
+    def _compute_bank_id(self):
+        payment_method_change = self._origin.payment_method_line_id != self.payment_method_line_id
+        partner_id_change = self._origin.payment_id.partner_id != self.payment_id.partner_id
+        if payment_method_change or partner_id_change:
+            super()._compute_bank_id()
+
+    @api.depends("payment_method_line_id.code", "payment_id.partner_id")
+    def _compute_issuer_vat(self):
+        payment_method_change = self._origin.payment_method_line_id != self.payment_method_line_id
+        partner_id_change = self._origin.payment_id.partner_id != self.payment_id.partner_id
+        if payment_method_change or partner_id_change:
+            super()._compute_issuer_vat()
