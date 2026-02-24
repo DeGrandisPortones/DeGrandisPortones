@@ -14,6 +14,12 @@ class l10nLatamAccountPaymentCheck(models.Model):
 
     date = fields.Date(related="first_operation.date")
     memo = fields.Char(related="payment_id.memo")
+    payment_move_id = fields.Many2one(
+        comodel_name="account.move",
+        related="payment_id.move_id",
+        string="Asiento",
+        readonly=True,
+    )
     company_id = fields.Many2one(
         compute="_compute_company_id", store=True, compute_sudo=True, comodel_name="res.company"
     )

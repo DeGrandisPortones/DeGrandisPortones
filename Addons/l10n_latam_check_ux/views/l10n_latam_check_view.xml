@@ -59,8 +59,34 @@
             </xpath>
         </field>
     </record>
+
+    <!-- Asegura que el click en la fila abra el form del cheque -->
     <record id="l10n_latam_check.action_third_party_check" model="ir.actions.act_window">
+        <field name="view_mode">list,form</field>
         <field name="domain">[('payment_method_code', '=', 'new_third_party_checks'), ('payment_state', '!=', 'draft')]</field>
+    </record>
+
+    <!-- Evita modo edición en la lista (si el upstream lo trae) y agrega accesos a Recibo/Asiento -->
+    <record id="view_account_third_party_check_tree_open_form" model="ir.ui.view">
+        <field name="name">l10n_latam.check.third.party.list.open.form</field>
+        <field name="model">l10n_latam.check</field>
+        <field name="inherit_id" ref="l10n_latam_check.view_account_third_party_check_tree" />
+        <field name="arch" type="xml">
+            <!-- Odoo 18 -->
+            <xpath expr="//list" position="attributes">
+                <attribute name="editable" remove="1"/>
+            </xpath>
+            <!-- compat por si el upstream aún usa tree -->
+            <xpath expr="//tree" position="attributes">
+                <attribute name="editable" remove="1"/>
+            </xpath>
+
+            <!-- accesos directos desde la grilla -->
+            <xpath expr="//field[@name='name']" position="after">
+                <field name="payment_id" string="Recibo" optional="hide"/>
+                <field name="payment_move_id" optional="hide"/>
+            </xpath>
+        </field>
     </record>
 
 </odoo>
