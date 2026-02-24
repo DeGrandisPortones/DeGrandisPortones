@@ -73,5 +73,36 @@ class AccountMove(models.Model):
                     )
 
     def action_post(self):
-        self._check_official_aux_accounts_mix()
+        # Si el usuario ya confirmó, no bloqueamos el posteo.
+        if self.env.context.get("official_aux_validation_confirmed"):
+            return super().action_post()
+
+        try:
+            self._check_official_aux_accounts_mix()
+        except ValidationError as e:
+            # En procesos no interactivos (cron / import / scripts) mantenemos el comportamiento actual: bloquear.
+            if not self.env.context.get("params"):
+                raise
+
+            wiz = self.env["official.aux.validation.confirm.wizard"].create(
+                {
+                    "move_ids": [(6, 0, self.ids)],
+                    "message": _(
+                        "El movimiento presenta una incongruencia entre las cuentas contables "
+                        "(mezcla de cuentas oficiales 1-4 y auxiliares 5-7).\n\n"
+                        "¿Deseas continuar?\n\n"
+                        "Detalle:\n%s"
+                    )
+                    % str(e),
+                }
+            )
+            return {
+                "type": "ir.actions.act_window",
+                "name": _("Confirmación"),
+                "res_model": "official.aux.validation.confirm.wizard",
+                "view_mode": "form",
+                "res_id": wiz.id,
+                "target": "new",
+            }
+
         return super().action_post()
