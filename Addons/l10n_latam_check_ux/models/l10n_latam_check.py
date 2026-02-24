@@ -85,3 +85,37 @@ class l10nLatamAccountPaymentCheck(models.Model):
         partner_id_change = self._origin.payment_id.partner_id != self.payment_id.partner_id
         if payment_method_change or partner_id_change:
             super()._compute_issuer_vat()
+
+    def action_open_check_form(self):
+        self.ensure_one()
+        return {
+            "type": "ir.actions.act_window",
+            "res_model": "l10n_latam.check",
+            "view_mode": "form",
+            "res_id": self.id,
+            "target": "current",
+        }
+
+    def action_open_payment(self):
+        self.ensure_one()
+        if not self.payment_id:
+            return False
+        return {
+            "type": "ir.actions.act_window",
+            "res_model": "account.payment",
+            "view_mode": "form",
+            "res_id": self.payment_id.id,
+            "target": "current",
+        }
+
+    def action_open_payment_move(self):
+        self.ensure_one()
+        if not self.payment_move_id:
+            return False
+        return {
+            "type": "ir.actions.act_window",
+            "res_model": "account.move",
+            "view_mode": "form",
+            "res_id": self.payment_move_id.id,
+            "target": "current",
+        }

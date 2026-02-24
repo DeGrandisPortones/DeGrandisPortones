@@ -60,20 +60,32 @@
         </field>
     </record>
 
+    <!-- Asegurar que el action tenga form disponible al hacer click -->
     <record id="l10n_latam_check.action_third_party_check" model="ir.actions.act_window">
-        <!-- Asegura que el click en una fila tenga form disponible -->
         <field name="view_mode">list,form</field>
         <field name="domain">[('payment_method_code', '=', 'new_third_party_checks'), ('payment_state', '!=', 'draft')]</field>
     </record>
 
-    <record id="view_account_third_party_check_tree_open_form" model="ir.ui.view">
-        <field name="name">l10n_latam.check.third.party.list.open.form</field>
+    <!-- En Odoo 18, si el list está editable, el click entra en edición y no abre. Además agregamos accesos directos. -->
+    <record id="view_account_third_party_check_list_open_links" model="ir.ui.view">
+        <field name="name">l10n_latam.check.third.party.list.open.links</field>
         <field name="model">l10n_latam.check</field>
+        <field name="priority" eval="120"/>
         <field name="inherit_id" ref="l10n_latam_check.view_account_third_party_check_tree"/>
         <field name="arch" type="xml">
-            <!-- Si la lista es editable, el click entra en edición y no abre el formulario -->
             <xpath expr="//list" position="attributes">
                 <attribute name="editable" remove="1"/>
+            </xpath>
+
+            <xpath expr="//list" position="inside">
+                <!-- Botones para navegar aunque el click en fila no abra -->
+                <button name="action_open_check_form" type="object" icon="fa-external-link" title="Abrir cheque"/>
+                <button name="action_open_payment" type="object" icon="fa-receipt" title="Abrir recibo" invisible="not payment_id"/>
+                <button name="action_open_payment_move" type="object" icon="fa-book" title="Abrir asiento" invisible="not payment_move_id"/>
+
+                <!-- Columnas clickeables -->
+                <field name="payment_id" string="Recibo" optional="hide"/>
+                <field name="payment_move_id" string="Asiento" optional="hide"/>
             </xpath>
         </field>
     </record>
