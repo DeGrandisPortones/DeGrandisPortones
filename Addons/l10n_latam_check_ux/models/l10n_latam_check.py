@@ -5,6 +5,7 @@ class l10nLatamAccountPaymentCheck(models.Model):
     _inherit = "l10n_latam.check"
 
     check_add_debit_button = fields.Boolean(related="original_journal_id.check_add_debit_button", readonly=True)
+
     first_operation = fields.Many2one(
         "account.payment",
         compute="_compute_first_operation",
@@ -12,8 +13,55 @@ class l10nLatamAccountPaymentCheck(models.Model):
         readonly=True,
     )
 
+    # -------------------------------------------------------------------------
+    # Origen (recibo/pago que creó el cheque)
+    # -------------------------------------------------------------------------
+    # Compat: algunos XML usan `payment_move_id`, otros `origin_move_id`
+    payment_move_id = fields.Many2one(
+        comodel_name="account.move",
+        related="payment_id.move_id",
+        string="Asiento Origen",
+        readonly=True,
+    )
+    origin_move_id = fields.Many2one(
+        comodel_name="account.move",
+        related="payment_id.move_id",
+        string="Asiento Origen",
+        readonly=True,
+    )
+
+    # -------------------------------------------------------------------------
+    # Destino (última operación del cheque: depósito / pago proveedor / transf. / etc.)
+    # -------------------------------------------------------------------------
+    last_operation_id = fields.Many2one(
+        "account.payment",
+        compute="_compute_last_operation_id",
+        store=True,
+        readonly=True,
+        string="Operación Destino",
+    )
+    last_operation_move_id = fields.Many2one(
+        comodel_name="account.move",
+        related="last_operation_id.move_id",
+        string="Asiento Destino",
+        readonly=True,
+    )
+    last_operation_partner_id = fields.Many2one(
+        comodel_name="res.partner",
+        related="last_operation_id.partner_id",
+        string="Partner Destino",
+        readonly=True,
+    )
+    last_operation_journal_id = fields.Many2one(
+        comodel_name="account.journal",
+        related="last_operation_id.journal_id",
+        string="Diario Destino",
+        readonly=True,
+    )
+
     date = fields.Date(related="first_operation.date")
     memo = fields.Char(related="payment_id.memo")
+
     company_id = fields.Many2one(
         compute="_compute_company_id", store=True, compute_sudo=True, comodel_name="res.company"
     )
@@ -22,6 +70,22 @@ class l10nLatamAccountPaymentCheck(models.Model):
         related="payment_id.state",
         readonly=True,
     )
+
+    @api.depends(
+        "operation_ids.state",
+        "operation_ids.l10n_latam_move_check_ids_operation_date",
+        "payment_id.state",
+        "payment_id.l10n_latam_move_check_ids_operation_date",
+    )
+    def _compute_last_operation_id(self):
+        for rec in self:
+            ops = (rec.payment_id + rec.operation_ids).filtered(lambda p: p.state not in ["draft", "canceled"])
+            ops_with_date = ops.filtered(lambda p: p.l10n_latam_move_check_ids_operation_date)
+            if ops_with_date:
+                last = ops_with_date.sorted(key=lambda p: (p.l10n_latam_move_check_ids_operation_date, p.id))[-1:]
+            else:
+                last = ops.sorted(key=lambda p: (p.date, p.id))[-1:] if ops else self.env["account.payment"]
+            rec.last_operation_id = last[:1].id if last else False
 
     @api.depends("operation_ids.state", "payment_id.state")
     def _compute_company_id(self):
@@ -65,6 +129,56 @@ class l10nLatamAccountPaymentCheck(models.Model):
             .filtered(lambda x: x.state not in ["draft", "canceled"] and x.l10n_latam_move_check_ids_operation_date)
             .sorted(key=lambda payment: (payment.l10n_latam_move_check_ids_operation_date))[-1:]
         )
+
+    # -------------------------------------------------------------------------
+    # Acciones para navegar desde el listado (type="object")
+    # -------------------------------------------------------------------------
+    def _action_open_form(self, res_model, res_id):
+        return {
+            "type": "ir.actions.act_window",
+            "res_model": res_model,
+            "res_id": res_id,
+            "views": [(False, "form")],
+            "target": "current",
+        }
+
+    def action_open_check_form(self):
+        self.ensure_one()
+        return self._action_open_form("l10n_latam.check", self.id)
+
+    # Compat (v2)
+    def action_open_payment(self):
+        self.ensure_one()
+        if not self.payment_id:
+            return False
+        return self._action_open_form("account.payment", self.payment_id.id)
+
+    def action_open_payment_move(self):
+        self.ensure_one()
+        move = self.payment_id.move_id
+        if not move:
+            return self.action_open_payment()
+        return self._action_open_form("account.move", move.id)
+
+    # Nombres nuevos (v3)
+    def action_open_origin_payment(self):
+        return self.action_open_payment()
+
+    def action_open_origin_move(self):
+        return self.action_open_payment_move()
+
+    def action_open_destination_payment(self):
+        self.ensure_one()
+        if self.last_operation_id:
+            return self._action_open_form("account.payment", self.last_operation_id.id)
+        return self.action_open_payment()
+
+    def action_open_destination_move(self):
+        self.ensure_one()
+        move = self.last_operation_move_id
+        if move:
+            return self._action_open_form("account.move", move.id)
+        return self.action_open_destination_payment()
 
     @api.depends("payment_method_line_id.code", "payment_id.partner_id")
     def _compute_bank_id(self):
