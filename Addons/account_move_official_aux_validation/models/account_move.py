@@ -10,8 +10,6 @@ class AccountMove(models.Model):
         - Si move_type != 'entry' => NO es manual.
         - Si es 'entry' y está vinculado a un documento/origen típico (payment, stock, asset, etc.) => NO es manual.
         - Caso contrario => manual.
-
-        Nota: usamos getattr/fields para no depender de módulos opcionales.
         """
         self.ensure_one()
 
@@ -57,20 +55,46 @@ class AccountMove(models.Model):
                 return True
         return False
 
-    @api.onchange("move_type", "line_ids")
-    def _onchange_manual_accounts_incongruence_warning(self):
-        # WARNING no bloqueante (UI). Solo para asientos manuales.
+    def _incongruence_warning_payload(self):
+        return {
+            "title": _("Incongruencia de cuentas"),
+            "message": _(
+                "Este asiento manual mezcla cuentas con código 1–5 con cuentas 6–9.\n"
+                "Es recomendable no realizarlo."
+            ),
+        }
+
+    def action_post(self):
+        """No bloquea. Solo notifica (toast) al postear si corresponde."""
+        res = super().action_post()
+        # Toast no bloqueante: garantiza aviso incluso si no se disparó onchange.
         for move in self:
+            if move._is_manual_journal_entry() and move._has_mix_1_5_and_6_9():
+                payload = move._incongruence_warning_payload()
+                # sticky=True para que quede visible hasta que el usuario lo cierre
+                move.env.user.notify_warning(
+                    title=payload["title"],
+                    message=payload["message"],
+                    sticky=True,
+                )
+                break
+        return res
+
+
+class AccountMoveLine(models.Model):
+    _inherit = "account.move.line"
+
+    @api.onchange("account_id", "debit", "credit")
+    def _onchange_mix_accounts_warning(self):
+        """WARNING (popup) mientras se edita el asiento manual."""
+        for line in self:
+            move = line.move_id
+            if not move:
+                continue
+            # Solo manual
             if not move._is_manual_journal_entry():
                 continue
             if move._has_mix_1_5_and_6_9():
-                return {
-                    "warning": {
-                        "title": _("Incongruencia de cuentas"),
-                        "message": _(
-                            "Este asiento manual mezcla cuentas con código 1–5 con cuentas 6–9.\n"
-                            "Es recomendable no realizarlo."
-                        ),
-                    }
-                }
+                payload = move._incongruence_warning_payload()
+                return {"warning": payload}
         return {}
