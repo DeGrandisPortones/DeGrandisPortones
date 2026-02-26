@@ -10,6 +10,8 @@ class AccountMove(models.Model):
         - Si move_type != 'entry' => NO es manual.
         - Si es 'entry' y está vinculado a un documento/origen típico (payment, stock, asset, etc.) => NO es manual.
         - Caso contrario => manual.
+
+        Nota: usamos getattr/fields para no depender de módulos opcionales.
         """
         self.ensure_one()
 
@@ -55,7 +57,7 @@ class AccountMove(models.Model):
                 return True
         return False
 
-    def _incongruence_warning_payload(self):
+    def _mix_warning_dict(self):
         return {
             "title": _("Incongruencia de cuentas"),
             "message": _(
@@ -65,19 +67,24 @@ class AccountMove(models.Model):
         }
 
     def action_post(self):
-        """No bloquea. Solo notifica (toast) al postear si corresponde."""
+        """NO bloquea. Postea normalmente y, si corresponde, muestra notificación en UI."""
         res = super().action_post()
-        # Toast no bloqueante: garantiza aviso incluso si no se disparó onchange.
+
+        # Mostramos la notificación como acción cliente para garantizar que se vea al postear.
         for move in self:
             if move._is_manual_journal_entry() and move._has_mix_1_5_and_6_9():
-                payload = move._incongruence_warning_payload()
-                # sticky=True para que quede visible hasta que el usuario lo cierre
-                move.env.user.notify_warning(
-                    title=payload["title"],
-                    message=payload["message"],
-                    sticky=True,
-                )
-                break
+                payload = move._mix_warning_dict()
+                return {
+                    "type": "ir.actions.client",
+                    "tag": "display_notification",
+                    "params": {
+                        "title": payload["title"],
+                        "message": payload["message"],
+                        "type": "warning",
+                        "sticky": True,
+                    },
+                }
+
         return res
 
 
@@ -86,15 +93,13 @@ class AccountMoveLine(models.Model):
 
     @api.onchange("account_id", "debit", "credit")
     def _onchange_mix_accounts_warning(self):
-        """WARNING (popup) mientras se edita el asiento manual."""
+        """Warning no bloqueante mientras se edita el asiento (en borrador)."""
         for line in self:
             move = line.move_id
             if not move:
                 continue
-            # Solo manual
             if not move._is_manual_journal_entry():
                 continue
             if move._has_mix_1_5_and_6_9():
-                payload = move._incongruence_warning_payload()
-                return {"warning": payload}
+                return {"warning": move._mix_warning_dict()}
         return {}
