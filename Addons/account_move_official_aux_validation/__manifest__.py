@@ -1,17 +1,14 @@
 {
     "name": "Account Move Official vs Auxiliary Accounts Validation",
-    "summary": "Bloquea asientos automáticos que mezclen cuentas 1-4 con 5-7 (con confirmación)",
+    "summary": "Muestra una advertencia en asientos manuales si mezclan cuentas 1-5 con 6-9",
     "version": "18.0.1.1.0",
     "category": "Accounting",
     "license": "LGPL-3",
     "author": "Dflex Argentina SAS",
     "depends": [
-        "account",
+        "account"
     ],
-    "data": [
-        "security/ir.model.access.csv",
-        "views/official_aux_validation_confirm_wizard_view.xml",
-    ],
+    "data": [],
     "installable": True,
-    "application": False,
+    "application": False
 }
