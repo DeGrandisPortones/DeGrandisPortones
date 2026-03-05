@@ -88,7 +88,9 @@ class DistributorApiController(http.Controller):
             tag = Category.search([("name", "=", tag_name)], limit=1)
             if not tag:
                 # tolerancia: "Distribuidor 2"
-                tag = Category.search([("name", "=", f"Distribuidor {odoo_distributor_id}")], limit=1)
+                tag = Category.search(
+                    [("name", "=", f"Distribuidor {odoo_distributor_id}")], limit=1
+                )
 
         if not tag:
             return None, self._json_response(
@@ -498,7 +500,15 @@ class DistributorApiController(http.Controller):
                     price = item.fixed_price or price
 
                 order_lines.append(
-                    (0, 0, {"product_id": product.id, "product_uom_qty": qty, "price_unit": price})
+                    (
+                        0,
+                        0,
+                        {
+                            "product_id": product.id,
+                            "product_uom_qty": qty,
+                            "price_unit": price,
+                        },
+                    )
                 )
 
             if not order_lines:
@@ -510,15 +520,25 @@ class DistributorApiController(http.Controller):
                     status=400,
                 )
 
-            order = SaleOrder.create(
-                {
-                    "partner_id": distributor.id,
-                    "company_id": company.id,
-                    "pricelist_id": vip_pricelist.id,
-                    "note": internal_note,
-                    "order_line": order_lines,
-                }
-            )
+            # ================================================================
+            # Notas internas / comentarios del distribuidor
+            # - En Vert deben ir a la Studio field del sale.order: x_studio_notas_internas_1
+            # - Si en alguna DB no existe, hacemos fallback a sale.order.note (comportamiento anterior)
+            # ================================================================
+            order_vals = {
+                "partner_id": distributor.id,
+                "company_id": company.id,
+                "pricelist_id": vip_pricelist.id,
+                "order_line": order_lines,
+            }
+
+            if internal_note:
+                if "x_studio_notas_internas_1" in SaleOrder._fields:
+                    order_vals["x_studio_notas_internas_1"] = internal_note
+                else:
+                    order_vals["note"] = internal_note
+
+            order = SaleOrder.create(order_vals)
 
             return self._json_response(
                 {"success": True, "order_id": order.id, "name": order.name},
