@@ -1,12 +1,20 @@
-# Part of Odoo. See LICENSE file for full copyright and licensing details.
+# -*- coding: utf-8 -*-
 {
-    "name": "Invoice Tax Totals Persist (Date & Partner)",
+    "name": "Dflex - Financiamiento Taca Taca (Recargo por Cuotas)",
     "version": "18.0.1.1.0",
-    "category": "Accounting/Accounting",
-    "summary": "Preserve manually adjusted tax totals when changing date or partner in draft",
-    "depends": ["account"],
-    "data": [],
+    "category": "Sales/Sales",
+    "summary": "Aplica recargo por cuotas y permite emitir una comparativa de financiación en PDF.",
+    "author": "Dflex Argentina SAS",
     "license": "LGPL-3",
+    "depends": ["sale"],
+    "data": [
+        "data/ir_config_parameter.xml",
+        "security/ir.model.access.csv",
+        "data/financing_data.xml",
+        "views/sale_financing_views.xml",
+        "views/sale_order_views.xml",
+        "reports/report_saleorder_financing_comparison.xml",
+    ],
     "application": False,
     "installable": True,
 }
