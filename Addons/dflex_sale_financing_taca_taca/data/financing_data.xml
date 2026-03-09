@@ -6,7 +6,6 @@
         <field name="active">True</field>
     </record>
 
-    <!-- Tarjeta Cordobesa -->
     <record id="rate_taca_taca_cordobesa_4" model="sale.financing.rate">
         <field name="plan_id" ref="financing_plan_taca_taca"/>
         <field name="card_type">cordobesa</field>
@@ -43,7 +42,6 @@
         <field name="active">True</field>
     </record>
 
-    <!-- Tarjeta Naranja -->
     <record id="rate_taca_taca_naranja_3" model="sale.financing.rate">
         <field name="plan_id" ref="financing_plan_taca_taca"/>
         <field name="card_type">naranja</field>
@@ -66,7 +64,6 @@
         <field name="active">True</field>
     </record>
 
-    <!-- Otras tarjetas bancarizadas -->
     <record id="rate_taca_taca_otras_3" model="sale.financing.rate">
         <field name="plan_id" ref="financing_plan_taca_taca"/>
         <field name="card_type">otras</field>

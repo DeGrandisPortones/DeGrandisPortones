@@ -5,23 +5,72 @@
         <field name="model">sale.order</field>
         <field name="inherit_id" ref="sale.view_order_form"/>
         <field name="arch" type="xml">
-                        <xpath expr="//group[@name='order_details']//div[@class='o_row'][field[@name='pricelist_id']]" position="after">
-                <newline/>
-                <group invisible="not financing_allowed" colspan="2" col="2">
+            <xpath expr="//group[@name='order_details']//field[@name='pricelist_id']" position="attributes">
+                <attribute name="class" add="o_dflex_pricelist_fix" separator=" "/>
+            </xpath>
+
+            <xpath expr="//group[@name='order_details']" position="after">
+                <group string="Financiación" invisible="not financing_allowed">
                     <field name="financing_allowed" invisible="1"/>
-                    <separator string="Financiación"/>
                     <field name="financing_plan_id" options="{'no_create': False}"/>
                     <field name="financing_card_type"
-                           invisible="not financing_plan_id" required="financing_plan_id"/>
+                           invisible="not financing_plan_id"
+                           required="financing_plan_id"/>
                     <field name="financing_rate_id"
-                           invisible="not financing_card_type" required="financing_card_type"
-                           domain="[('active','=',True), ('plan_id','=',financing_plan_id), ('card_type','=',financing_card_type)]"/>
+                           invisible="not financing_card_type"
+                           required="financing_card_type"
+                           domain="[('active','=',True), ('plan_id','=',financing_plan_id), ('card_type','=',financing_card_type)]"
+                           options="{'no_create': True, 'no_open': True}"/>
                     <field name="financing_rate_percent" invisible="not financing_rate_id"/>
                 </group>
             </xpath>
 
-            <!-- Mostrar precio base opcional en líneas -->
-            <xpath expr="//field[@name='order_line']//field[@name='price_unit'][ancestor::tree or ancestor::list]" position="after">
+            <xpath expr="//notebook[1]" position="inside">
+                <page string="Comparativa financiación" invisible="not financing_allowed">
+                    <group>
+                        <group>
+                            <button name="action_sync_financing_comparison_lines"
+                                    type="object"
+                                    string="Recargar opciones del plan"
+                                    class="oe_highlight"
+                                    invisible="not financing_plan_id"/>
+                        </group>
+                    </group>
+                    <field name="financing_comparison_line_ids"
+                           nolabel="1"
+                           context="{'default_plan_id': financing_plan_id}">
+                        <list editable="bottom">
+                            <field name="sequence" widget="handle"/>
+                            <field name="include_in_report"/>
+                            <field name="plan_id" options="{'no_create': False}"/>
+                            <field name="card_type"/>
+                            <field name="rate_id"
+                                   domain="[('active','=',True), ('plan_id','=',plan_id), ('card_type','=',card_type)]"
+                                   options="{'no_create': True, 'no_open': True}"/>
+                            <field name="rate_percent" string="Recargo %" readonly="1"/>
+                            <field name="installments" string="Cuotas" readonly="1"/>
+                            <field name="currency_id" column_invisible="True"/>
+                            <field name="base_total"
+                                   string="Total contado"
+                                   widget="monetary"
+                                   options="{'currency_field': 'currency_id'}"
+                                   readonly="1"/>
+                            <field name="financed_total"
+                                   string="Total financiado"
+                                   widget="monetary"
+                                   options="{'currency_field': 'currency_id'}"
+                                   readonly="1"/>
+                            <field name="installment_amount"
+                                   string="Valor cuota"
+                                   widget="monetary"
+                                   options="{'currency_field': 'currency_id'}"
+                                   readonly="1"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+
+            <xpath expr="//field[@name='order_line']//field[@name='price_unit'][ancestor::list]" position="after">
                 <field name="financing_base_price_unit" optional="hide"/>
             </xpath>
         </field>

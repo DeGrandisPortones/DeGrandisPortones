@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Plans -->
     <record id="view_sale_financing_plan_li" model="ir.ui.view">
         <field name="name">sale.financing.plan.li</field>
         <field name="model">sale.financing.plan</field>

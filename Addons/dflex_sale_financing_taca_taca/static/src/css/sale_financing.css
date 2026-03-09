@@ -1,0 +1,13 @@
+.o_form_view .o_field_widget.o_dflex_pricelist_fix,
+.o_form_view .o_field_widget[name="pricelist_id"],
+.o_form_view .o_field_widget[name="pricelist_id"] .o_input_dropdown,
+.o_form_view .o_field_widget[name="pricelist_id"] .o_input,
+.o_form_view .o_field_widget[name="pricelist_id"] input,
+.o_form_view .o_field_widget[name="pricelist_id"] .o-autocomplete--input {
+    min-width: 260px !important;
+    width: 100% !important;
+}
+
+.o_form_view .o_group .o_field_widget[name="pricelist_id"] {
+    flex: 1 1 260px !important;
+}
