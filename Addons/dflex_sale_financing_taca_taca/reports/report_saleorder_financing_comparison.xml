@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_report_saleorder_financing_comparison" model="ir.actions.report">
+        <field name="name">Comparativa financiación</field>
+        <field name="model">sale.order</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">dflex_sale_financing_taca_taca.report_saleorder_financing_comparison</field>
+        <field name="report_file">dflex_sale_financing_taca_taca.report_saleorder_financing_comparison</field>
+        <field name="binding_model_id" ref="sale.model_sale_order"/>
+        <field name="binding_type">report</field>
+        <field name="print_report_name">'Comparativa financiación - %s' % (object.name or 'Presupuesto')</field>
+    </record>
+
+    <template id="report_saleorder_financing_comparison">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="web.external_layout">
+                    <t t-set="comparison_lines" t-value="o._get_financing_comparison_report_lines()"/>
+                    <t t-set="base_amounts" t-value="o._get_financing_amounts_for_rate_percent(0.0)"/>
+                    <t t-set="options_count" t-value="len(comparison_lines)"/>
+                    <div class="page">
+                        <style>
+                            .tt-hero {
+                                border: 1px solid #d9dee5;
+                                border-radius: 14px;
+                                overflow: hidden;
+                                margin-bottom: 18px;
+                            }
+                            .tt-hero-head {
+                                background: #f4f6f8;
+                                padding: 18px 22px;
+                                border-bottom: 1px solid #d9dee5;
+                            }
+                            .tt-hero-title {
+                                font-size: 24px;
+                                font-weight: 700;
+                                margin: 0;
+                                color: #243447;
+                            }
+                            .tt-hero-subtitle {
+                                font-size: 11px;
+                                color: #5b6770;
+                                margin-top: 6px;
+                            }
+                            .tt-hero-body {
+                                padding: 18px 22px 10px 22px;
+                            }
+                            .tt-meta-label {
+                                font-size: 10px;
+                                text-transform: uppercase;
+                                letter-spacing: 0.04em;
+                                color: #6b7280;
+                                margin-bottom: 4px;
+                            }
+                            .tt-meta-value {
+                                font-size: 13px;
+                                color: #1f2937;
+                                margin-bottom: 12px;
+                            }
+                            .tt-summary-wrap {
+                                margin: 16px 0 18px 0;
+                            }
+                            .tt-summary-card {
+                                border: 1px solid #d9dee5;
+                                border-radius: 12px;
+                                padding: 14px 16px;
+                                min-height: 74px;
+                                background: #fff;
+                            }
+                            .tt-summary-label {
+                                font-size: 10px;
+                                text-transform: uppercase;
+                                letter-spacing: 0.04em;
+                                color: #6b7280;
+                                margin-bottom: 8px;
+                            }
+                            .tt-summary-value {
+                                font-size: 18px;
+                                font-weight: 700;
+                                color: #243447;
+                                line-height: 1.2;
+                            }
+                            .tt-section-title {
+                                font-size: 14px;
+                                font-weight: 700;
+                                color: #243447;
+                                margin: 18px 0 10px 0;
+                            }
+                            table.tt-table {
+                                width: 100%;
+                                border-collapse: separate;
+                                border-spacing: 0;
+                                font-size: 12px;
+                                border: 1px solid #d9dee5;
+                                border-radius: 12px;
+                                overflow: hidden;
+                            }
+                            .tt-table thead th {
+                                background: #f4f6f8;
+                                color: #243447;
+                                font-weight: 700;
+                                border-bottom: 1px solid #d9dee5;
+                                padding: 10px 12px;
+                            }
+                            .tt-table tbody td {
+                                padding: 10px 12px;
+                                border-bottom: 1px solid #eef1f4;
+                                color: #1f2937;
+                                vertical-align: middle;
+                            }
+                            .tt-table tbody tr:last-child td {
+                                border-bottom: none;
+                            }
+                            .tt-table tbody tr:nth-child(even) {
+                                background: #fafbfc;
+                            }
+                            .tt-text-end {
+                                text-align: right;
+                            }
+                            .tt-muted {
+                                color: #6b7280;
+                            }
+                            .tt-note {
+                                margin-top: 12px;
+                                font-size: 11px;
+                                color: #6b7280;
+                            }
+                        </style>
+
+                        <div class="tt-hero">
+                            <div class="tt-hero-head">
+                                <h2 class="tt-hero-title">Comparativa de financiación</h2>
+                                <div class="tt-hero-subtitle">
+                                    Resumen de alternativas de pago para compartir con el cliente.
+                                </div>
+                            </div>
+                            <div class="tt-hero-body">
+                                <div class="row">
+                                    <div class="col-6">
+                                        <div class="tt-meta-label">Cliente</div>
+                                        <div class="tt-meta-value">
+                                            <span t-field="o.partner_id.commercial_partner_id.name"/>
+                                        </div>
+
+                                        <div class="tt-meta-label">Presupuesto</div>
+                                        <div class="tt-meta-value">
+                                            <span t-out="o.name or 'Nuevo'"/>
+                                        </div>
+
+                                        <div class="tt-meta-label">Lista de precios</div>
+                                        <div class="tt-meta-value">
+                                            <span t-field="o.pricelist_id"/>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="tt-meta-label">Fecha</div>
+                                        <div class="tt-meta-value">
+                                            <span t-field="o.date_order"/>
+                                        </div>
+
+                                        <div class="tt-meta-label">Vendedor</div>
+                                        <div class="tt-meta-value">
+                                            <span t-field="o.user_id"/>
+                                        </div>
+
+                                        <div class="tt-meta-label">Moneda</div>
+                                        <div class="tt-meta-value">
+                                            <span t-field="o.currency_id"/>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row tt-summary-wrap">
+                                    <div class="col-4">
+                                        <div class="tt-summary-card">
+                                            <div class="tt-summary-label">Total contado</div>
+                                            <div class="tt-summary-value">
+                                                <span t-out="base_amounts['total']" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="tt-summary-card">
+                                            <div class="tt-summary-label">Opciones a imprimir</div>
+                                            <div class="tt-summary-value">
+                                                <span t-out="options_count"/>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="tt-summary-card">
+                                            <div class="tt-summary-label">Medio de pago</div>
+                                            <div class="tt-summary-value" style="font-size: 16px;">
+                                                Tarjeta
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tt-section-title">Alternativas de pago</div>
+                        <table class="tt-table">
+                            <thead>
+                                <tr>
+                                    <th>Medio de pago</th>
+                                    <th>Tarjeta</th>
+                                    <th class="tt-text-end">Cuotas</th>
+                                    <th class="tt-text-end">Recargo</th>
+                                    <th class="tt-text-end">Total financiado</th>
+                                    <th class="tt-text-end">Valor por cuota</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr t-if="not comparison_lines">
+                                    <td colspan="6" class="tt-muted" style="text-align: center; padding: 18px;">
+                                        No hay opciones marcadas para imprimir en la comparativa.
+                                    </td>
+                                </tr>
+                                <tr t-foreach="comparison_lines" t-as="line">
+                                    <td>Tarjeta</td>
+                                    <td>
+                                        <span t-out="line.card_type_label"/>
+                                    </td>
+                                    <td class="tt-text-end">
+                                        <span t-out="line.installments"/>
+                                    </td>
+                                    <td class="tt-text-end">
+                                        <span t-out="'%.2f' % (line.rate_percent or 0.0)"/>%
+                                    </td>
+                                    <td class="tt-text-end">
+                                        <span t-out="line.financed_total" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
+                                    </td>
+                                    <td class="tt-text-end">
+                                        <span t-out="line.installment_amount" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <div class="tt-note">
+                            Valores estimados sobre la cotización actual. Los importes pueden variar si cambia la lista de precios,
+                            los impuestos, los productos o el plan seleccionado.
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

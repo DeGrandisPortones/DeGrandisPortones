@@ -1,3 +1,4 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_sale_financing_plan_user,sale.financing.plan user,model_sale_financing_plan,,1,1,1,1
-access_sale_financing_rate_user,sale.financing.rate user,model_sale_financing_rate,,1,1,1,1
+access_sale_financing_plan_user,sale.financing.plan user,model_sale_financing_plan,sales_team.group_sale_salesman,1,1,1,1
+access_sale_financing_rate_user,sale.financing.rate user,model_sale_financing_rate,sales_team.group_sale_salesman,1,1,1,1
+access_sale_order_financing_option_user,sale.order.financing.option user,model_sale_order_financing_option,sales_team.group_sale_salesman,1,1,1,1

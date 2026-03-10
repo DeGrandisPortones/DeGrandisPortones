@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_report_saleorder_financing_comparison" model="ir.actions.report">
+        <field name="name">Comparativa financiación</field>
+        <field name="model">sale.order</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">dflex_sale_financing_taca_taca.report_saleorder_financing_comparison</field>
+        <field name="report_file">dflex_sale_financing_taca_taca.report_saleorder_financing_comparison</field>
+        <field name="binding_model_id" ref="sale.model_sale_order"/>
+        <field name="binding_type">report</field>
+        <field name="print_report_name">'Comparativa financiación - %s' % (object.name or 'Presupuesto')</field>
+    </record>
+
+    <template id="report_saleorder_financing_comparison">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="web.external_layout">
+                    <t t-set="comparison_lines" t-value="o._get_financing_comparison_report_lines()"/>
+                    <t t-set="base_amounts" t-value="o._get_financing_amounts_for_rate_percent(0.0)"/>
+                    <div class="page">
+                        <h2>Comparativa de financiación</h2>
+
+                        <div class="row mt16 mb16">
+                            <div class="col-6">
+                                <strong>Presupuesto:</strong>
+                                <span t-out="o.name or 'Nuevo'"/>
+                                <br/>
+                                <strong>Cliente:</strong>
+                                <span t-field="o.partner_id.commercial_partner_id.name"/>
+                                <br/>
+                                <strong>Fecha:</strong>
+                                <span t-field="o.date_order"/>
+                            </div>
+                            <div class="col-6">
+                                <t t-if="o.user_id">
+                                    <strong>Vendedor:</strong>
+                                    <span t-field="o.user_id"/>
+                                    <br/>
+                                </t>
+                                <strong>Lista de precios:</strong>
+                                <span t-field="o.pricelist_id"/>
+                                <br/>
+                                <strong>Total contado:</strong>
+                                <span t-out="base_amounts['total']"
+                                      t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
+                            </div>
+                        </div>
+
+                        <table class="table table-sm o_main_table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Plan</th>
+                                    <th>Tarjeta</th>
+                                    <th class="text-end">Cuotas</th>
+                                    <th class="text-end">Recargo</th>
+                                    <th class="text-end">Total contado</th>
+                                    <th class="text-end">Total financiado</th>
+                                    <th class="text-end">Valor por cuota</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr t-if="not comparison_lines">
+                                    <td colspan="7" class="text-center">
+                                        No hay opciones marcadas para imprimir en la comparativa.
+                                    </td>
+                                </tr>
+                                <tr t-foreach="comparison_lines" t-as="line">
+                                    <td>
+                                        <span t-field="line.plan_id"/>
+                                    </td>
+                                    <td>
+                                        <span t-out="line.card_type_label"/>
+                                    </td>
+                                    <td class="text-end">
+                                        <span t-out="line.installments"/>
+                                    </td>
+                                    <td class="text-end">
+                                        <span t-out="'%.2f%%' % (line.rate_percent or 0.0)"/>
+                                    </td>
+                                    <td class="text-end">
+                                        <span t-out="line.base_total"
+                                              t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
+                                    </td>
+                                    <td class="text-end">
+                                        <span t-out="line.financed_total"
+                                              t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
+                                    </td>
+                                    <td class="text-end">
+                                        <span t-out="line.installment_amount"
+                                              t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>
