@@ -5,16 +5,13 @@
         <field name="model">sale.order</field>
         <field name="inherit_id" ref="sale.view_order_form"/>
         <field name="arch" type="xml">
-            <xpath expr="//group[@name='order_details']//field[@name='pricelist_id']" position="attributes">
-                <attribute name="class" add="o_dflex_pricelist_fix" separator=" "/>
-            </xpath>
 
             <xpath expr="//group[@name='order_details']" position="after">
                 <group string="Financiación" invisible="not financing_allowed">
                     <field name="financing_allowed" invisible="1"/>
                     <field name="financing_plan_id" options="{'no_create': False}"/>
                     <field name="financing_card_type"
-                           invisible="not financing_plan_id"
+                          
                            required="financing_plan_id"/>
                     <field name="financing_rate_id"
                            invisible="not financing_card_type"
@@ -33,7 +30,7 @@
                                     type="object"
                                     string="Recargar opciones del plan"
                                     class="oe_highlight"
-                                    invisible="not financing_plan_id"/>
+                                   />
                         </group>
                     </group>
                     <field name="financing_comparison_line_ids"

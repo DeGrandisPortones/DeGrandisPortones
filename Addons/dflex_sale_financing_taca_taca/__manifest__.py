@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Dflex - Financiamiento Taca Taca (Recargo por Cuotas)",
-    "version": "18.0.1.1.1",
+    "version": "18.0.1.1.2",
     "category": "Sales/Sales",
     "summary": "Aplica recargo por cuotas y permite emitir una comparativa de financiación en PDF.",
     "author": "Dflex Argentina SAS",
@@ -15,11 +15,6 @@
         "views/sale_order_views.xml",
         "reports/report_saleorder_financing_comparison.xml",
     ],
-    "assets": {
-        "web.assets_backend": [
-            "dflex_sale_financing_taca_taca/static/src/css/sale_financing.css",
-        ],
-    },
     "application": False,
     "installable": True,
 }
