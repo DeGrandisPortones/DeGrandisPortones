@@ -189,9 +189,9 @@
                                     </div>
                                     <div class="col-4">
                                         <div class="tt-summary-card">
-                                            <div class="tt-summary-label">Plan principal</div>
+                                            <div class="tt-summary-label">Medio de pago</div>
                                             <div class="tt-summary-value" style="font-size: 16px;">
-                                                <span t-out="o.financing_plan_id.name or '-'"/>
+                                                Tarjeta
                                             </div>
                                         </div>
                                     </div>
@@ -203,25 +203,22 @@
                         <table class="tt-table">
                             <thead>
                                 <tr>
-                                    <th>Plan</th>
+                                    <th>Medio de pago</th>
                                     <th>Tarjeta</th>
                                     <th class="tt-text-end">Cuotas</th>
                                     <th class="tt-text-end">Recargo</th>
-                                    <th class="tt-text-end">Total contado</th>
                                     <th class="tt-text-end">Total financiado</th>
                                     <th class="tt-text-end">Valor por cuota</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr t-if="not comparison_lines">
-                                    <td colspan="7" class="tt-muted" style="text-align: center; padding: 18px;">
+                                    <td colspan="6" class="tt-muted" style="text-align: center; padding: 18px;">
                                         No hay opciones marcadas para imprimir en la comparativa.
                                     </td>
                                 </tr>
                                 <tr t-foreach="comparison_lines" t-as="line">
-                                    <td>
-                                        <span t-field="line.plan_id"/>
-                                    </td>
+                                    <td>Tarjeta</td>
                                     <td>
                                         <span t-out="line.card_type_label"/>
                                     </td>
@@ -230,9 +227,6 @@
                                     </td>
                                     <td class="tt-text-end">
                                         <span t-out="'%.2f' % (line.rate_percent or 0.0)"/>%
-                                    </td>
-                                    <td class="tt-text-end">
-                                        <span t-out="line.base_total" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
                                     </td>
                                     <td class="tt-text-end">
                                         <span t-out="line.financed_total" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
