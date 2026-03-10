@@ -6,31 +6,32 @@
         <field name="inherit_id" ref="sale.view_order_form"/>
         <field name="arch" type="xml">
 
-            <xpath expr="//group[@name='order_details']" position="after">
-                <group string="Financiación" invisible="not financing_allowed">
-                    <field name="financing_allowed" invisible="1"/>
-                    <field name="financing_plan_id" options="{'no_create': False}"/>
-                    <field name="financing_card_type"
-                          
-                           required="financing_plan_id"/>
-                    <field name="financing_rate_id"
-                           invisible="not financing_card_type"
-                           required="financing_card_type"
-                           domain="[('active','=',True), ('plan_id','=',financing_plan_id), ('card_type','=',financing_card_type)]"
-                           options="{'no_create': True, 'no_open': True}"/>
-                    <field name="financing_rate_percent" invisible="not financing_rate_id"/>
-                </group>
-            </xpath>
-
             <xpath expr="//notebook[1]" position="inside">
+                <page string="Financiación" invisible="not financing_allowed">
+                    <group>
+                        <field name="financing_allowed" invisible="1"/>
+                        <group>
+                            <field name="financing_plan_id" options="{'no_create': False}"/>
+                            <field name="financing_card_type"
+                                   invisible="not financing_plan_id"
+                                   required="financing_plan_id"/>
+                            <field name="financing_rate_id"
+                                   invisible="not financing_card_type"
+                                   required="financing_card_type"
+                                   domain="[('active','=',True), ('plan_id','=',financing_plan_id), ('card_type','=',financing_card_type)]"
+                                   options="{'no_create': True, 'no_open': True}"/>
+                            <field name="financing_rate_percent" invisible="not financing_rate_id"/>
+                        </group>
+                    </group>
+                </page>
+
                 <page string="Comparativa financiación" invisible="not financing_allowed">
                     <group>
                         <group>
                             <button name="action_sync_financing_comparison_lines"
                                     type="object"
                                     string="Recargar opciones del plan"
-                                    class="oe_highlight"
-                                   />
+                                    class="oe_highlight"/>
                         </group>
                     </group>
                     <field name="financing_comparison_line_ids"
@@ -40,8 +41,9 @@
                             <field name="sequence" widget="handle"/>
                             <field name="include_in_report"/>
                             <field name="plan_id" options="{'no_create': False}"/>
-                            <field name="card_type"/>
+                            <field name="card_type" string="Tarjeta"/>
                             <field name="rate_id"
+                                   string="Cuotas / opción"
                                    domain="[('active','=',True), ('plan_id','=',plan_id), ('card_type','=',card_type)]"
                                    options="{'no_create': True, 'no_open': True}"/>
                             <field name="rate_percent" string="Recargo %" readonly="1"/>
