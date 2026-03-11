@@ -76,8 +76,6 @@ class AccountMove(models.Model):
     # -------------------------------------------------------------------------
     # ORM overrides
     # -------------------------------------------------------------------------
-
-
     def write(self, vals):
         if self.env.context.get("skip_tax_totals_persist"):
             return super().write(vals)
@@ -109,7 +107,25 @@ class AccountMove(models.Model):
 
         if preserve and snapshots:
             moves = self.filtered(lambda m: m.id in snapshots)
-            for m in moves:
-                m._apply_tax_amounts_by_group(snapshots.get(m.id))
+            for move in moves:
+                move._apply_tax_amounts_by_group(snapshots.get(move.id))
+
+        return res
+
+    def button_draft(self):
+        if self.env.context.get("skip_tax_totals_persist"):
+            return super().button_draft()
+
+        moves = self.filtered(
+            lambda m: m.state == "posted"
+            and m.is_invoice(include_receipts=True)
+            and m.tax_totals
+        )
+        snapshots = {m.id: self._extract_tax_amounts_by_group(m.tax_totals) for m in moves}
+
+        res = super().button_draft()
+
+        for move in self.filtered(lambda m: m.id in snapshots and m.state == "draft"):
+            move._apply_tax_amounts_by_group(snapshots.get(move.id))
 
         return res
