@@ -1,4 +1,5 @@
-from odoo import _, api, models
+from odoo import _, models
+from odoo.exceptions import ValidationError
 
 
 class AccountMove(models.Model):
@@ -35,71 +36,42 @@ class AccountMove(models.Model):
 
         return True
 
-    def _has_mix_1_5_and_6_9(self):
-        """True si el asiento mezcla cuentas cuyo código inicia en 1-5 con cuentas 6-9."""
-        self.ensure_one()
-        g1 = set("12345")
-        g2 = set("6789")
+    def _check_official_aux_accounts_mix(self):
+        """Regla:
+        - Si el asiento NO es manual:
+          no se permite mezclar cuentas con código que empiece en 1-4 (oficiales)
+          con cuentas que empiecen en 5-7 (auxiliares).
+        """
+        official_prefixes = set("1234")
+        aux_prefixes = set("567")
 
-        has_g1 = False
-        has_g2 = False
-
-        for line in self.line_ids.filtered(lambda l: not l.display_type and l.account_id):
-            code = (line.account_id.code or "").strip()
-            if not code:
+        for move in self:
+            if move._is_manual_journal_entry():
                 continue
-            first = code[0]
-            if first in g1:
-                has_g1 = True
-            elif first in g2:
-                has_g2 = True
-            if has_g1 and has_g2:
-                return True
-        return False
 
-    def _mix_warning_dict(self):
-        return {
-            "title": _("Incongruencia de cuentas"),
-            "message": _(
-                "Este asiento manual mezcla cuentas con código 1–5 con cuentas 6–9.\n"
-                "Es recomendable no realizarlo."
-            ),
-        }
+            has_official = False
+            has_aux = False
+
+            for line in move.line_ids.filtered(lambda l: not l.display_type):
+                code = (line.account_id.code or "").strip()
+                if not code:
+                    continue
+                first = code[0]
+                if first in official_prefixes:
+                    has_official = True
+                elif first in aux_prefixes:
+                    has_aux = True
+
+                if has_official and has_aux:
+                    raise ValidationError(
+                        _(
+                            "Validación contable: no se permite mezclar cuentas oficiales (1-4) con auxiliares (5-7) "
+                            "en asientos que NO fueron creados desde 'Asientos Contables'.\n\n"
+                            "Asiento: %s\nDiario: %s"
+                        )
+                        % (move.display_name, move.journal_id.display_name)
+                    )
 
     def action_post(self):
-        """NO bloquea. Postea normalmente y, si corresponde, muestra notificación en UI."""
-        res = super().action_post()
-
-        # Mostramos la notificación como acción cliente para garantizar que se vea al postear.
-        for move in self:
-            if move._is_manual_journal_entry() and move._has_mix_1_5_and_6_9():
-                payload = move._mix_warning_dict()
-                return {
-                    "type": "ir.actions.client",
-                    "tag": "display_notification",
-                    "params": {
-                        "title": payload["title"],
-                        "message": payload["message"],
-                        "type": "warning",
-                        "sticky": True,
-                    },
-                }
-
-        return res
-
-
-class AccountMoveLine(models.Model):
-    _inherit = "account.move.line"
-
-    @api.onchange("account_id", "debit", "credit")
-    def _onchange_mix_accounts_warning(self):
-        """Warning no bloqueante mientras se edita el asiento (en borrador)."""
-        for line in self:
-            move = line.move_id
-            if not move:
-                continue
-            if not move._is_manual_journal_entry():
-                continue
-            if move._has_mix_1_5_and_6_9():
-                return {"warning": move._mix_warning_dict()}
-        return {}
+        self._check_official_aux_accounts_mix()
+        return super().action_post()
