@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="sale_report_view_tree_inherit_localidad" model="ir.ui.view">
+        <field name="name">sale.report.view.list.localidad</field>
+        <field name="model">sale.report</field>
+        <field name="inherit_id" ref="sale.sale_report_view_tree"/>
+        <field name="arch" type="xml">
+            <field name="partner_id" position="after">
+                <field name="partner_city" optional="show"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="view_order_product_search_inherit_localidad" model="ir.ui.view">
+        <field name="name">sale.report.search.localidad</field>
+        <field name="model">sale.report</field>
+        <field name="inherit_id" ref="sale.view_order_product_search"/>
+        <field name="arch" type="xml">
+            <field name="partner_id" position="after">
+                <field name="partner_city" string="Localidad"/>
+            </field>
+
+            <filter name="Customer" position="after">
+                <filter string="Localidad" name="group_by_partner_city" context="{'group_by': 'partner_city'}"/>
+            </filter>
+        </field>
+    </record>
+</odoo>
