@@ -6,8 +6,7 @@
         <field name="inherit_id" ref="sale.sale_report_view_tree"/>
         <field name="arch" type="xml">
             <field name="partner_id" position="after">
-                <field name="partner_city" string="Localidad" optional="show"/>
-                <field name="state_id" string="Provincia" optional="show"/>
+                <field name="partner_city" optional="show"/>
             </field>
         </field>
     </record>
@@ -19,12 +18,10 @@
         <field name="arch" type="xml">
             <field name="partner_id" position="after">
                 <field name="partner_city" string="Localidad"/>
-                <field name="state_id" string="Provincia"/>
             </field>
 
             <filter name="Customer" position="after">
                 <filter string="Localidad" name="group_by_partner_city" context="{'group_by': 'partner_city'}"/>
-                <filter string="Provincia" name="group_by_state_id" context="{'group_by': 'state_id'}"/>
             </filter>
         </field>
     </record>
