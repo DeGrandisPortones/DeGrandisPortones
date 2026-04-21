@@ -49,6 +49,23 @@ class ResPartner(models.Model):
     )
     last_update_padron = fields.Date()
 
+    _invoice_edit_protected_fields = {
+        "name",
+        "vat",
+        "street",
+        "street2",
+        "zip",
+        "city",
+        "state_id",
+        "country_id",
+        "phone",
+        "mobile",
+        "email",
+        "website",
+        "l10n_latam_identification_type_id",
+        "l10n_ar_afip_responsibility_type_id",
+    }
+
     @api.constrains("gross_income_jurisdiction_ids", "state_id")
     def check_gross_income_jurisdictions(self):
         for rec in self:
@@ -61,6 +78,106 @@ class ResPartner(models.Model):
                     )
                     % rec.state_id.name
                 )
+
+    def _get_invoice_edit_changed_field_labels(self, vals):
+        field_labels = []
+        for field_name in sorted(self._invoice_edit_protected_fields & set(vals.keys())):
+            field = self._fields.get(field_name)
+            if field:
+                field_labels.append(field.string or field_name)
+            else:
+                field_labels.append(field_name)
+        return field_labels
+
+    def _get_invoice_edit_blocking_move(self, commercial_partner):
+        return self.env["account.move"].sudo().search(
+            [
+                ("partner_id", "child_of", commercial_partner.id),
+                (
+                    "move_type",
+                    "in",
+                    [
+                        "out_invoice",
+                        "out_refund",
+                        "out_receipt",
+                        "in_invoice",
+                        "in_refund",
+                        "in_receipt",
+                    ],
+                ),
+                ("state", "!=", "cancel"),
+            ],
+            order="invoice_date desc, date desc, id desc",
+            limit=1,
+        )
+
+    def _get_invoice_edit_move_type_label(self, move):
+        move_type_labels = {
+            "out_invoice": _("Factura de cliente"),
+            "out_refund": _("Nota de crédito de cliente"),
+            "out_receipt": _("Recibo de cliente"),
+            "in_invoice": _("Factura de proveedor"),
+            "in_refund": _("Nota de crédito de proveedor"),
+            "in_receipt": _("Recibo de proveedor"),
+        }
+        return move_type_labels.get(move.move_type, move.move_type or "-")
+
+    def _get_invoice_edit_state_label(self, move):
+        state_labels = {
+            "draft": _("Borrador"),
+            "posted": _("Publicado"),
+            "cancel": _("Cancelado"),
+        }
+        return state_labels.get(move.state, move.state or "-")
+
+    def _raise_invoice_edit_validation(self, commercial_partner, changed_fields, blocking_move):
+        field_lines = "\n- ".join(changed_fields) if changed_fields else _("Sin detalle")
+        partner_role = (
+            _("Cliente") if blocking_move.move_type in ["out_invoice", "out_refund", "out_receipt"] else _("Proveedor")
+        )
+        move_number = blocking_move.name or blocking_move.ref or _("Sin número")
+        move_date = fields.Date.to_string(blocking_move.invoice_date or blocking_move.date) or "-"
+
+        raise ValidationError(
+            _(
+                "No podés modificar los datos del contacto '%(partner)s' porque ya tiene comprobantes asociados.\n\n"
+                "Campos que intentás modificar:\n"
+                "- %(fields)s\n\n"
+                "Comprobante detectado:\n"
+                "- Tipo: %(move_type)s\n"
+                "- Número: %(move_number)s\n"
+                "- Fecha: %(move_date)s\n"
+                "- Estado: %(move_state)s\n"
+                "- %(partner_role)s: %(commercial_partner)s"
+            )
+            % {
+                "partner": commercial_partner.display_name,
+                "fields": field_lines,
+                "move_type": self._get_invoice_edit_move_type_label(blocking_move),
+                "move_number": move_number,
+                "move_date": move_date,
+                "move_state": self._get_invoice_edit_state_label(blocking_move),
+                "partner_role": partner_role,
+                "commercial_partner": commercial_partner.display_name,
+            }
+        )
+
+    def write(self, vals):
+        if self.env.context.get("skip_partner_invoice_edit_check"):
+            return super().write(vals)
+
+        changed_fields = self._get_invoice_edit_changed_field_labels(vals)
+        if not changed_fields:
+            return super().write(vals)
+
+        if self.env.user.has_group("sales_team.group_sale_salesman"):
+            for partner in self:
+                commercial_partner = partner.commercial_partner_id
+                blocking_move = self._get_invoice_edit_blocking_move(commercial_partner)
+                if blocking_move:
+                    self._raise_invoice_edit_validation(commercial_partner, changed_fields, blocking_move)
+
+        return super().write(vals)
 
     @api.model
     def try_write_commercial(self, data):
