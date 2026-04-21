@@ -52,17 +52,6 @@ class ResPartner(models.Model):
     _invoice_edit_protected_fields = {
         "name",
         "vat",
-        "street",
-        "street2",
-        "zip",
-        "city",
-        "state_id",
-        "country_id",
-        "phone",
-        "mobile",
-        "email",
-        "website",
-        "l10n_latam_identification_type_id",
         "l10n_ar_afip_responsibility_type_id",
     }
 
