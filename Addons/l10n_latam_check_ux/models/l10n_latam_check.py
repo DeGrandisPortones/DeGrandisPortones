@@ -127,8 +127,11 @@ class l10nLatamAccountPaymentCheck(models.Model):
     )
     ux_destination_type = fields.Char(
         compute="_compute_ux_history_summary_fields",
+        store=True,
+        index=True,
         string="Estado",
         readonly=True,
+        help="Estado operativo visible del cheque: En cartera, Entregado, Depositado, Vendido o Transferido.",
     )
     ux_destination = fields.Char(
         compute="_compute_ux_history_summary_fields",
@@ -322,6 +325,9 @@ class l10nLatamAccountPaymentCheck(models.Model):
         "payment_id.payment_type",
         "payment_id.journal_id",
         "payment_id.destination_journal_id",
+        "payment_id.payment_method_line_id",
+        "payment_id.payment_method_line_id.code",
+        "payment_id.is_internal_transfer",
         "payment_id.l10n_latam_move_check_ids_operation_date",
         "payment_date",
         "issuer_vat",
@@ -330,6 +336,9 @@ class l10nLatamAccountPaymentCheck(models.Model):
         "operation_ids.payment_type",
         "operation_ids.journal_id",
         "operation_ids.destination_journal_id",
+        "operation_ids.payment_method_line_id",
+        "operation_ids.payment_method_line_id.code",
+        "operation_ids.is_internal_transfer",
         "operation_ids.partner_id",
         "operation_ids.l10n_latam_move_check_ids_operation_date",
         "last_operation_id",

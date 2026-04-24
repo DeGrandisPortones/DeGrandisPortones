@@ -57,6 +57,14 @@
         <field name="arch" type="xml">
             <xpath expr="//filter[@name='payment_date']" position="after">
                 <filter string="Last 90 days" name="last_90_days" domain="[('payment_date', '&gt;=', (context_today() - relativedelta(days=90)).strftime('%Y-%m-%d'))]" />
+                <separator/>
+                <filter string="En cartera" name="ux_destination_state_in_wallet" domain="[('ux_destination_type', '=', 'En cartera')]"/>
+                <filter string="Entregado" name="ux_destination_state_delivered" domain="[('ux_destination_type', '=', 'Entregado')]"/>
+                <filter string="Depositado" name="ux_destination_state_deposited" domain="[('ux_destination_type', '=', 'Depositado')]"/>
+                <filter string="Vendido" name="ux_destination_state_sold" domain="[('ux_destination_type', '=', 'Vendido')]"/>
+                <filter string="Transferido" name="ux_destination_state_transferred" domain="[('ux_destination_type', '=', 'Transferido')]"/>
+                <separator/>
+                <filter string="Agrupar por Estado" name="ux_destination_state_groupby" context="{'group_by': 'ux_destination_type'}"/>
             </xpath>
         </field>
     </record>
@@ -64,7 +72,7 @@
     <!-- Acción: aseguramos list+form -->
     <record id="l10n_latam_check.action_third_party_check" model="ir.actions.act_window">
         <field name="view_mode">list,form</field>
-        <field name="domain">[('payment_method_code', '=', 'new_third_party_checks'), ('payment_state', '!=', 'draft')]</field>
+        <field name="domain">[('payment_method_code', '=', 'new_third_party_checks'), ('payment_method_code', '!=', 'own_checks'), ('payment_state', '!=', 'draft')]</field>
     </record>
 
     <record id="l10n_latam_check_history_wizard_view_form" model="ir.ui.view">
