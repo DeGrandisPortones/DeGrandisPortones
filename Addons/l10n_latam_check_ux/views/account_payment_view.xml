@@ -20,4 +20,18 @@
             </xpath>
         </field>
     </record>
+
+    <!-- Campo Orden al cargar cheques nuevos en la cobranza.
+         Se ubica después del campo Studio Tipo (x_studio_tipo_cheque). -->
+    <record id="view_account_payment_form_add_check_order_type" model="ir.ui.view">
+        <field name="name">account.payment.form.add.check.order.type</field>
+        <field name="model">account.payment</field>
+        <field name="inherit_id" ref="l10n_latam_check.view_account_payment_form_inherited"/>
+        <field name="priority" eval="300"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='l10n_latam_new_check_ids']//field[@name='x_studio_tipo_cheque']" position="after">
+                <field name="ux_order_type" string="Orden" required="1" optional="show"/>
+            </xpath>
+        </field>
+    </record>
 </odoo>
