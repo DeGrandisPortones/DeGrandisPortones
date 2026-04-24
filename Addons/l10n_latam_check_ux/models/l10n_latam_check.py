@@ -180,6 +180,101 @@ class l10nLatamAccountPaymentCheck(models.Model):
             return self._action_open_form("account.move", move.id)
         return self.action_open_destination_payment()
 
+    # -------------------------------------------------------------------------
+    # Historial de cheques de terceros
+    # -------------------------------------------------------------------------
+    def _history_get_first_existing_value(self, field_names):
+        self.ensure_one()
+        for field_name in field_names:
+            if field_name in self._fields and self[field_name]:
+                return self[field_name]
+        return False
+
+    def _history_get_issue_date(self):
+        self.ensure_one()
+        return self._history_get_first_existing_value(("issue_date", "emission_date", "date")) or self.payment_id.date
+
+    def _history_get_issuer_vat(self):
+        self.ensure_one()
+        return self._history_get_first_existing_value(("issuer_vat", "owner_vat")) or ""
+
+    def _history_get_issuer_name(self):
+        self.ensure_one()
+        issuer_name = self._history_get_first_existing_value(
+            ("x_studio_emisor_nombre", "issuer_name", "owner_name")
+        )
+        if issuer_name:
+            return issuer_name
+        issuer_vat = self._history_get_issuer_vat()
+        if issuer_vat:
+            partner = self.env["res.partner"].sudo().search([("vat", "=", issuer_vat)], limit=1)
+            if partner:
+                return partner.display_name
+        return ""
+
+    def _history_get_operations(self):
+        self.ensure_one()
+        operations = (self.payment_id + self.operation_ids).filtered(lambda p: p.state not in ["draft", "canceled"])
+
+        def _sort_key(payment):
+            operation_date = payment.l10n_latam_move_check_ids_operation_date
+            if not operation_date and payment.date:
+                operation_date = fields.Datetime.to_datetime(payment.date)
+            return (operation_date or fields.Datetime.to_datetime("1970-01-01"), payment.id)
+
+        return operations.sorted(key=_sort_key)
+
+    def _history_get_payment_destination(self, payment):
+        self.ensure_one()
+        if payment == self.payment_id:
+            return _("Ingreso: %s") % (payment.journal_id.display_name or payment.display_name)
+
+        if payment.destination_journal_id:
+            return payment.destination_journal_id.display_name
+        if payment.partner_id:
+            return payment.partner_id.display_name
+        if payment.journal_id:
+            return payment.journal_id.display_name
+        return payment.display_name
+
+    def _history_prepare_line_vals(self, payment):
+        self.ensure_one()
+        origin_partner = self.payment_id.partner_id
+        operation_date = payment.l10n_latam_move_check_ids_operation_date
+        if not operation_date and payment.date:
+            operation_date = fields.Datetime.to_datetime(payment.date)
+
+        return {
+            "check_id": self.id,
+            "payment_id": payment.id,
+            "issue_date": self._history_get_issue_date(),
+            "issuer_vat": self._history_get_issuer_vat(),
+            "issuer_name": self._history_get_issuer_name(),
+            "payment_date": self.payment_date,
+            "payment_contact_name": origin_partner.display_name or "",
+            "payment_contact_vat": origin_partner.vat or "",
+            "destination": self._history_get_payment_destination(payment),
+            "destination_movement_date": operation_date,
+        }
+
+    def action_open_check_history(self):
+        self.ensure_one()
+        wizard = self.env["l10n_latam.check.history.wizard"].create(
+            {
+                "check_id": self.id,
+                "line_ids": [(0, 0, self._history_prepare_line_vals(payment)) for payment in self._history_get_operations()],
+            }
+        )
+        return {
+            "name": _("Historial del cheque"),
+            "type": "ir.actions.act_window",
+            "res_model": "l10n_latam.check.history.wizard",
+            "res_id": wizard.id,
+            "views": [(self.env.ref("l10n_latam_check_ux.l10n_latam_check_history_wizard_view_form").id, "form")],
+            "target": "current",
+            "context": {"create": False, "edit": False, "delete": False},
+        }
+
     @api.depends("payment_method_line_id.code", "payment_id.partner_id")
     def _compute_bank_id(self):
         payment_method_change = self._origin.payment_method_line_id != self.payment_method_line_id
