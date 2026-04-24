@@ -84,7 +84,7 @@
                             <field name="payment_date"/>
                             <field name="payment_contact_name"/>
                             <field name="payment_contact_vat"/>
-                            <field name="destination_type"/>
+                            <field name="destination_type" string="Estado"/>
                             <field name="destination"/>
                             <field name="destination_movement_date"/>
                             <field name="payment_id" optional="hide"/>
@@ -107,6 +107,15 @@
                 <attribute name="editable" remove="1"/>
             </xpath>
 
+            <xpath expr="//field[@name='issue_state']" position="attributes">
+                <attribute name="invisible">1</attribute>
+                <attribute name="optional">hide</attribute>
+            </xpath>
+            <xpath expr="//field[@name='bank_id']" position="attributes">
+                <attribute name="invisible">1</attribute>
+                <attribute name="optional">hide</attribute>
+            </xpath>
+
             <xpath expr="//field[@name='name']" position="after">
                 <!-- Origen -->
                 <field name="payment_id" string="Origen" optional="hide"/>
@@ -124,8 +133,8 @@
 
                 <!-- Destino / última operación -->
                 <field name="last_operation_id" string="Destino" optional="hide"/>
-                <field name="ux_check_state" string="Estado Auto" optional="show"/>
-                <field name="ux_destination_type" optional="show"/>
+                <field name="ux_check_state" string="Estado Automático" invisible="1" optional="hide"/>
+                <field name="ux_destination_type" string="Estado" optional="show"/>
                 <field name="ux_destination" optional="show"/>
                 <field name="ux_destination_movement_date" optional="show"/>
                 <field name="last_operation_partner_id" optional="hide"/>
