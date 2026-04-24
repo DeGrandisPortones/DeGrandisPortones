@@ -12,9 +12,6 @@
                         invisible="payment_method_code != 'own_checks' or issue_state != 'handed' or not check_add_debit_button"
                         type="action"/>
             </xpath>
-            <xpath expr="//field[@name='check_type']" position="after">
-                <field name="ux_order_type"/>
-            </xpath>
         </field>
     </record>
 

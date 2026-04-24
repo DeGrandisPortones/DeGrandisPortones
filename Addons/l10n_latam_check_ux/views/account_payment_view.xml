@@ -18,9 +18,6 @@
                 }
                 </attribute>
             </xpath>
-            <xpath expr="//field[@name='l10n_latam_new_check_ids']//field[@name='check_type']" position="after">
-                <field name="ux_order_type" optional="show"/>
-            </xpath>
         </field>
     </record>
 </odoo>
