@@ -84,6 +84,7 @@
                             <field name="payment_date"/>
                             <field name="payment_contact_name"/>
                             <field name="payment_contact_vat"/>
+                            <field name="destination_type"/>
                             <field name="destination"/>
                             <field name="destination_movement_date"/>
                             <field name="payment_id" optional="hide"/>
@@ -112,9 +113,21 @@
                 <!-- Compat: algunas instancias usan payment_move_id en vez de origin_move_id -->
                 <field name="payment_move_id" string="Asiento Origen" optional="hide"/>
 
+                <!-- Campos del historial disponibles en la lista -->
+                <field name="ux_history_issue_date" optional="hide"/>
+                <field name="ux_history_issuer_vat" optional="hide"/>
+                <field name="ux_history_issuer_name" optional="hide"/>
+                <field name="ux_history_payment_date" optional="hide"/>
+                <field name="ux_history_payment_contact_name" optional="hide"/>
+                <field name="ux_history_payment_contact_vat" optional="hide"/>
+                <field name="ux_order_type" optional="show"/>
+
                 <!-- Destino / última operación -->
-                <field name="last_operation_id" string="Destino" optional="show"/>
+                <field name="last_operation_id" string="Destino" optional="hide"/>
                 <field name="ux_check_state" string="Estado Auto" optional="show"/>
+                <field name="ux_destination_type" optional="show"/>
+                <field name="ux_destination" optional="show"/>
+                <field name="ux_destination_movement_date" optional="show"/>
                 <field name="last_operation_partner_id" optional="hide"/>
                 <field name="last_operation_journal_id" optional="hide"/>
                 <field name="last_operation_move_id" optional="hide"/>

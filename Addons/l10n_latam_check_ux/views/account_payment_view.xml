@@ -11,13 +11,29 @@
         <field name="model">account.payment</field>
         <field name="inherit_id" ref="l10n_latam_check.view_account_payment_form_inherited"/>
         <field name="arch" type="xml">
-        <xpath expr="//field[@name='l10n_latam_move_check_ids']" position="attributes">
-            <attribute name="context">
-            {
-                'search_default_last_90_days': payment_method_code in ['in_third_party_checks', 'out_third_party_checks', 'return_third_party_checks'],
-            }
-            </attribute>
-        </xpath>
+            <xpath expr="//field[@name='l10n_latam_move_check_ids']" position="attributes">
+                <attribute name="context">
+                {
+                    'search_default_last_90_days': payment_method_code in ['in_third_party_checks', 'out_third_party_checks', 'return_third_party_checks'],
+                }
+                </attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Campo Orden al cargar cheques nuevos en la cobranza.
+         No se engancha al campo Studio x_studio_tipo_cheque porque Studio vive en otra vista heredada
+         y ese campo no existe en la vista base durante la actualizacion del modulo.
+         Se ubica antes de Importe, que si pertenece a la vista base. Luego puede reordenarse con Studio. -->
+    <record id="view_account_payment_form_add_check_order_type" model="ir.ui.view">
+        <field name="name">account.payment.form.add.check.order.type</field>
+        <field name="model">account.payment</field>
+        <field name="inherit_id" ref="l10n_latam_check.view_account_payment_form_inherited"/>
+        <field name="priority" eval="300"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='l10n_latam_new_check_ids']//field[@name='amount']" position="before">
+                <field name="ux_order_type" string="Orden" required="1" optional="show"/>
+            </xpath>
         </field>
     </record>
 </odoo>
