@@ -114,6 +114,7 @@
 
                 <!-- Destino / última operación -->
                 <field name="last_operation_id" string="Destino" optional="show"/>
+                <field name="ux_check_state" string="Estado Auto" optional="show"/>
                 <field name="last_operation_partner_id" optional="hide"/>
                 <field name="last_operation_journal_id" optional="hide"/>
                 <field name="last_operation_move_id" optional="hide"/>
