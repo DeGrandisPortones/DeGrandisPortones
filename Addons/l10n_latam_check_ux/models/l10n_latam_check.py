@@ -71,6 +71,21 @@ class l10nLatamAccountPaymentCheck(models.Model):
         readonly=True,
     )
 
+    ux_check_state = fields.Selection(
+        selection=[
+            ("in_wallet", "En cartera"),
+            ("delivered", "Entregado"),
+            ("deposited", "Depositado"),
+            ("sold", "Vendido"),
+            ("transferred", "Transferido"),
+        ],
+        compute="_compute_ux_check_state",
+        store=True,
+        readonly=True,
+        string="Estado Auto",
+        help="Estado operativo calculado a partir de las operaciones vigentes del cheque, sin modificar el estado nativo.",
+    )
+
     @api.depends(
         "operation_ids.state",
         "operation_ids.l10n_latam_move_check_ids_operation_date",
@@ -86,6 +101,122 @@ class l10nLatamAccountPaymentCheck(models.Model):
             else:
                 last = ops.sorted(key=lambda p: (p.date, p.id))[-1:] if ops else self.env["account.payment"]
             rec.last_operation_id = last[:1].id if last else False
+
+    @api.depends(
+        "payment_id",
+        "payment_id.state",
+        "payment_id.payment_type",
+        "payment_id.is_internal_transfer",
+        "payment_id.payment_method_line_id.code",
+        "payment_id.journal_id",
+        "payment_id.destination_journal_id",
+        "payment_id.partner_id",
+        "operation_ids",
+        "operation_ids.state",
+        "operation_ids.payment_type",
+        "operation_ids.is_internal_transfer",
+        "operation_ids.payment_method_line_id.code",
+        "operation_ids.journal_id",
+        "operation_ids.destination_journal_id",
+        "operation_ids.partner_id",
+        "operation_ids.l10n_latam_move_check_ids_operation_date",
+        "last_operation_id",
+    )
+    def _compute_ux_check_state(self):
+        for rec in self:
+            operations = rec._ux_get_effective_operations()
+            if not operations:
+                rec.ux_check_state = False
+                continue
+
+            last_operation = rec.last_operation_id
+            if not last_operation:
+                last_operation = operations[-1:]
+
+            if not last_operation or last_operation == rec.payment_id or len(operations) <= 1:
+                rec.ux_check_state = "in_wallet"
+                continue
+
+            rec.ux_check_state = rec._ux_classify_operation_state(last_operation)
+
+    def _ux_get_effective_operations(self):
+        self.ensure_one()
+        operations = (self.payment_id + self.operation_ids).filtered(lambda p: p.state not in ["draft", "canceled"])
+
+        def _sort_key(payment):
+            operation_date = payment.l10n_latam_move_check_ids_operation_date
+            if not operation_date and payment.date:
+                operation_date = fields.Datetime.to_datetime(payment.date)
+            return (operation_date or fields.Datetime.to_datetime("1970-01-01"), payment.id)
+
+        return operations.sorted(key=_sort_key)
+
+    def _ux_journal_has_third_party_check_methods(self, journal):
+        if not journal:
+            return False
+        methods = journal.inbound_payment_method_line_ids + journal.outbound_payment_method_line_ids
+        return bool(
+            methods.filtered(
+                lambda method: method.code
+                in [
+                    "new_third_party_checks",
+                    "in_third_party_checks",
+                    "out_third_party_checks",
+                    "return_third_party_checks",
+                ]
+            )
+        )
+
+    def _ux_get_field_value(self, record, field_name):
+        if record and field_name in record._fields:
+            return record[field_name]
+        return False
+
+    def _ux_operation_looks_sold(self, payment):
+        sale_keywords = ("venta", "vendido", "vendida", "negoci", "descuento", "factoring")
+        text_parts = [
+            self._ux_get_field_value(payment, "name"),
+            self._ux_get_field_value(payment, "memo"),
+            self._ux_get_field_value(payment, "ref"),
+            payment.journal_id.display_name,
+            payment.destination_journal_id.display_name,
+            payment.partner_id.display_name,
+        ]
+        haystack = " ".join(str(part) for part in text_parts if part).lower()
+        return any(keyword in haystack for keyword in sale_keywords)
+
+    def _ux_classify_operation_state(self, payment):
+        self.ensure_one()
+        if not payment or payment.state in ["draft", "canceled"]:
+            return "in_wallet"
+
+        if self._ux_operation_looks_sold(payment):
+            return "sold"
+
+        method_code = payment.payment_method_line_id.code
+        if method_code == "return_third_party_checks":
+            return "delivered"
+
+        if payment.is_internal_transfer:
+            current_journal = payment.journal_id
+            destination_journal = payment.destination_journal_id
+            current_is_check_wallet = self._ux_journal_has_third_party_check_methods(current_journal)
+            destination_is_check_wallet = self._ux_journal_has_third_party_check_methods(destination_journal)
+
+            if not current_is_check_wallet and current_journal.type in ["bank", "cash"]:
+                return "deposited"
+            if not destination_is_check_wallet and destination_journal.type in ["bank", "cash"]:
+                return "deposited"
+            return "transferred"
+
+        if payment.payment_type == "outbound" or method_code == "out_third_party_checks":
+            return "delivered"
+
+        if payment.payment_type == "inbound" and payment.journal_id.type in ["bank", "cash"]:
+            if not self._ux_journal_has_third_party_check_methods(payment.journal_id):
+                return "deposited"
+
+        return "transferred"
 
     @api.depends("operation_ids.state", "payment_id.state")
     def _compute_company_id(self):
@@ -214,15 +345,7 @@ class l10nLatamAccountPaymentCheck(models.Model):
 
     def _history_get_operations(self):
         self.ensure_one()
-        operations = (self.payment_id + self.operation_ids).filtered(lambda p: p.state not in ["draft", "canceled"])
-
-        def _sort_key(payment):
-            operation_date = payment.l10n_latam_move_check_ids_operation_date
-            if not operation_date and payment.date:
-                operation_date = fields.Datetime.to_datetime(payment.date)
-            return (operation_date or fields.Datetime.to_datetime("1970-01-01"), payment.id)
-
-        return operations.sorted(key=_sort_key)
+        return self._ux_get_effective_operations()
 
     def _history_get_payment_destination(self, payment):
         self.ensure_one()
