@@ -127,7 +127,7 @@ class l10nLatamAccountPaymentCheck(models.Model):
     )
     ux_destination_type = fields.Char(
         compute="_compute_ux_history_summary_fields",
-        string="Tipo destino",
+        string="Estado",
         readonly=True,
     )
     ux_destination = fields.Char(
@@ -247,14 +247,26 @@ class l10nLatamAccountPaymentCheck(models.Model):
         haystack = " ".join(str(part) for part in text_parts if part).lower()
         return any(keyword in haystack for keyword in sale_keywords)
 
+    def _ux_get_operation_day(self, payment):
+        self.ensure_one()
+        operation_date = self._ux_get_operation_date(payment)
+        if not operation_date:
+            return False
+        if hasattr(operation_date, "date"):
+            # Use the user's/context timezone so the comparison matches the date shown in Odoo.
+            operation_date = fields.Datetime.context_timestamp(self, operation_date)
+            return operation_date.date()
+        return operation_date
+
     def _ux_operation_before_check_due(self, payment):
         self.ensure_one()
         if not payment or payment == self.payment_id or not self.payment_date:
             return False
-        operation_date = self._ux_get_operation_date(payment)
-        if not operation_date:
+        operation_day = self._ux_get_operation_day(payment)
+        if not operation_day:
             return False
-        operation_day = operation_date.date() if hasattr(operation_date, "date") else operation_date
+        # Strict comparison: only movements BEFORE the check payment/due date are treated as sold.
+        # Same-day movements are deposits/transfers/deliveries according to their operation type.
         return operation_day < self.payment_date
 
     def _ux_classify_operation_state(self, payment):

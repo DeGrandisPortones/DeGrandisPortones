@@ -46,6 +46,6 @@ class L10nLatamCheckHistoryLine(models.TransientModel):
     payment_date = fields.Date(string="Fecha de pago", readonly=True)
     payment_contact_name = fields.Char(string="Contacto que hizo el pago", readonly=True)
     payment_contact_vat = fields.Char(string="CUIT contacto pago", readonly=True)
-    destination_type = fields.Char(string="Tipo destino", readonly=True)
+    destination_type = fields.Char(string="Estado", readonly=True)
     destination = fields.Char(string="Destino del cheque", readonly=True)
     destination_movement_date = fields.Datetime(string="Fecha mov. destino", readonly=True)
