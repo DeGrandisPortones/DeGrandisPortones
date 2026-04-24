@@ -86,6 +86,61 @@ class l10nLatamAccountPaymentCheck(models.Model):
         help="Estado operativo calculado a partir de las operaciones vigentes del cheque, sin modificar el estado nativo.",
     )
 
+    ux_order_type = fields.Selection(
+        selection=[
+            ("to_order", "A la orden"),
+            ("not_to_order", "No a la orden"),
+        ],
+        string="Orden",
+        help="Indica si el cheque recibido es a la orden o no a la orden.",
+    )
+
+    ux_history_issue_date = fields.Date(
+        compute="_compute_ux_history_summary_fields",
+        string="Fecha emisi\u00f3n",
+        readonly=True,
+    )
+    ux_history_issuer_vat = fields.Char(
+        compute="_compute_ux_history_summary_fields",
+        string="CUIT emisor",
+        readonly=True,
+    )
+    ux_history_issuer_name = fields.Char(
+        compute="_compute_ux_history_summary_fields",
+        string="Raz\u00f3n social emisor",
+        readonly=True,
+    )
+    ux_history_payment_date = fields.Date(
+        compute="_compute_ux_history_summary_fields",
+        string="Fecha de pago",
+        readonly=True,
+    )
+    ux_history_payment_contact_name = fields.Char(
+        compute="_compute_ux_history_summary_fields",
+        string="Contacto que hizo el pago",
+        readonly=True,
+    )
+    ux_history_payment_contact_vat = fields.Char(
+        compute="_compute_ux_history_summary_fields",
+        string="CUIT contacto pago",
+        readonly=True,
+    )
+    ux_destination_type = fields.Char(
+        compute="_compute_ux_history_summary_fields",
+        string="Tipo destino",
+        readonly=True,
+    )
+    ux_destination = fields.Char(
+        compute="_compute_ux_history_summary_fields",
+        string="Destino del cheque",
+        readonly=True,
+    )
+    ux_destination_movement_date = fields.Datetime(
+        compute="_compute_ux_history_summary_fields",
+        string="Fecha mov. destino",
+        readonly=True,
+    )
+
     @api.depends(
         "operation_ids.state",
         "operation_ids.l10n_latam_move_check_ids_operation_date",
@@ -111,6 +166,7 @@ class l10nLatamAccountPaymentCheck(models.Model):
         "payment_id.journal_id",
         "payment_id.destination_journal_id",
         "payment_id.partner_id",
+        "payment_date",
         "operation_ids",
         "operation_ids.state",
         "operation_ids.payment_type",
@@ -139,14 +195,20 @@ class l10nLatamAccountPaymentCheck(models.Model):
 
             rec.ux_check_state = rec._ux_classify_operation_state(last_operation)
 
+    def _ux_get_operation_date(self, payment):
+        if not payment:
+            return False
+        operation_date = payment.l10n_latam_move_check_ids_operation_date
+        if not operation_date and payment.date:
+            operation_date = fields.Datetime.to_datetime(payment.date)
+        return operation_date
+
     def _ux_get_effective_operations(self):
         self.ensure_one()
         operations = (self.payment_id + self.operation_ids).filtered(lambda p: p.state not in ["draft", "canceled"])
 
         def _sort_key(payment):
-            operation_date = payment.l10n_latam_move_check_ids_operation_date
-            if not operation_date and payment.date:
-                operation_date = fields.Datetime.to_datetime(payment.date)
+            operation_date = self._ux_get_operation_date(payment)
             return (operation_date or fields.Datetime.to_datetime("1970-01-01"), payment.id)
 
         return operations.sorted(key=_sort_key)
@@ -185,12 +247,25 @@ class l10nLatamAccountPaymentCheck(models.Model):
         haystack = " ".join(str(part) for part in text_parts if part).lower()
         return any(keyword in haystack for keyword in sale_keywords)
 
+    def _ux_operation_before_check_due(self, payment):
+        self.ensure_one()
+        if not payment or payment == self.payment_id or not self.payment_date:
+            return False
+        operation_date = self._ux_get_operation_date(payment)
+        if not operation_date:
+            return False
+        operation_day = operation_date.date() if hasattr(operation_date, "date") else operation_date
+        return operation_day < self.payment_date
+
     def _ux_classify_operation_state(self, payment):
         self.ensure_one()
         if not payment or payment.state in ["draft", "canceled"]:
             return "in_wallet"
 
-        if self._ux_operation_looks_sold(payment):
+        if payment == self.payment_id:
+            return "in_wallet"
+
+        if self._ux_operation_before_check_due(payment) or self._ux_operation_looks_sold(payment):
             return "sold"
 
         method_code = payment.payment_method_line_id.code
@@ -217,6 +292,58 @@ class l10nLatamAccountPaymentCheck(models.Model):
                 return "deposited"
 
         return "transferred"
+
+    def _ux_get_state_label(self, state_key):
+        return {
+            "in_wallet": _("En cartera"),
+            "delivered": _("Entregado"),
+            "deposited": _("Depositado"),
+            "sold": _("Vendido"),
+            "transferred": _("Transferido"),
+        }.get(state_key, "")
+
+    @api.depends(
+        "payment_id",
+        "payment_id.partner_id",
+        "payment_id.date",
+        "payment_id.state",
+        "payment_id.payment_type",
+        "payment_id.journal_id",
+        "payment_id.destination_journal_id",
+        "payment_id.l10n_latam_move_check_ids_operation_date",
+        "payment_date",
+        "issuer_vat",
+        "operation_ids",
+        "operation_ids.state",
+        "operation_ids.payment_type",
+        "operation_ids.journal_id",
+        "operation_ids.destination_journal_id",
+        "operation_ids.partner_id",
+        "operation_ids.l10n_latam_move_check_ids_operation_date",
+        "last_operation_id",
+    )
+    def _compute_ux_history_summary_fields(self):
+        for rec in self:
+            operations = rec._history_get_operations()
+            destination_operation = rec.last_operation_id or operations[-1:]
+
+            rec.ux_history_issue_date = rec._history_get_issue_date()
+            rec.ux_history_issuer_vat = rec._history_get_issuer_vat()
+            rec.ux_history_issuer_name = rec._history_get_issuer_name()
+            rec.ux_history_payment_date = rec.payment_date
+
+            origin_partner = rec.payment_id.partner_id
+            rec.ux_history_payment_contact_name = origin_partner.display_name or False
+            rec.ux_history_payment_contact_vat = origin_partner.vat or False
+
+            if destination_operation:
+                rec.ux_destination_type = rec._history_get_destination_type(destination_operation)
+                rec.ux_destination = rec._history_get_payment_destination(destination_operation)
+                rec.ux_destination_movement_date = rec._ux_get_operation_date(destination_operation)
+            else:
+                rec.ux_destination_type = False
+                rec.ux_destination = False
+                rec.ux_destination_movement_date = False
 
     @api.depends("operation_ids.state", "payment_id.state")
     def _compute_company_id(self):
@@ -347,7 +474,7 @@ class l10nLatamAccountPaymentCheck(models.Model):
         self.ensure_one()
         return self._ux_get_effective_operations()
 
-    def _history_get_payment_destination(self, payment):
+    def _history_get_payment_destination_base(self, payment):
         self.ensure_one()
         if payment == self.payment_id:
             return _("Ingreso: %s") % (payment.journal_id.display_name or payment.display_name)
@@ -360,12 +487,40 @@ class l10nLatamAccountPaymentCheck(models.Model):
             return payment.journal_id.display_name
         return payment.display_name
 
+    def _history_get_sold_destination_name(self, payment):
+        self.ensure_one()
+        if not payment:
+            return False
+        journals = payment.journal_id + payment.destination_journal_id
+        for journal in journals:
+            if journal.type in ["bank", "cash"] and not self._ux_journal_has_third_party_check_methods(journal):
+                return journal.display_name
+        if payment.destination_journal_id:
+            return payment.destination_journal_id.display_name
+        if payment.journal_id:
+            return payment.journal_id.display_name
+        if payment.partner_id:
+            return payment.partner_id.display_name
+        return payment.display_name
+
+    def _history_get_payment_destination(self, payment):
+        self.ensure_one()
+        destination = self._history_get_payment_destination_base(payment)
+        if payment != self.payment_id and self._ux_classify_operation_state(payment) == "sold":
+            sold_destination = self._history_get_sold_destination_name(payment) or destination
+            return _("Vendido: %s") % sold_destination
+        return destination
+
+    def _history_get_destination_type(self, payment):
+        self.ensure_one()
+        if not payment or payment == self.payment_id:
+            return self._ux_get_state_label("in_wallet")
+        return self._ux_get_state_label(self._ux_classify_operation_state(payment))
+
     def _history_prepare_line_vals(self, payment):
         self.ensure_one()
         origin_partner = self.payment_id.partner_id
-        operation_date = payment.l10n_latam_move_check_ids_operation_date
-        if not operation_date and payment.date:
-            operation_date = fields.Datetime.to_datetime(payment.date)
+        operation_date = self._ux_get_operation_date(payment)
 
         return {
             "check_id": self.id,
@@ -376,6 +531,7 @@ class l10nLatamAccountPaymentCheck(models.Model):
             "payment_date": self.payment_date,
             "payment_contact_name": origin_partner.display_name or "",
             "payment_contact_vat": origin_partner.vat or "",
+            "destination_type": self._history_get_destination_type(payment),
             "destination": self._history_get_payment_destination(payment),
             "destination_movement_date": operation_date,
         }

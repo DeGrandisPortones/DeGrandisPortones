@@ -11,13 +11,16 @@
         <field name="model">account.payment</field>
         <field name="inherit_id" ref="l10n_latam_check.view_account_payment_form_inherited"/>
         <field name="arch" type="xml">
-        <xpath expr="//field[@name='l10n_latam_move_check_ids']" position="attributes">
-            <attribute name="context">
-            {
-                'search_default_last_90_days': payment_method_code in ['in_third_party_checks', 'out_third_party_checks', 'return_third_party_checks'],
-            }
-            </attribute>
-        </xpath>
+            <xpath expr="//field[@name='l10n_latam_move_check_ids']" position="attributes">
+                <attribute name="context">
+                {
+                    'search_default_last_90_days': payment_method_code in ['in_third_party_checks', 'out_third_party_checks', 'return_third_party_checks'],
+                }
+                </attribute>
+            </xpath>
+            <xpath expr="//field[@name='l10n_latam_new_check_ids']//field[@name='check_type']" position="after">
+                <field name="ux_order_type" optional="show"/>
+            </xpath>
         </field>
     </record>
 </odoo>
