@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
-  <!-- Extensión de Pagos: múltiples cheques propios por pago.
-       Se hereda la vista de l10n_latam_check porque allí existe la solapa nativa de cheques.
-       La vista base account.view_account_payment_form no siempre tiene notebook al momento de validar. -->
+  <!-- Reutilizamos la solapa nativa de cheques LATAM para que pasen las validaciones estándar.
+       Para Cheques propios se agrega un selector de cheques generados por DFlex. -->
 
   <record id="view_account_payment_form_dflex_checks" model="ir.ui.view">
     <field name="name">account.payment.form.dflex.checks</field>
@@ -10,37 +9,27 @@
     <field name="inherit_id" ref="l10n_latam_check.view_account_payment_form_inherited"/>
     <field name="priority" eval="450"/>
     <field name="arch" type="xml">
-      <xpath expr="//field[@name='l10n_latam_new_check_ids']/ancestor::page[1]" position="after">
-        <page name="dflex_own_check_line_ids"
-              string="Cheques propios"
-              invisible="payment_type != 'outbound' or payment_method_code != 'own_checks'">
-          <group>
-            <field name="dflex_own_check_total" readonly="1"/>
-          </group>
-          <field name="dflex_check_line_ids"
-                 nolabel="1"
-                 readonly="state != 'draft'"
-                 context="{'default_payment_id': id}">
-            <list editable="bottom">
-              <field name="company_id" column_invisible="1"/>
-              <field name="journal_id" column_invisible="1"/>
-              <field name="currency_id" column_invisible="1"/>
-              <field name="check_id"
-                     string="Número"
-                     options="{'no_create': True, 'no_open': True}"
-                     domain="[('state','=','available'), ('company_id','=',parent.company_id), ('journal_id','=',parent.journal_id)]"/>
-              <field name="check_type" readonly="1"/>
-              <field name="check_payment_date" string="Fecha del cheque"/>
-              <field name="amount" widget="monetary" sum="Total"/>
-              <field name="check_state" readonly="1" optional="hide"/>
-              <field name="note" optional="hide"/>
-            </list>
-          </field>
-        </page>
+      <xpath expr="//field[@name='l10n_latam_new_check_ids']//field[@name='amount']" position="before">
+        <field name="dflex_check_id"
+               string="Cheque disponible"
+               options="{'no_create': True, 'no_open': True}"
+               column_invisible="parent.payment_method_code != 'own_checks'"
+               domain="[('state','=','available'), ('company_id','=',parent.company_id), ('journal_id','=',parent.journal_id)]"/>
+        <field name="dflex_check_type"
+               string="Tipo propio"
+               readonly="1"
+               column_invisible="parent.payment_method_code != 'own_checks'"/>
       </xpath>
 
-      <xpath expr="//field[@name='l10n_latam_new_check_ids']/ancestor::page[1]" position="attributes">
-        <attribute name="invisible" separator=" or " add="payment_method_code == 'own_checks'"/>
+      <xpath expr="//field[@name='l10n_latam_new_check_ids']//field[@name='name']" position="attributes">
+        <attribute name="string">Número</attribute>
+      </xpath>
+
+      <xpath expr="//field[@name='l10n_latam_new_check_ids']" position="after">
+        <field name="dflex_own_check_total"
+               string="Total cheques propios"
+               readonly="1"
+               invisible="payment_method_code != 'own_checks'"/>
       </xpath>
 
       <xpath expr="//header" position="inside">
@@ -48,7 +37,7 @@
                 type="object"
                 string="Marcar cheque devuelto"
                 class="oe_highlight"
-                invisible="state == 'draft' or not dflex_check_line_ids"/>
+                invisible="state == 'draft' or payment_method_code != 'own_checks'"/>
       </xpath>
     </field>
   </record>
