@@ -62,7 +62,6 @@
                 <filter string="Entregado" name="ux_destination_state_delivered" domain="[('ux_destination_type', '=', 'Entregado')]"/>
                 <filter string="Depositado" name="ux_destination_state_deposited" domain="[('ux_destination_type', '=', 'Depositado')]"/>
                 <filter string="Vendido" name="ux_destination_state_sold" domain="[('ux_destination_type', '=', 'Vendido')]"/>
-                <filter string="Transferido" name="ux_destination_state_transferred" domain="[('ux_destination_type', '=', 'Transferido')]"/>
                 <separator/>
                 <filter string="Agrupar por Estado" name="ux_destination_state_groupby" context="{'group_by': 'ux_destination_type'}"/>
             </xpath>

@@ -77,7 +77,7 @@ class l10nLatamAccountPaymentCheck(models.Model):
             ("delivered", "Entregado"),
             ("deposited", "Depositado"),
             ("sold", "Vendido"),
-            ("transferred", "Transferido"),
+            ("transferred", "Depositado"),
         ],
         compute="_compute_ux_check_state",
         store=True,
@@ -131,7 +131,7 @@ class l10nLatamAccountPaymentCheck(models.Model):
         index=True,
         string="Estado",
         readonly=True,
-        help="Estado operativo visible del cheque: En cartera, Entregado, Depositado, Vendido o Transferido.",
+        help="Estado operativo visible del cheque: En cartera, Entregado, Depositado o Vendido.",
     )
     ux_destination = fields.Char(
         compute="_compute_ux_history_summary_fields",
@@ -297,7 +297,7 @@ class l10nLatamAccountPaymentCheck(models.Model):
                 return "deposited"
             if not destination_is_check_wallet and destination_journal.type in ["bank", "cash"]:
                 return "deposited"
-            return "transferred"
+            return "deposited"
 
         if payment.payment_type == "outbound" or method_code == "out_third_party_checks":
             return "delivered"
@@ -306,7 +306,7 @@ class l10nLatamAccountPaymentCheck(models.Model):
             if not self._ux_journal_has_third_party_check_methods(payment.journal_id):
                 return "deposited"
 
-        return "transferred"
+        return "deposited"
 
     def _ux_get_state_label(self, state_key):
         return {
@@ -314,7 +314,7 @@ class l10nLatamAccountPaymentCheck(models.Model):
             "delivered": _("Entregado"),
             "deposited": _("Depositado"),
             "sold": _("Vendido"),
-            "transferred": _("Transferido"),
+            "transferred": _("Depositado"),
         }.get(state_key, "")
 
     @api.depends(
@@ -574,6 +574,16 @@ class l10nLatamAccountPaymentCheck(models.Model):
             "target": "current",
             "context": {"create": False, "edit": False, "delete": False},
         }
+
+    @api.model
+    def _ux_force_recompute_operational_state_fields(self):
+        """Recalcula los campos UX guardados para que cambios de criterio se vean al actualizar el modulo."""
+        checks = self.search([("payment_method_code", "=", "new_third_party_checks")])
+        if checks:
+            checks._compute_last_operation_id()
+            checks._compute_ux_check_state()
+            checks._compute_ux_history_summary_fields()
+        return True
 
     @api.depends("payment_method_line_id.code", "payment_id.partner_id")
     def _compute_bank_id(self):
