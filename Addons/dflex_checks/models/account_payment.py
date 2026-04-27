@@ -6,31 +6,20 @@ from odoo.tools.float_utils import float_compare
 class AccountPayment(models.Model):
     _inherit = "account.payment"
 
-    dflex_check_line_ids = fields.One2many(
-        "dflex.payment.check.line",
-        "payment_id",
-        string="Cheques propios",
-        copy=False,
-    )
-    dflex_own_check_total = fields.Monetary(
-        string="Total cheques propios",
-        compute="_compute_dflex_own_check_total",
-        currency_field="currency_id",
-    )
-
-    # Compatibilidad con versiones anteriores del módulo que usaban un solo cheque en el encabezado.
+    # Campos legacy: se conservan para no romper vistas/datos viejos, pero el flujo nuevo
+    # usa l10n_latam_new_check_ids.dflex_check_id en la solapa nativa Cheques.
     dflex_check_id = fields.Many2one(
         "dflex.check",
         string="Cheque propio",
         domain="[(\"state\", \"=\", \"available\"), (\"company_id\", \"=\", company_id), (\"journal_id\", \"=\", journal_id)]",
-        help="Campo legado. Usar las líneas de cheques propios.",
+        help="Campo legado. Usar la solapa Cheques.",
         copy=False,
     )
     dflex_check_type = fields.Selection(related="dflex_check_id.type", string="Tipo cheque propio", readonly=True)
     dflex_check_payment_date = fields.Date(
         string="Fecha del cheque",
         copy=False,
-        help="Campo legado. Usar la fecha en la línea del cheque propio.",
+        help="Campo legado. Usar la fecha en la línea de la solapa Cheques.",
     )
     dflex_check_state = fields.Selection(
         related="dflex_check_id.state",
@@ -39,10 +28,16 @@ class AccountPayment(models.Model):
         readonly=True,
     )
 
-    @api.depends("dflex_check_line_ids.amount")
+    dflex_own_check_total = fields.Monetary(
+        string="Total cheques propios",
+        compute="_compute_dflex_own_check_total",
+        currency_field="currency_id",
+    )
+
+    @api.depends("l10n_latam_new_check_ids.amount", "l10n_latam_new_check_ids.dflex_check_id")
     def _compute_dflex_own_check_total(self):
         for payment in self:
-            payment.dflex_own_check_total = sum(payment.dflex_check_line_ids.mapped("amount"))
+            payment.dflex_own_check_total = sum(payment._dflex_get_native_own_check_lines().mapped("amount"))
 
     def _dflex_is_own_check_payment(self):
         self.ensure_one()
@@ -61,28 +56,11 @@ class AccountPayment(models.Model):
             or "own check" in method_name
         )
 
-    def _dflex_has_own_check_lines(self):
+    def _dflex_get_native_own_check_lines(self):
         self.ensure_one()
-        return bool(self.dflex_check_line_ids or self.dflex_check_id)
-
-    def _compute_l10n_latam_check_warning_msg(self):
-        """Suppress the native LATAM check amount warning for DFlex own checks.
-
-        The native LATAM warning compares the payment amount against the hidden
-        l10n_latam_new_check_ids table. For DFlex own checks, the real checks
-        are loaded in dflex_check_line_ids, so that native warning does not
-        apply. We keep the native computation for all other payment flows.
-        """
-        super_method = getattr(super(), "_compute_l10n_latam_check_warning_msg", None)
-        if super_method:
-            super_method()
-        for payment in self:
-            if (
-                "l10n_latam_check_warning_msg" in payment._fields
-                and payment._dflex_is_own_check_payment()
-                and payment._dflex_has_own_check_lines()
-            ):
-                payment.l10n_latam_check_warning_msg = False
+        if "l10n_latam_new_check_ids" not in self._fields:
+            return self.env["l10n_latam.check"]
+        return self.l10n_latam_new_check_ids.filtered("dflex_check_id")
 
     @api.onchange("payment_method_line_id", "payment_type")
     def _onchange_dflex_check_payment_method(self):
@@ -90,90 +68,54 @@ class AccountPayment(models.Model):
             if not payment._dflex_is_own_check_payment():
                 payment.dflex_check_id = False
                 payment.dflex_check_payment_date = False
-                payment.dflex_check_line_ids = [(5, 0, 0)]
-
-    @api.onchange("journal_id")
-    def _onchange_dflex_check_journal_id(self):
-        for payment in self:
-            if not payment.dflex_check_line_ids:
-                continue
-            invalid_lines = payment.dflex_check_line_ids.filtered(
-                lambda line: line.check_id and line.check_id.journal_id and line.check_id.journal_id != payment.journal_id
-            )
-            if invalid_lines:
-                payment.dflex_check_line_ids = [(2, line.id, 0) for line in invalid_lines if line.id]
-                return {
-                    "warning": {
-                        "title": _("Cheques propios quitados"),
-                        "message": _("Se quitaron cheques propios que no pertenecen al diario seleccionado."),
-                    }
-                }
 
     @api.onchange("dflex_check_id")
     def _onchange_dflex_check_id(self):
-        """Legacy compatibility: convert old single field into one line."""
+        """Compatibilidad legacy: si alguien usa el campo viejo, crea una línea nativa."""
         for payment in self:
             check = payment.dflex_check_id
             if not check:
                 continue
-            if not payment.dflex_check_line_ids.filtered(lambda line: line.check_id == check):
-                payment.dflex_check_line_ids = [
+            if "l10n_latam_new_check_ids" not in payment._fields:
+                continue
+            if not payment.l10n_latam_new_check_ids.filtered(lambda line: line.dflex_check_id == check):
+                payment.l10n_latam_new_check_ids = [
                     (0, 0, {
-                        "check_id": check.id,
-                        "check_payment_date": payment.dflex_check_payment_date or check.payment_date or payment.date,
+                        "dflex_check_id": check.id,
+                        "name": check.name,
+                        "bank_id": check.bank_id.id if check.bank_id else False,
+                        "payment_date": payment.dflex_check_payment_date or check.payment_date or payment.date,
                         "amount": payment.amount or check.amount or 0.0,
                     })
                 ]
 
-    @api.onchange("dflex_check_line_ids")
-    def _onchange_dflex_check_line_ids(self):
+    def _dflex_validate_native_own_checks_before_post(self):
         for payment in self:
-            total = sum(payment.dflex_check_line_ids.mapped("amount"))
-            if total and payment._dflex_is_own_check_payment():
-                payment.amount = total
-            if (
-                "l10n_latam_check_warning_msg" in payment._fields
-                and payment._dflex_is_own_check_payment()
-                and payment._dflex_has_own_check_lines()
-            ):
-                payment.l10n_latam_check_warning_msg = False
+            native_lines = payment._dflex_get_native_own_check_lines()
 
-    @api.constrains("dflex_check_line_ids", "company_id", "payment_type", "payment_method_line_id", "journal_id")
-    def _constrains_dflex_check_lines(self):
-        for payment in self:
-            if not payment.dflex_check_line_ids:
-                continue
-            if not payment._dflex_is_own_check_payment():
-                raise ValidationError(
-                    _("Los cheques propios de chequera solo pueden usarse en pagos salientes con método Own Checks.")
-                )
-
-    def _dflex_validate_checks_before_post(self):
-        for payment in self:
-            if payment._dflex_is_own_check_payment() and not payment.dflex_check_line_ids:
-                raise ValidationError(_("Debe cargar al menos un cheque propio para confirmar un pago con Own Checks."))
-
-            if not payment.dflex_check_line_ids:
+            if not native_lines:
+                # No bloqueamos el flujo estándar si no usan cheques generados por DFlex.
                 continue
 
             if not payment._dflex_is_own_check_payment():
-                raise ValidationError(_("Los cheques propios solo pueden usarse con el método de pago Own Checks."))
+                raise ValidationError(_("Los cheques propios DFlex solo pueden usarse con el método Cheques propios."))
 
-            checks = payment.dflex_check_line_ids.mapped("check_id")
-            if len(checks) != len(payment.dflex_check_line_ids):
-                raise ValidationError(_("Hay líneas de cheques propios sin número de cheque."))
+            checks = native_lines.mapped("dflex_check_id")
+            if len(checks) != len(native_lines):
+                raise ValidationError(_("Hay líneas sin número de cheque propio."))
             if len(checks) != len(set(checks.ids)):
                 raise ValidationError(_("No se puede repetir el mismo cheque propio en un pago."))
 
+            total_checks = sum(native_lines.mapped("amount"))
             precision = payment.currency_id.rounding
-            if float_compare(payment.amount, payment.dflex_own_check_total, precision_rounding=precision) != 0:
+            if float_compare(payment.amount, total_checks, precision_rounding=precision) != 0:
                 raise ValidationError(
                     _("El importe del pago (%s) debe coincidir con el total de cheques propios (%s).")
-                    % (payment.amount, payment.dflex_own_check_total)
+                    % (payment.amount, total_checks)
                 )
 
-            for line in payment.dflex_check_line_ids:
-                check = line.check_id
+            for line in native_lines:
+                check = line.dflex_check_id
                 if check.company_id != payment.company_id:
                     raise ValidationError(_("El cheque %s pertenece a otra compañía.") % check.display_name)
                 if check.journal_id and check.journal_id != payment.journal_id:
@@ -193,18 +135,18 @@ class AccountPayment(models.Model):
                         % (check.display_name, selection.get(check.state, check.state))
                     )
 
-    def _dflex_write_delivered_checks(self):
-        for payment in self.filtered("dflex_check_line_ids"):
-            for line in payment.dflex_check_line_ids:
-                check = line.check_id
+    def _dflex_write_delivered_native_checks(self):
+        for payment in self:
+            for line in payment._dflex_get_native_own_check_lines():
+                check = line.dflex_check_id
                 check.write(
                     {
                         "state": "delivered",
                         "payment_id": payment.id,
-                        "payment_line_id": line.id,
+                        "payment_line_id": False,
                         "move_id": payment.move_id.id or False,
                         "issue_date": payment.date,
-                        "payment_date": line.check_payment_date or payment.date,
+                        "payment_date": line.payment_date or payment.date,
                         "delivery_date": fields.Date.context_today(payment),
                         "amount": line.amount,
                         "currency_id": payment.currency_id.id,
@@ -212,10 +154,10 @@ class AccountPayment(models.Model):
                     }
                 )
 
-    def _dflex_release_checks(self):
-        for payment in self.filtered("dflex_check_line_ids"):
-            for line in payment.dflex_check_line_ids:
-                check = line.check_id
+    def _dflex_release_native_checks(self):
+        for payment in self:
+            for line in payment._dflex_get_native_own_check_lines():
+                check = line.dflex_check_id
                 if check.payment_id != payment:
                     continue
                 if check.state == "debited":
@@ -225,19 +167,13 @@ class AccountPayment(models.Model):
                 check.write(check._clear_payment_usage_values())
 
     def _dflex_sync_check_states_from_payments(self):
-        checks = self.mapped("dflex_check_line_ids.check_id") | self.mapped("dflex_check_id")
+        checks = self.mapped("l10n_latam_new_check_ids.dflex_check_id") | self.mapped("dflex_check_id")
         checks._update_operational_state()
 
     def action_post(self):
-        self._dflex_validate_checks_before_post()
-        # La validación nativa de LATAM compara el monto contra l10n_latam_new_check_ids.
-        # En este flujo esa tabla está oculta y se usa dflex_check_line_ids, por eso pasamos
-        # contexto para que l10n_latam_check_ux no bloquee con un falso positivo.
-        post_self = self
-        if any(payment._dflex_has_own_check_lines() for payment in self):
-            post_self = self.with_context(dflex_skip_l10n_latam_check_warning=True)
-        res = super(AccountPayment, post_self).action_post()
-        self._dflex_write_delivered_checks()
+        self._dflex_validate_native_own_checks_before_post()
+        res = super().action_post()
+        self._dflex_write_delivered_native_checks()
         return res
 
     def write(self, vals):
@@ -248,18 +184,17 @@ class AccountPayment(models.Model):
 
     def action_cancel(self):
         res = super().action_cancel()
-        self._dflex_release_checks()
+        self._dflex_release_native_checks()
         return res
 
     def action_draft(self):
         res = super().action_draft()
-        self._dflex_release_checks()
+        self._dflex_release_native_checks()
         return res
 
     def action_dflex_mark_check_returned(self):
-        """Marcar los cheques del pago como devueltos/rechazados."""
         for payment in self:
-            checks = payment.dflex_check_line_ids.mapped("check_id") | payment.dflex_check_id
+            checks = payment._dflex_get_native_own_check_lines().mapped("dflex_check_id") | payment.dflex_check_id
             for check in checks:
                 if check.payment_id and check.payment_id != payment:
                     raise ValidationError(
