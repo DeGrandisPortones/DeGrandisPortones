@@ -13,26 +13,15 @@ class AccountPayment(models.Model):
     )
 
     def _dflex_uses_own_check_lines(self):
-        """Return True when DFlex own-check lines are being used for this payment.
-
-        The native LATAM own-check warning validates l10n_latam_new_check_ids.
-        DFlex own checks use their own lines/model, so that warning must not
-        block posting when the payment is actually paid with DFlex own checks.
-        """
+        """DFlex own checks use dflex_check_line_ids instead of l10n_latam_new_check_ids."""
         self.ensure_one()
         if self.payment_method_line_id.code != "own_checks":
             return False
-
-        line_fields = (
-            "dflex_own_check_line_ids",
-            "dflex_check_line_ids",
-            "dflex_payment_check_line_ids",
-        )
-        for field_name in line_fields:
-            if field_name in self._fields and self[field_name]:
-                return True
-
-        return bool("dflex_check_id" in self._fields and self.dflex_check_id)
+        if "dflex_check_line_ids" in self._fields and self.dflex_check_line_ids:
+            return True
+        if "dflex_check_id" in self._fields and self.dflex_check_id:
+            return True
+        return False
 
     def action_post(self):
         # Nosotros queremos bloquear también nros. de cheques de terceros que sean únicos.
