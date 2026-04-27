@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <function model="l10n_latam.check" name="_ux_force_recompute_operational_state_fields"/>
+</odoo>

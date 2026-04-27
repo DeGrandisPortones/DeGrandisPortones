@@ -44,6 +44,7 @@
         "reports/report_account_transfer.xml",
         "reports/report_checks_to_date.xml",
         "security/ir.model.access.csv",
+        "data/recompute_check_ux_state.xml",
     ],
     "demo": [],
     "installable": True,
