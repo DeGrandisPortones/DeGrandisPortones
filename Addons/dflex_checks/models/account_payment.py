@@ -56,9 +56,27 @@ class AccountPayment(models.Model):
             or "own check" in method_name
         )
 
+    def _dflex_native_check_column_ready(self):
+        """Avoid crashing before dflex_checks is upgraded and the SQL column exists."""
+        check_model = self.env["l10n_latam.check"]
+        if "dflex_check_id" not in check_model._fields:
+            return False
+        self.env.cr.execute(
+            """
+            SELECT 1
+              FROM information_schema.columns
+             WHERE table_name = 'l10n_latam_check'
+               AND column_name = 'dflex_check_id'
+             LIMIT 1
+            """
+        )
+        return bool(self.env.cr.fetchone())
+
     def _dflex_get_native_own_check_lines(self):
         self.ensure_one()
         if "l10n_latam_new_check_ids" not in self._fields:
+            return self.env["l10n_latam.check"]
+        if not self._dflex_native_check_column_ready():
             return self.env["l10n_latam.check"]
         return self.l10n_latam_new_check_ids.filtered("dflex_check_id")
 
