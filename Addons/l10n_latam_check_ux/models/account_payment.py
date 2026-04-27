@@ -12,14 +12,36 @@ class AccountPayment(models.Model):
         default=fields.Datetime.now(),
     )
 
+    def _dflex_uses_own_check_lines(self):
+        """Return True when DFlex own-check lines are being used for this payment.
+
+        The native LATAM own-check warning validates l10n_latam_new_check_ids.
+        DFlex own checks use their own lines/model, so that warning must not
+        block posting when the payment is actually paid with DFlex own checks.
+        """
+        self.ensure_one()
+        if self.payment_method_line_id.code != "own_checks":
+            return False
+
+        line_fields = (
+            "dflex_own_check_line_ids",
+            "dflex_check_line_ids",
+            "dflex_payment_check_line_ids",
+        )
+        for field_name in line_fields:
+            if field_name in self._fields and self[field_name]:
+                return True
+
+        return bool("dflex_check_id" in self._fields and self.dflex_check_id)
+
     def action_post(self):
-        # nosotros queremos bloquear tmb nros de cheques de terceros que sea unicos
-        # para esto chequeamos el campo computado de warnings que ya lo tiene incorporado
-        # NOTA: no mandamos todos los warnings de "self" juntos porque podría ser muy verbose (por ej. la
-        # leyenda de cheques duplicados en un mismo payment group apareceria varias veces si el cheque está repetido
-        # en el mismo payment group)
+        # Nosotros queremos bloquear también nros. de cheques de terceros que sean únicos.
+        # Para esto chequeamos el campo computado de warnings que ya lo tiene incorporado.
+        # Excepción: pagos con cheques propios DFlex. En ese flujo no se usa
+        # l10n_latam_new_check_ids, por lo que el warning nativo de monto de cheque
+        # no aplica y no debe bloquear la confirmación.
         for rec in self:
-            if rec.l10n_latam_check_warning_msg:
+            if rec.l10n_latam_check_warning_msg and not rec._dflex_uses_own_check_lines():
                 raise ValidationError("%s" % rec.l10n_latam_check_warning_msg)
             rec.l10n_latam_move_check_ids_operation_date = fields.Datetime.now()
         super().action_post()
@@ -28,8 +50,8 @@ class AccountPayment(models.Model):
         """
         Two modifications when only when transferring from a third party checks journal:
         1. When a paired transfer is created, the default odoo behavior is to use on the paired transfer the first
-        available payment method. If we are transferring to another third party checks journal, then set as payment
-        method on the paired transfer 'in_third_party_checks' or 'out_third_party_checks'
+        available payment method. If we are transferring to another third party checks journal, then set as
+        payment method on the paired transfer 'in_third_party_checks' or 'out_third_party_checks'
         2. On the paired transfer set the l10n_latam_check_id field, this field is needed for the
         l10n_latam_check_operation_ids and also for some warnings and constrains.
         """
