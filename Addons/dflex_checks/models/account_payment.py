@@ -48,6 +48,29 @@ class AccountPayment(models.Model):
         self.ensure_one()
         return self.payment_type == "outbound" and self.payment_method_line_id.code == "own_checks"
 
+    def _dflex_has_own_check_lines(self):
+        self.ensure_one()
+        return bool(self.dflex_check_line_ids or self.dflex_check_id)
+
+    def _compute_l10n_latam_check_warning_msg(self):
+        """Suppress the native LATAM check amount warning for DFlex own checks.
+
+        The native LATAM warning compares the payment amount against the hidden
+        l10n_latam_new_check_ids table. For DFlex own checks, the real checks
+        are loaded in dflex_check_line_ids, so that native warning does not
+        apply. We keep the native computation for all other payment flows.
+        """
+        super_method = getattr(super(), "_compute_l10n_latam_check_warning_msg", None)
+        if super_method:
+            super_method()
+        for payment in self:
+            if (
+                "l10n_latam_check_warning_msg" in payment._fields
+                and payment._dflex_is_own_check_payment()
+                and payment._dflex_has_own_check_lines()
+            ):
+                payment.l10n_latam_check_warning_msg = False
+
     @api.onchange("payment_method_line_id", "payment_type")
     def _onchange_dflex_check_payment_method(self):
         for payment in self:
@@ -95,6 +118,12 @@ class AccountPayment(models.Model):
             total = sum(payment.dflex_check_line_ids.mapped("amount"))
             if total and payment._dflex_is_own_check_payment():
                 payment.amount = total
+            if (
+                "l10n_latam_check_warning_msg" in payment._fields
+                and payment._dflex_is_own_check_payment()
+                and payment._dflex_has_own_check_lines()
+            ):
+                payment.l10n_latam_check_warning_msg = False
 
     @api.constrains("dflex_check_line_ids", "company_id", "payment_type", "payment_method_line_id", "journal_id")
     def _constrains_dflex_check_lines(self):
