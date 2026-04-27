@@ -46,7 +46,20 @@ class AccountPayment(models.Model):
 
     def _dflex_is_own_check_payment(self):
         self.ensure_one()
-        return self.payment_type == "outbound" and self.payment_method_line_id.code == "own_checks"
+        if self.payment_type != "outbound":
+            return False
+        payment_method_line = self.payment_method_line_id
+        if not payment_method_line:
+            return False
+        method_code = payment_method_line.code or payment_method_line.payment_method_id.code
+        method_name = " ".join(
+            part for part in [payment_method_line.name, payment_method_line.payment_method_id.name] if part
+        ).lower()
+        return bool(
+            method_code == "own_checks"
+            or "cheques propios" in method_name
+            or "own check" in method_name
+        )
 
     def _dflex_has_own_check_lines(self):
         self.ensure_one()
@@ -217,7 +230,13 @@ class AccountPayment(models.Model):
 
     def action_post(self):
         self._dflex_validate_checks_before_post()
-        res = super().action_post()
+        # La validación nativa de LATAM compara el monto contra l10n_latam_new_check_ids.
+        # En este flujo esa tabla está oculta y se usa dflex_check_line_ids, por eso pasamos
+        # contexto para que l10n_latam_check_ux no bloquee con un falso positivo.
+        post_self = self
+        if any(payment._dflex_has_own_check_lines() for payment in self):
+            post_self = self.with_context(dflex_skip_l10n_latam_check_warning=True)
+        res = super(AccountPayment, post_self).action_post()
         self._dflex_write_delivered_checks()
         return res
 
