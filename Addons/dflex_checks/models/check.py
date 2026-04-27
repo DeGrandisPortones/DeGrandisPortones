@@ -125,21 +125,39 @@ class DflexCheck(models.Model):
     def _is_payment_reconciled_in_bank(self):
         self.ensure_one()
         payment = self.payment_id
-        if not payment:
+        if not payment or not payment.move_id:
             return False
-
-        if payment.state == "paid":
-            return True
 
         move = payment.move_id
-        if not move:
-            return False
 
-        bank_or_cash_lines = move.line_ids.filtered(lambda line: line.account_id.account_type == "asset_cash")
-        if not bank_or_cash_lines:
-            bank_or_cash_lines = move.line_ids.filtered(lambda line: line.journal_id.type in ["bank", "cash"])
+        # IMPORTANT: account.payment.state == "paid" only means that the payment
+        # was posted/validated. It does NOT mean that the check was debited by
+        # the bank. A check must move to Pagado only when the liquidity/outstanding
+        # line is reconciled through a bank statement/reconciliation move.
+        liquidity_lines = move.line_ids.filtered(lambda line: line.account_id.account_type == "asset_cash")
+        if not liquidity_lines:
+            liquidity_lines = move.line_ids.filtered(lambda line: line.journal_id.type in ["bank", "cash"])
 
-        return bool(bank_or_cash_lines.filtered(lambda line: line.reconciled))
+        for line in liquidity_lines:
+            if "statement_line_id" in line._fields and line.statement_line_id:
+                return True
+
+            matched_lines = self.env["account.move.line"]
+            if "matched_debit_ids" in line._fields:
+                matched_lines |= line.matched_debit_ids.mapped("debit_move_id")
+                matched_lines |= line.matched_debit_ids.mapped("credit_move_id")
+            if "matched_credit_ids" in line._fields:
+                matched_lines |= line.matched_credit_ids.mapped("debit_move_id")
+                matched_lines |= line.matched_credit_ids.mapped("credit_move_id")
+
+            matched_lines -= line
+            for matched_line in matched_lines:
+                if "statement_line_id" in matched_line._fields and matched_line.statement_line_id:
+                    return True
+                if "statement_line_id" in matched_line.move_id._fields and matched_line.move_id.statement_line_id:
+                    return True
+
+        return False
 
     def _get_state_from_dates_and_payment(self):
         self.ensure_one()
@@ -167,12 +185,12 @@ class DflexCheck(models.Model):
 
     @api.model
     def _cron_update_check_states(self):
-        checks = self.search([("state", "in", ["delivered", "pending_entry", "expired"]), ("payment_id", "!=", False)])
+        checks = self.search([("state", "in", ["delivered", "pending_entry", "expired", "debited"]), ("payment_id", "!=", False)])
         checks._update_operational_state()
         return True
 
     def action_update_operational_state(self):
-        records = self if self else self.search([("state", "in", ["delivered", "pending_entry", "expired"]), ("payment_id", "!=", False)])
+        records = self if self else self.search([("state", "in", ["delivered", "pending_entry", "expired", "debited"]), ("payment_id", "!=", False)])
         records._update_operational_state()
         return True
 
