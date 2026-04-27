@@ -12,13 +12,28 @@ class DflexCheck(models.Model):
     name = fields.Char(string="N° Cheque", required=True, index=True, copy=False)
     number = fields.Integer(string="Número", required=True, index=True)
     checkbook_id = fields.Many2one("dflex.checkbook", string="Chequera", ondelete="restrict")
-    bank_id = fields.Many2one("res.bank", string="Banco", required=True)
+    journal_id = fields.Many2one(
+        "account.journal",
+        string="Diario banco",
+        domain="[('type', 'in', ('bank', 'cash')), ('company_id', '=', company_id)]",
+        check_company=True,
+        index=True,
+        help="Diario/banco desde el que se emite el cheque propio.",
+    )
+    bank_id = fields.Many2one(
+        "res.bank",
+        string="Banco",
+        compute="_compute_bank_id",
+        store=True,
+        readonly=False,
+        help="Banco asociado al diario. Se conserva por compatibilidad con cheques existentes.",
+    )
     type = fields.Selection(
         [("fisico", "Físico"), ("echeq", "eCheq")],
         string="Tipo de cheque",
         required=True,
         default="fisico",
-        help="Indica si la chequera/cartera contiene cheques físicos o cheques electrónicos.",
+        help="Indica si el cheque propio es físico o electrónico.",
     )
 
     # Fechas e importes
@@ -66,15 +81,33 @@ class DflexCheck(models.Model):
         copy=False,
         help="Pago en el que este cheque fue utilizado/entregado.",
     )
+    payment_line_id = fields.Many2one(
+        "dflex.payment.check.line",
+        string="Línea de pago relacionada",
+        readonly=True,
+        copy=False,
+    )
     note = fields.Text(string="Notas")
 
     _sql_constraints = [
         (
-            "unique_check_per_bank_company",
-            "unique(number, bank_id, company_id)",
-            "Ya existe un cheque con ese número para este banco y compañía.",
-        ),
+            "unique_check_per_journal_company",
+            "unique(number, journal_id, company_id)",
+            "Ya existe un cheque con ese número para este diario y compañía.",
+        )
     ]
+
+    @api.depends("journal_id", "journal_id.bank_id")
+    def _compute_bank_id(self):
+        for rec in self:
+            if rec.journal_id and "bank_id" in rec.journal_id._fields:
+                rec.bank_id = rec.journal_id.bank_id
+
+    @api.onchange("journal_id")
+    def _onchange_journal_id(self):
+        for rec in self:
+            if rec.journal_id and "bank_id" in rec.journal_id._fields:
+                rec.bank_id = rec.journal_id.bank_id
 
     def _get_available_action(self):
         return {
@@ -92,7 +125,6 @@ class DflexCheck(models.Model):
         if not payment:
             return False
 
-        # En Odoo 18/AR, el pago suele pasar a paid cuando queda conciliado.
         if payment.state == "paid":
             return True
 
@@ -169,26 +201,44 @@ class DflexCheck(models.Model):
                 raise ValidationError(_("Solo se pueden marcar como Devueltos cheques Entregados o Por ingresar."))
             check.state = "returned"
 
+    def _clear_payment_usage_values(self):
+        return {
+            "state": "available",
+            "payment_id": False,
+            "payment_line_id": False,
+            "move_id": False,
+            "issue_date": False,
+            "payment_date": False,
+            "delivery_date": False,
+            "amount": 0.0,
+            "partner_id": False,
+        }
+
     def action_reset_available(self):
         for check in self:
             if check.state == "debited":
                 raise ValidationError(_("No se puede volver a En Cartera un cheque ya ingresado."))
-            check.write(
-                {
-                    "state": "available",
-                    "payment_id": False,
-                    "move_id": False,
-                    "issue_date": False,
-                    "payment_date": False,
-                    "delivery_date": False,
-                    "amount": 0.0,
-                    "partner_id": False,
-                }
-            )
+            check.write(check._clear_payment_usage_values())
 
-    # Conveniencia
     @api.onchange("number")
     def _onchange_number(self):
         for rec in self:
             if rec.number:
                 rec.name = str(rec.number)
+
+    @api.model
+    def _assign_missing_journals_from_bank(self):
+        """Best-effort migration for old records created when the model used res.bank only."""
+        checks = self.search([("journal_id", "=", False), ("bank_id", "!=", False)])
+        for check in checks:
+            journal = self.env["account.journal"].search(
+                [
+                    ("type", "in", ["bank", "cash"]),
+                    ("company_id", "=", check.company_id.id),
+                    ("bank_id", "=", check.bank_id.id),
+                ],
+                limit=1,
+            )
+            if journal:
+                check.journal_id = journal.id
+        return True

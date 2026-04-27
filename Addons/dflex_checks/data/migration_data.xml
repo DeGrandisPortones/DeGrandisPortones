@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <function model="dflex.checkbook" name="_assign_missing_journals_from_bank"/>
+</odoo>
