@@ -1,3 +1,5 @@
+from dateutil.relativedelta import relativedelta
+
 from odoo import api, fields, models, _
 from odoo.exceptions import ValidationError
 
@@ -59,7 +61,8 @@ class DflexCheck(models.Model):
             ("available", "En Cartera"),
             ("delivered", "Entregado"),
             ("pending_entry", "Por ingresar"),
-            ("debited", "Ingresado"),
+            ("expired", "Vencido"),
+            ("debited", "Pagado"),
             ("returned", "Devuelto"),
             ("cancelled", "Anulado"),
         ],
@@ -147,25 +150,29 @@ class DflexCheck(models.Model):
             return "debited"
 
         today = fields.Date.context_today(self)
-        if self.payment_date and self.payment_date <= today:
-            return "pending_entry"
+        if self.payment_date:
+            expired_date = self.payment_date + relativedelta(months=1)
+            if today >= expired_date:
+                return "expired"
+            if today >= self.payment_date:
+                return "pending_entry"
 
         return "delivered"
 
     def _update_operational_state(self):
-        for check in self.filtered(lambda c: c.state in ["delivered", "pending_entry", "debited"]):
+        for check in self.filtered(lambda c: c.state in ["delivered", "pending_entry", "expired", "debited"]):
             new_state = check._get_state_from_dates_and_payment()
             if new_state != check.state:
                 check.state = new_state
 
     @api.model
     def _cron_update_check_states(self):
-        checks = self.search([("state", "in", ["delivered", "pending_entry"]), ("payment_id", "!=", False)])
+        checks = self.search([("state", "in", ["delivered", "pending_entry", "expired"]), ("payment_id", "!=", False)])
         checks._update_operational_state()
         return True
 
     def action_update_operational_state(self):
-        records = self if self else self.search([("state", "in", ["delivered", "pending_entry"]), ("payment_id", "!=", False)])
+        records = self if self else self.search([("state", "in", ["delivered", "pending_entry", "expired"]), ("payment_id", "!=", False)])
         records._update_operational_state()
         return True
 
@@ -184,21 +191,21 @@ class DflexCheck(models.Model):
 
     def action_debit(self):
         for check in self:
-            if check.state not in ["delivered", "pending_entry"]:
-                raise ValidationError(_("Solo se pueden marcar como Ingresados cheques Entregados o Por ingresar."))
+            if check.state not in ["delivered", "pending_entry", "expired"]:
+                raise ValidationError(_("Solo se pueden marcar como Pagados cheques Entregados, Por ingresar o Vencidos."))
             check.state = "debited"
 
     def action_cancel(self):
         for check in self:
             if check.state == "debited":
-                raise ValidationError(_("No se puede anular un cheque ya ingresado."))
+                raise ValidationError(_("No se puede anular un cheque ya pagado."))
             check.state = "cancelled"
 
     def action_return(self):
         """Marca el cheque como devuelto/rechazado."""
         for check in self:
-            if check.state not in ["delivered", "pending_entry"]:
-                raise ValidationError(_("Solo se pueden marcar como Devueltos cheques Entregados o Por ingresar."))
+            if check.state not in ["delivered", "pending_entry", "expired"]:
+                raise ValidationError(_("Solo se pueden marcar como Devueltos cheques Entregados, Por ingresar o Vencidos."))
             check.state = "returned"
 
     def _clear_payment_usage_values(self):
@@ -217,7 +224,7 @@ class DflexCheck(models.Model):
     def action_reset_available(self):
         for check in self:
             if check.state == "debited":
-                raise ValidationError(_("No se puede volver a En Cartera un cheque ya ingresado."))
+                raise ValidationError(_("No se puede volver a En Cartera un cheque ya pagado."))
             check.write(check._clear_payment_usage_values())
 
     @api.onchange("number")
