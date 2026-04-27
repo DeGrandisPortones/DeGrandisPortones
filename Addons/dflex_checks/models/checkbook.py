@@ -27,7 +27,6 @@ class DflexCheckbook(models.Model):
         [("draft", "Borrador"), ("generated", "Generada"), ("closed", "Cerrada")],
         default="draft",
         string="Estado",
-        tracking=True,
     )
 
     check_ids = fields.One2many("dflex.check", "checkbook_id", string="Cheques")
@@ -50,7 +49,6 @@ class DflexCheckbook(models.Model):
             if book.state != "draft":
                 raise ValidationError(_("Solo se pueden generar cheques desde el estado Borrador."))
 
-            # Validar solapamientos con otras chequeras del mismo banco/empresa
             overlap = self.search(
                 [
                     ("id", "!=", book.id),

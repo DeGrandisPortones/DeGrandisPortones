@@ -5,7 +5,7 @@ from odoo.exceptions import ValidationError
 class DflexCheck(models.Model):
     _name = "dflex.check"
     _description = "Cheque propio"
-    _order = "issue_date desc, id desc"
+    _order = "number asc, id asc"
     _rec_name = "name"
 
     # Datos principales
@@ -17,12 +17,18 @@ class DflexCheck(models.Model):
 
     # Fechas e importes
     issue_date = fields.Date(string="Fecha Emisión")
-    payment_date = fields.Date(string="Fecha Pago")
+    payment_date = fields.Date(string="Fecha de pago")
+    delivery_date = fields.Date(
+        string="Fecha entrega",
+        readonly=True,
+        copy=False,
+        help="Fecha en la que el cheque propio se entregó mediante un pago.",
+    )
     amount = fields.Monetary(string="Importe")
     currency_id = fields.Many2one("res.currency", default=lambda self: self.env.company.currency_id, required=True)
 
-    # Proveedor
-    partner_id = fields.Many2one("res.partner", string="Proveedor")
+    # Proveedor / destinatario
+    partner_id = fields.Many2one("res.partner", string="Entregado a")
     cuit_proveedor = fields.Char(string="CUIT Proveedor", related="partner_id.vat", store=True)
     partner_name = fields.Char(string="Razón Social Proveedor", related="partner_id.name", store=True)
 
@@ -37,7 +43,6 @@ class DflexCheck(models.Model):
         ],
         string="Estado",
         default="available",
-        tracking=True,
     )
 
     company_id = fields.Many2one(
@@ -60,8 +65,18 @@ class DflexCheck(models.Model):
             "unique_check_per_bank_company",
             "unique(number, bank_id, company_id)",
             "Ya existe un cheque con ese número para este banco y compañía.",
-        )
+        ),
     ]
+
+    def _get_available_action(self):
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("Cheques propios disponibles"),
+            "res_model": "dflex.check",
+            "view_mode": "list,form",
+            "domain": [("state", "=", "available")],
+            "context": {"search_default_available": 1},
+        }
 
     # Acciones de estado
     def action_deliver(self):
@@ -93,8 +108,18 @@ class DflexCheck(models.Model):
         for check in self:
             if check.state == "debited":
                 raise ValidationError(_("No se puede volver a Disponible un cheque ya debitado."))
-            check.state = "available"
-            check.payment_id = False
+            check.write(
+                {
+                    "state": "available",
+                    "payment_id": False,
+                    "move_id": False,
+                    "issue_date": False,
+                    "payment_date": False,
+                    "delivery_date": False,
+                    "amount": 0.0,
+                    "partner_id": False,
+                }
+            )
 
     # Conveniencia
     @api.onchange("number")
