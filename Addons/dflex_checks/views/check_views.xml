@@ -134,14 +134,14 @@
                   invisible="state != 'available'"/>
           <button name="action_pending_entry" type="object" string="Por ingresar"
                   invisible="state != 'delivered'"/>
-          <button name="action_debit" type="object" string="Marcar ingresado" class="oe_highlight"
-                  invisible="state not in ['delivered','pending_entry']"/>
+          <button name="action_debit" type="object" string="Marcar pagado" class="oe_highlight"
+                  invisible="state not in ['delivered','pending_entry','expired']"/>
           <button name="action_return" type="object" string="Marcar devuelto"
-                  invisible="state not in ['delivered','pending_entry']"/>
+                  invisible="state not in ['delivered','pending_entry','expired']"/>
           <button name="action_cancel" type="object" string="Anular"
                   invisible="state == 'debited'"/>
           <field name="state" widget="statusbar"
-                 statusbar_visible="available,delivered,pending_entry,debited,returned,cancelled"/>
+                 statusbar_visible="available,delivered,pending_entry,expired,debited,returned,cancelled"/>
         </header>
         <sheet>
           <group>
@@ -186,7 +186,8 @@
         <filter name="available" string="En Cartera" domain="[('state','=','available')]"/>
         <filter name="delivered" string="Entregados" domain="[('state','=','delivered')]"/>
         <filter name="pending_entry" string="Por ingresar" domain="[('state','=','pending_entry')]"/>
-        <filter name="debited" string="Ingresados" domain="[('state','=','debited')]"/>
+        <filter name="expired" string="Vencidos" domain="[('state','=','expired')]"/>
+        <filter name="debited" string="Pagados" domain="[('state','=','debited')]"/>
         <filter name="returned" string="Devueltos" domain="[('state','=','returned')]"/>
         <filter name="cancelled" string="Anulados" domain="[('state','=','cancelled')]"/>
         <group expand="0" string="Agrupar por">

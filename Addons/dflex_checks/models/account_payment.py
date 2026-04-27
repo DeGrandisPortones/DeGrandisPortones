@@ -171,6 +171,7 @@ class AccountPayment(models.Model):
                         "partner_id": payment.partner_id.id or False,
                     }
                 )
+                check._update_operational_state()
 
     def _dflex_release_native_checks(self):
         for payment in self:
@@ -180,7 +181,7 @@ class AccountPayment(models.Model):
                     continue
                 if check.state == "debited":
                     raise ValidationError(
-                        _("No se puede liberar el cheque %s porque ya está ingresado.") % check.display_name
+                        _("No se puede liberar el cheque %s porque ya está pagado.") % check.display_name
                     )
                 check.write(check._clear_payment_usage_values())
 
@@ -219,10 +220,10 @@ class AccountPayment(models.Model):
                         _("El cheque %s está vinculado a otro pago (%s).")
                         % (check.display_name, check.payment_id.display_name)
                     )
-                if check.state not in ["delivered", "pending_entry"]:
+                if check.state not in ["delivered", "pending_entry", "expired"]:
                     selection = dict(check._fields["state"].selection)
                     raise ValidationError(
-                        _("Solo se puede marcar como Devuelto un cheque Entregado o Por ingresar. Estado actual: %s")
+                        _("Solo se puede marcar como Devuelto un cheque Entregado, Por ingresar o Vencido. Estado actual: %s")
                         % selection.get(check.state, check.state)
                     )
                 check.write({"state": "returned", "payment_id": payment.id})
