@@ -9,8 +9,13 @@ class AccountPayment(models.Model):
         "dflex.check",
         string="Cheque propio",
         domain="[(\"state\", \"=\", \"available\"), (\"company_id\", \"=\", company_id)]",
-        help="Cheque propio disponible a entregar con este pago.",
+        help="Cheque propio en cartera a entregar con este pago.",
         copy=False,
+    )
+    dflex_check_type = fields.Selection(
+        related="dflex_check_id.type",
+        string="Tipo cheque propio",
+        readonly=True,
     )
     dflex_check_payment_date = fields.Date(
         string="Fecha del cheque",
@@ -75,7 +80,7 @@ class AccountPayment(models.Model):
             if check.state != "available":
                 selection = dict(check._fields["state"].selection)
                 raise ValidationError(
-                    _("El cheque %s no está disponible (estado actual: %s).")
+                    _("El cheque %s no está en cartera (estado actual: %s).")
                     % (check.display_name, selection.get(check.state, check.state))
                 )
 
@@ -95,6 +100,7 @@ class AccountPayment(models.Model):
                     "partner_id": payment.partner_id.id or False,
                 }
             )
+            check._update_operational_state()
 
     def _dflex_release_checks(self):
         for payment in self.filtered("dflex_check_id"):
@@ -102,7 +108,7 @@ class AccountPayment(models.Model):
             if check.payment_id != payment:
                 continue
             if check.state == "debited":
-                raise ValidationError(_("No se puede liberar el cheque %s porque ya fue debitado.") % check.display_name)
+                raise ValidationError(_("No se puede liberar el cheque %s porque ya está ingresado.") % check.display_name)
             check.write(
                 {
                     "state": "available",
@@ -116,10 +122,19 @@ class AccountPayment(models.Model):
                 }
             )
 
+    def _dflex_sync_check_states_from_payments(self):
+        self.filtered("dflex_check_id").mapped("dflex_check_id")._update_operational_state()
+
     def action_post(self):
         self._dflex_validate_checks_before_post()
         res = super().action_post()
         self._dflex_write_delivered_checks()
+        return res
+
+    def write(self, vals):
+        res = super().write(vals)
+        if "state" in vals:
+            self._dflex_sync_check_states_from_payments()
         return res
 
     def action_cancel(self):
@@ -145,10 +160,10 @@ class AccountPayment(models.Model):
                     % (check.display_name, check.payment_id.display_name)
                 )
 
-            if check.state != "delivered":
+            if check.state not in ["delivered", "pending_entry"]:
                 selection = dict(check._fields["state"].selection)
                 raise ValidationError(
-                    _("Solo se puede marcar como Devuelto un cheque en estado Entregado. Estado actual: %s")
+                    _("Solo se puede marcar como Devuelto un cheque Entregado o Por ingresar. Estado actual: %s")
                     % selection.get(check.state, check.state)
                 )
 

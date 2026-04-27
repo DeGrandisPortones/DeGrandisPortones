@@ -11,9 +11,10 @@ class DflexCheckbook(models.Model):
     bank_id = fields.Many2one("res.bank", string="Banco", required=True)
     type = fields.Selection(
         [("fisico", "Físico"), ("echeq", "eCheq")],
-        string="Tipo",
+        string="Tipo de cheques",
         required=True,
         default="fisico",
+        help="Define si esta cartera/chequera genera cheques físicos o cheques electrónicos.",
     )
 
     start_number = fields.Integer(string="Número inicial", required=True)
@@ -49,6 +50,7 @@ class DflexCheckbook(models.Model):
             if book.state != "draft":
                 raise ValidationError(_("Solo se pueden generar cheques desde el estado Borrador."))
 
+            # Validar solapamientos con otras chequeras del mismo banco/empresa.
             overlap = self.search(
                 [
                     ("id", "!=", book.id),
@@ -74,6 +76,7 @@ class DflexCheckbook(models.Model):
                         "type": book.type,
                         "company_id": book.company_id.id,
                         "checkbook_id": book.id,
+                        "state": "available",
                     }
                 )
             self.env["dflex.check"].create(vals_list)
