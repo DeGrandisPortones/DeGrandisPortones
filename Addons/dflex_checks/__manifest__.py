@@ -7,9 +7,10 @@
     "website": "https://dflex.com.ar",
     "category": "Accounting/Payments",
     "license": "LGPL-3",
-    "depends": ["account", "base", "l10n_latam_check"],
+    "depends": ["account", "base"],
     "data": [
         "security/ir.model.access.csv",
+        "data/ir_cron_data.xml",
         "views/check_views.xml",
         "views/account_payment_views.xml",
     ],
