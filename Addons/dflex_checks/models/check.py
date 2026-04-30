@@ -114,6 +114,12 @@ class DflexCheck(models.Model):
 
     def _is_payment_reconciled_in_bank(self):
         self.ensure_one()
+
+        # En el flujo DFlex, cada cheque se debita individualmente.
+        # Si ya se creó/posteó el asiento de débito del cheque, el cheque está Pagado.
+        if self.debit_move_id and self.debit_move_id.state == "posted":
+            return True
+
         payment = self.payment_id
         if not payment or not payment.move_id:
             return False
@@ -121,8 +127,7 @@ class DflexCheck(models.Model):
         move = payment.move_id
 
         # payment.state == "paid" solo indica que el pago fue validado/conciliado
-        # con deuda. El cheque propio debe quedar "Pagado" únicamente cuando la
-        # línea de liquidez/outstanding se concilia contra banco/extracto.
+        # con deuda. No alcanza para marcar cada cheque como Pagado.
         liquidity_lines = move.line_ids.filtered(lambda line: line.account_id.account_type == "asset_cash")
         if not liquidity_lines:
             liquidity_lines = move.line_ids.filtered(lambda line: line.journal_id.type in ["bank", "cash"])
@@ -147,6 +152,84 @@ class DflexCheck(models.Model):
                     return True
 
         return False
+
+    def _get_own_check_pending_account(self):
+        self.ensure_one()
+
+        if self.payment_id and self.payment_id.payment_method_line_id.payment_account_id:
+            return self.payment_id.payment_method_line_id.payment_account_id
+
+        method_lines = self.journal_id.outbound_payment_method_line_ids.filtered(
+            lambda line: (
+                line.code == "own_checks"
+                or line.payment_method_id.code == "own_checks"
+                or "cheques propios" in " ".join(part for part in [line.name, line.payment_method_id.name] if part).lower()
+                or "own check" in " ".join(part for part in [line.name, line.payment_method_id.name] if part).lower()
+            )
+        )
+        account = method_lines.filtered("payment_account_id")[:1].payment_account_id
+        if account:
+            return account
+
+        raise ValidationError(
+            _(
+                "No se pudo determinar la cuenta puente de Cheques propios. "
+                "Configurá una cuenta en Pagos salientes > Cheques propios del diario %s."
+            )
+            % (self.journal_id.display_name or "")
+        )
+
+    def _get_bank_account_for_debit(self):
+        self.ensure_one()
+        if not self.journal_id:
+            raise ValidationError(_("El cheque %s no tiene Diario banco configurado.") % self.display_name)
+        if not self.journal_id.default_account_id:
+            raise ValidationError(
+                _("El diario %s no tiene cuenta bancaria/default configurada.") % self.journal_id.display_name
+            )
+        return self.journal_id.default_account_id
+
+    def _prepare_debit_move_vals(self):
+        self.ensure_one()
+        if not self.amount:
+            raise ValidationError(_("El cheque %s no tiene importe para debitar.") % self.display_name)
+
+        pending_account = self._get_own_check_pending_account()
+        bank_account = self._get_bank_account_for_debit()
+        partner = self.partner_id
+        date = fields.Date.context_today(self)
+        ref = _("Débito cheque propio %s") % (self.name or self.display_name)
+
+        return {
+            "move_type": "entry",
+            "journal_id": self.journal_id.id,
+            "date": date,
+            "ref": ref,
+            "line_ids": [
+                (
+                    0,
+                    0,
+                    {
+                        "name": ref,
+                        "account_id": pending_account.id,
+                        "partner_id": partner.id or False,
+                        "debit": self.amount,
+                        "credit": 0.0,
+                    },
+                ),
+                (
+                    0,
+                    0,
+                    {
+                        "name": ref,
+                        "account_id": bank_account.id,
+                        "partner_id": partner.id or False,
+                        "debit": 0.0,
+                        "credit": self.amount,
+                    },
+                ),
+            ],
+        }
 
     def _get_state_from_dates_and_payment(self):
         self.ensure_one()
@@ -192,8 +275,17 @@ class DflexCheck(models.Model):
     def action_debit(self):
         for check in self:
             if check.state not in ["delivered", "pending_entry", "expired"]:
-                raise ValidationError(_("Solo se pueden marcar como Pagados cheques Entregados, Por ingresar o Vencidos."))
-            check.state = "debited"
+                raise ValidationError(_("Solo se pueden debitar cheques Entregados, Por ingresar o Vencidos."))
+
+            if check.debit_move_id:
+                if check.debit_move_id.state != "posted":
+                    check.debit_move_id.action_post()
+                check.state = "debited"
+                continue
+
+            debit_move = self.env["account.move"].create(check._prepare_debit_move_vals())
+            debit_move.action_post()
+            check.write({"debit_move_id": debit_move.id, "state": "debited"})
 
     def action_cancel(self):
         for check in self:
@@ -212,6 +304,7 @@ class DflexCheck(models.Model):
             "state": "available",
             "payment_id": False,
             "move_id": False,
+            "debit_move_id": False,
             "issue_date": False,
             "payment_date": False,
             "delivery_date": False,
