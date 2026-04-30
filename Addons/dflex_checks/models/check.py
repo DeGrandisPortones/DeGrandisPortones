@@ -45,7 +45,16 @@ class DflexCheck(models.Model):
         copy=False,
         help="Fecha en la que el cheque propio se entregó mediante un pago.",
     )
-    amount = fields.Monetary(string="Importe", aggregator="sum", group_operator="sum", store=True)
+    amount = fields.Monetary(string="Importe")
+    amount_list_total = fields.Float(
+        string="Importe",
+        compute="_compute_amount_list_total",
+        store=True,
+        digits="Account",
+        aggregator="sum",
+        group_operator="sum",
+        help="Campo técnico para mostrar totales en vistas de lista. Copia el importe monetario del cheque.",
+    )
     currency_id = fields.Many2one("res.currency", default=lambda self: self.env.company.currency_id, required=True)
 
     partner_id = fields.Many2one("res.partner", string="Entregado a")
@@ -129,10 +138,19 @@ class DflexCheck(models.Model):
             if node.get("sum") != "Total":
                 node.set("sum", "Total")
                 changed = True
+        for node in arch.xpath("//field[@name='amount_list_total']"):
+            if node.get("sum") != "Total":
+                node.set("sum", "Total")
+                changed = True
 
         if changed:
             res["arch"] = etree.tostring(arch, encoding="unicode")
         return res
+
+    @api.depends("amount")
+    def _compute_amount_list_total(self):
+        for rec in self:
+            rec.amount_list_total = rec.amount or 0.0
 
     @api.depends("journal_id", "journal_id.bank_id")
     def _compute_bank_id(self):
