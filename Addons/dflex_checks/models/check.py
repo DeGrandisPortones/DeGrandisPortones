@@ -70,7 +70,19 @@ class DflexCheck(models.Model):
         "res.company", string="Compañía", default=lambda self: self.env.company, required=True
     )
 
-    move_id = fields.Many2one("account.move", string="Asiento relacionado", readonly=True)
+    move_id = fields.Many2one(
+        "account.move",
+        string="Asiento pago relacionado",
+        readonly=True,
+        help="Asiento del pago que entregó el cheque propio contra la cuenta puente.",
+    )
+    debit_move_id = fields.Many2one(
+        "account.move",
+        string="Asiento débito banco",
+        readonly=True,
+        copy=False,
+        help="Asiento creado al debitar este cheque propio contra el banco.",
+    )
     payment_id = fields.Many2one(
         "account.payment",
         string="Pago relacionado",
@@ -117,7 +129,7 @@ class DflexCheck(models.Model):
 
         # En el flujo DFlex, cada cheque se debita individualmente.
         # Si ya se creó/posteó el asiento de débito del cheque, el cheque está Pagado.
-        if self.debit_move_id and self.debit_move_id.state == "posted":
+        if "debit_move_id" in self._fields and self.debit_move_id and self.debit_move_id.state == "posted":
             return True
 
         payment = self.payment_id
@@ -277,7 +289,7 @@ class DflexCheck(models.Model):
             if check.state not in ["delivered", "pending_entry", "expired"]:
                 raise ValidationError(_("Solo se pueden debitar cheques Entregados, Por ingresar o Vencidos."))
 
-            if check.debit_move_id:
+            if "debit_move_id" in check._fields and check.debit_move_id:
                 if check.debit_move_id.state != "posted":
                     check.debit_move_id.action_post()
                 check.state = "debited"
