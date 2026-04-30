@@ -17,11 +17,7 @@ class AccountPayment(models.Model):
             return res
 
         changed = False
-        check_grid_fields = arch.xpath("//field[@name='l10n_latam_new_check_ids']")
-
-        if check_grid_fields:
-            # Tipo y Orden son datos de cheques de terceros. En cheques propios se cargan
-            # automáticamente o no aplican, por eso se ocultan cuando el método es own_checks.
+        if arch.xpath("//field[@name='l10n_latam_new_check_ids']"):
             for field_name in ("x_studio_tipo_cheque", "ux_order_type"):
                 for node in arch.xpath(
                     "//field[@name='l10n_latam_new_check_ids']//field[@name='%s']" % field_name

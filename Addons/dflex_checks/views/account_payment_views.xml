@@ -1,8 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
-  <!-- Reutilizamos la solapa nativa de cheques LATAM para que pasen las validaciones estándar.
-       Para Cheques propios se agrega un selector de cheques generados por DFlex. -->
-
   <record id="view_account_payment_form_dflex_checks" model="ir.ui.view">
     <field name="name">account.payment.form.dflex.checks</field>
     <field name="model">account.payment</field>

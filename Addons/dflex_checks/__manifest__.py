@@ -1,16 +1,19 @@
 # -*- coding: utf-8 -*-
 {
     "name": "DFlex - Cheques Propios",
-    "summary": "Gestión de chequeras y cheques propios (físicos y eCheq)",
-    "version": "18.0.1.0.5",
+    "summary": "Gestión de chequeras y cheques propios físicos/eCheq",
+    "version": "18.0.1.1.0",
     "author": "DFLEX Argentina SAS",
     "website": "https://dflex.com.ar",
     "category": "Accounting/Payments",
     "license": "LGPL-3",
-    "depends": ["account", "base", "l10n_latam_check"],
+    "depends": [
+        "account",
+        "base",
+        "l10n_latam_check",
+    ],
     "data": [
         "security/ir.model.access.csv",
-        "data/migration_data.xml",
         "data/ir_cron_data.xml",
         "data/update_states_data.xml",
         "views/check_views.xml",
