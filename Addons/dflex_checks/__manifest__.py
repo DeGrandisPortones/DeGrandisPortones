@@ -2,7 +2,7 @@
 {
     "name": "DFlex - Cheques Propios",
     "summary": "Gestión de chequeras y cheques propios físicos/eCheq",
-    "version": "18.0.1.2.0",
+    "version": "18.0.1.2.1",
     "author": "DFLEX Argentina SAS",
     "website": "https://dflex.com.ar",
     "category": "Accounting/Payments",
@@ -15,7 +15,6 @@
     "data": [
         "security/ir.model.access.csv",
         "data/ir_cron_data.xml",
-        "data/update_states_data.xml",
         "views/check_views.xml",
         "views/account_payment_views.xml",
     ],
