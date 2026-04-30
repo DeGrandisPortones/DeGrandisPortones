@@ -72,23 +72,30 @@ class L10nLatamPaymentMassTransfer(models.TransientModel):
             )
         return account
 
-    def _get_or_create_deposit_method_line(self, bank_journal, cartera_account):
-        """Find/create an inbound manual payment method line in the bank journal.
+    def _get_or_create_deposit_method_line(self, bank_journal):
+        """Find/create an inbound manual payment method line for direct deposits.
 
-        The payment account is the third-party checks wallet account so the
-        generated deposit entry is Dr Bank / Cr Third-party checks wallet.
+        For an inbound account.payment, Odoo uses payment_method_line_id.payment_account_id
+        as the liquidity/outstanding line. For a direct cheque deposit this line must be
+        the bank account, while the checks wallet account is set as destination_account_id.
         """
         self.ensure_one()
 
+        bank_account = bank_journal.default_account_id
+        if not bank_account:
+            raise ValidationError(
+                _("El diario destino %s no tiene cuenta bancaria configurada.") % bank_journal.display_name
+            )
+
         manual_lines = bank_journal.inbound_payment_method_line_ids.filtered(lambda l: l.code == "manual")
 
-        line = manual_lines.filtered(lambda l: l.payment_account_id == cartera_account)[:1]
+        line = manual_lines.filtered(lambda l: l.payment_account_id == bank_account)[:1]
         if line:
             return line
 
         line = manual_lines.filtered(lambda l: l.name == self.DEPOSIT_METHOD_LINE_NAME)[:1]
         if line:
-            line.payment_account_id = cartera_account
+            line.payment_account_id = bank_account
             return line
 
         manual_method = self.env["account.payment.method"].search(
@@ -108,9 +115,24 @@ class L10nLatamPaymentMassTransfer(models.TransientModel):
                 "name": self.DEPOSIT_METHOD_LINE_NAME,
                 "journal_id": bank_journal.id,
                 "payment_method_id": manual_method.id,
-                "payment_account_id": cartera_account.id,
+                "payment_account_id": bank_account.id,
             }
         )
+
+    def _prepare_deposit_payment_vals(self, checks, amount, cartera_account, method_line):
+        self.ensure_one()
+        return {
+            "date": self.payment_date,
+            "amount": amount,
+            "partner_id": self.env.company.partner_id.id,
+            "payment_type": "inbound",
+            "memo": self.communication,
+            "journal_id": self.destination_journal_id.id,
+            "currency_id": checks[0].currency_id.id,
+            "payment_method_line_id": method_line.id,
+            "destination_account_id": cartera_account.id,
+            "l10n_latam_move_check_ids": [Command.link(c.id) for c in checks],
+        }
 
     def _create_payments(self):
         """Direct deposit: Dr Bank / Cr Third-party checks wallet.
@@ -132,24 +154,12 @@ class L10nLatamPaymentMassTransfer(models.TransientModel):
             return self._create_split_payments()
 
         cartera_account = self._get_checks_cartera_account(checks)
-        method_line = self._get_or_create_deposit_method_line(self.destination_journal_id, cartera_account)
+        method_line = self._get_or_create_deposit_method_line(self.destination_journal_id)
 
         payment = (
             self.env["account.payment"]
             .with_context(check_deposit_transfer=True)
-            .create(
-                {
-                    "date": self.payment_date,
-                    "amount": sum(checks.mapped("amount")),
-                    "partner_id": self.env.company.partner_id.id,
-                    "payment_type": "inbound",
-                    "memo": self.communication,
-                    "journal_id": self.destination_journal_id.id,
-                    "currency_id": checks[0].currency_id.id,
-                    "payment_method_line_id": method_line.id,
-                    "l10n_latam_move_check_ids": [Command.link(c.id) for c in checks],
-                }
-            )
+            .create(self._prepare_deposit_payment_vals(checks, sum(checks.mapped("amount")), cartera_account, method_line))
         )
 
         payment.with_context(l10n_ar_skip_remove_check=True).action_post()
@@ -164,26 +174,14 @@ class L10nLatamPaymentMassTransfer(models.TransientModel):
             raise ValidationError(_("No se encontraron cheques de terceros validos para depositar."))
 
         cartera_account = self._get_checks_cartera_account(checks)
-        method_line = self._get_or_create_deposit_method_line(self.destination_journal_id, cartera_account)
+        method_line = self._get_or_create_deposit_method_line(self.destination_journal_id)
 
         payments = self.env["account.payment"]
         for check in checks:
             payment = (
                 self.env["account.payment"]
                 .with_context(check_deposit_transfer=True)
-                .create(
-                    {
-                        "date": self.payment_date,
-                        "amount": check.amount,
-                        "partner_id": self.env.company.partner_id.id,
-                        "payment_type": "inbound",
-                        "memo": self.communication,
-                        "journal_id": self.destination_journal_id.id,
-                        "currency_id": check.currency_id.id,
-                        "payment_method_line_id": method_line.id,
-                        "l10n_latam_move_check_ids": [Command.link(check.id)],
-                    }
-                )
+                .create(self._prepare_deposit_payment_vals(check, check.amount, cartera_account, method_line))
             )
             payment.with_context(l10n_ar_skip_remove_check=True).action_post()
             payments |= payment
