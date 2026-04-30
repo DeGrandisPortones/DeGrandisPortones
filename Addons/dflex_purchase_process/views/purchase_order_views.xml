@@ -41,9 +41,9 @@
         <field name="name">purchase.order.list.dflex.purchase.process</field>
         <field name="model">purchase.order</field>
         <field name="inherit_id" ref="purchase.purchase_order_tree"/>
-        <field name="priority" eval="450"/>
+        <field name="priority" eval="900"/>
         <field name="arch" type="xml">
-            <xpath expr="//field[@name='state']" position="before">
+            <xpath expr="//list/field[@name='state'] | //tree/field[@name='state']" position="before">
                 <field name="dflex_purchase_process_state"
                        string="Estado compras"
                        widget="badge"
@@ -53,8 +53,36 @@
                        decoration-warning="dflex_purchase_process_state == 'in_process'"
                        decoration-danger="dflex_purchase_process_state == 'redo'"/>
             </xpath>
-            <xpath expr="//field[@name='date_order']" position="after">
-                <field name="dflex_purchase_redo_deadline_date" optional="hide"/>
+            <xpath expr="//list/field[@name='date_order'] | //tree/field[@name='date_order']" position="after">
+                <field name="dflex_purchase_redo_deadline_date"
+                       string="Control cotización"
+                       optional="hide"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- La acción de Solicitudes de cotización usa una vista con KPIs distinta.
+         Por eso también heredamos la vista purchase_order_kpis_tree. -->
+    <record id="purchase_order_kpis_list_dflex_purchase_process" model="ir.ui.view">
+        <field name="name">purchase.order.kpis.list.dflex.purchase.process</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_kpis_tree"/>
+        <field name="priority" eval="900"/>
+        <field name="arch" type="xml">
+            <xpath expr="//list/field[@name='state'] | //tree/field[@name='state']" position="before">
+                <field name="dflex_purchase_process_state"
+                       string="Estado compras"
+                       widget="badge"
+                       optional="show"
+                       decoration-success="dflex_purchase_process_state == 'received'"
+                       decoration-info="dflex_purchase_process_state == 'authorized'"
+                       decoration-warning="dflex_purchase_process_state == 'in_process'"
+                       decoration-danger="dflex_purchase_process_state == 'redo'"/>
+            </xpath>
+            <xpath expr="//list/field[@name='date_order'] | //tree/field[@name='date_order']" position="after">
+                <field name="dflex_purchase_redo_deadline_date"
+                       string="Control cotización"
+                       optional="hide"/>
             </xpath>
         </field>
     </record>
