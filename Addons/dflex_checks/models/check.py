@@ -45,7 +45,7 @@ class DflexCheck(models.Model):
         copy=False,
         help="Fecha en la que el cheque propio se entregó mediante un pago.",
     )
-    amount = fields.Monetary(string="Importe", aggregator="sum")
+    amount = fields.Monetary(string="Importe", aggregator="sum", group_operator="sum", store=True)
     currency_id = fields.Many2one("res.currency", default=lambda self: self.env.company.currency_id, required=True)
 
     partner_id = fields.Many2one("res.partner", string="Entregado a")
