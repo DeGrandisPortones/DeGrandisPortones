@@ -129,9 +129,6 @@ class DflexCheck(models.Model):
             if node.get("sum") != "Total":
                 node.set("sum", "Total")
                 changed = True
-            if node.get("aggregator") != "sum":
-                node.set("aggregator", "sum")
-                changed = True
 
         if changed:
             res["arch"] = etree.tostring(arch, encoding="unicode")
