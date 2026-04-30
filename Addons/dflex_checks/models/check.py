@@ -10,7 +10,6 @@ class DflexCheck(models.Model):
     _order = "number asc, id asc"
     _rec_name = "name"
 
-    # Datos principales
     name = fields.Char(string="N° Cheque", required=True, index=True, copy=False)
     number = fields.Integer(string="Número", required=True, index=True)
     checkbook_id = fields.Many2one("dflex.checkbook", string="Chequera", ondelete="restrict")
@@ -35,11 +34,9 @@ class DflexCheck(models.Model):
         string="Tipo de cheque",
         required=True,
         default="fisico",
-        help="Indica si el cheque propio es físico o electrónico.",
     )
 
-    # Fechas e importes
-    issue_date = fields.Date(string="Fecha Emisión")
+    issue_date = fields.Date(string="Fecha emisión")
     payment_date = fields.Date(string="Fecha de pago")
     delivery_date = fields.Date(
         string="Fecha entrega",
@@ -50,12 +47,10 @@ class DflexCheck(models.Model):
     amount = fields.Monetary(string="Importe")
     currency_id = fields.Many2one("res.currency", default=lambda self: self.env.company.currency_id, required=True)
 
-    # Proveedor / destinatario
     partner_id = fields.Many2one("res.partner", string="Entregado a")
-    cuit_proveedor = fields.Char(string="CUIT Proveedor", related="partner_id.vat", store=True)
-    partner_name = fields.Char(string="Razón Social Proveedor", related="partner_id.name", store=True)
+    cuit_proveedor = fields.Char(string="CUIT", related="partner_id.vat", store=True)
+    partner_name = fields.Char(string="Proveedor", related="partner_id.name", store=True)
 
-    # Estado del ciclo del cheque
     state = fields.Selection(
         [
             ("available", "En Cartera"),
@@ -75,7 +70,6 @@ class DflexCheck(models.Model):
         "res.company", string="Compañía", default=lambda self: self.env.company, required=True
     )
 
-    # Auditoría
     move_id = fields.Many2one("account.move", string="Asiento relacionado", readonly=True)
     payment_id = fields.Many2one(
         "account.payment",
@@ -84,12 +78,6 @@ class DflexCheck(models.Model):
         copy=False,
         help="Pago en el que este cheque fue utilizado/entregado.",
     )
-    payment_line_id = fields.Many2one(
-        "dflex.payment.check.line",
-        string="Línea de pago relacionada",
-        readonly=True,
-        copy=False,
-    )
     note = fields.Text(string="Notas")
 
     _sql_constraints = [
@@ -97,7 +85,7 @@ class DflexCheck(models.Model):
             "unique_check_per_journal_company",
             "unique(number, journal_id, company_id)",
             "Ya existe un cheque con ese número para este diario y compañía.",
-        )
+        ),
     ]
 
     @api.depends("journal_id", "journal_id.bank_id")
@@ -105,6 +93,8 @@ class DflexCheck(models.Model):
         for rec in self:
             if rec.journal_id and "bank_id" in rec.journal_id._fields:
                 rec.bank_id = rec.journal_id.bank_id
+            elif not rec.journal_id:
+                rec.bank_id = rec.bank_id
 
     @api.onchange("journal_id")
     def _onchange_journal_id(self):
@@ -130,10 +120,9 @@ class DflexCheck(models.Model):
 
         move = payment.move_id
 
-        # IMPORTANT: account.payment.state == "paid" only means that the payment
-        # was posted/validated. It does NOT mean that the check was debited by
-        # the bank. A check must move to Pagado only when the liquidity/outstanding
-        # line is reconciled through a bank statement/reconciliation move.
+        # payment.state == "paid" solo indica que el pago fue validado/conciliado
+        # con deuda. El cheque propio debe quedar "Pagado" únicamente cuando la
+        # línea de liquidez/outstanding se concilia contra banco/extracto.
         liquidity_lines = move.line_ids.filtered(lambda line: line.account_id.account_type == "asset_cash")
         if not liquidity_lines:
             liquidity_lines = move.line_ids.filtered(lambda line: line.journal_id.type in ["bank", "cash"])
@@ -194,18 +183,11 @@ class DflexCheck(models.Model):
         records._update_operational_state()
         return True
 
-    # Acciones de estado
     def action_deliver(self):
         for check in self:
             if check.state != "available":
                 raise ValidationError(_("Solo se pueden entregar cheques en estado En Cartera."))
             check.state = "delivered"
-
-    def action_pending_entry(self):
-        for check in self:
-            if check.state != "delivered":
-                raise ValidationError(_("Solo se pueden marcar Por ingresar cheques en estado Entregado."))
-            check.state = "pending_entry"
 
     def action_debit(self):
         for check in self:
@@ -220,7 +202,6 @@ class DflexCheck(models.Model):
             check.state = "cancelled"
 
     def action_return(self):
-        """Marca el cheque como devuelto/rechazado."""
         for check in self:
             if check.state not in ["delivered", "pending_entry", "expired"]:
                 raise ValidationError(_("Solo se pueden marcar como Devueltos cheques Entregados, Por ingresar o Vencidos."))
@@ -230,7 +211,6 @@ class DflexCheck(models.Model):
         return {
             "state": "available",
             "payment_id": False,
-            "payment_line_id": False,
             "move_id": False,
             "issue_date": False,
             "payment_date": False,
@@ -250,20 +230,3 @@ class DflexCheck(models.Model):
         for rec in self:
             if rec.number:
                 rec.name = str(rec.number)
-
-    @api.model
-    def _assign_missing_journals_from_bank(self):
-        """Best-effort migration for old records created when the model used res.bank only."""
-        checks = self.search([("journal_id", "=", False), ("bank_id", "!=", False)])
-        for check in checks:
-            journal = self.env["account.journal"].search(
-                [
-                    ("type", "in", ["bank", "cash"]),
-                    ("company_id", "=", check.company_id.id),
-                    ("bank_id", "=", check.bank_id.id),
-                ],
-                limit=1,
-            )
-            if journal:
-                check.journal_id = journal.id
-        return True

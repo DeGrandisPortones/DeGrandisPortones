@@ -6,8 +6,6 @@ from odoo.tools.float_utils import float_compare
 class AccountPayment(models.Model):
     _inherit = "account.payment"
 
-    # Campos legacy: se conservan para no romper vistas/datos viejos, pero el flujo nuevo
-    # usa l10n_latam_new_check_ids.dflex_check_id en la solapa nativa Cheques.
     dflex_check_id = fields.Many2one(
         "dflex.check",
         string="Cheque propio",
@@ -16,11 +14,7 @@ class AccountPayment(models.Model):
         copy=False,
     )
     dflex_check_type = fields.Selection(related="dflex_check_id.type", string="Tipo cheque propio", readonly=True)
-    dflex_check_payment_date = fields.Date(
-        string="Fecha del cheque",
-        copy=False,
-        help="Campo legado. Usar la fecha en la línea de la solapa Cheques.",
-    )
+    dflex_check_payment_date = fields.Date(string="Fecha del cheque", copy=False)
     dflex_check_state = fields.Selection(
         related="dflex_check_id.state",
         string="Estado cheque propio",
@@ -57,7 +51,6 @@ class AccountPayment(models.Model):
         )
 
     def _dflex_native_check_column_ready(self):
-        """Avoid crashing before dflex_checks is upgraded and the SQL column exists."""
         check_model = self.env["l10n_latam.check"]
         if "dflex_check_id" not in check_model._fields:
             return False
@@ -89,22 +82,23 @@ class AccountPayment(models.Model):
 
     @api.onchange("dflex_check_id")
     def _onchange_dflex_check_id(self):
-        """Compatibilidad legacy: si alguien usa el campo viejo, crea una línea nativa."""
         for payment in self:
             check = payment.dflex_check_id
-            if not check:
-                continue
-            if "l10n_latam_new_check_ids" not in payment._fields:
+            if not check or "l10n_latam_new_check_ids" not in payment._fields:
                 continue
             if not payment.l10n_latam_new_check_ids.filtered(lambda line: line.dflex_check_id == check):
                 payment.l10n_latam_new_check_ids = [
-                    (0, 0, {
-                        "dflex_check_id": check.id,
-                        "name": check.name,
-                        "bank_id": check.bank_id.id if check.bank_id else False,
-                        "payment_date": payment.dflex_check_payment_date or check.payment_date or payment.date,
-                        "amount": payment.amount or check.amount or 0.0,
-                    })
+                    (
+                        0,
+                        0,
+                        {
+                            "dflex_check_id": check.id,
+                            "name": check.name,
+                            "bank_id": check.bank_id.id if check.bank_id else False,
+                            "payment_date": payment.dflex_check_payment_date or check.payment_date or payment.date,
+                            "amount": payment.amount or check.amount or 0.0,
+                        },
+                    )
                 ]
 
     def _dflex_validate_native_own_checks_before_post(self):
@@ -112,7 +106,6 @@ class AccountPayment(models.Model):
             native_lines = payment._dflex_get_native_own_check_lines()
 
             if not native_lines:
-                # No bloqueamos el flujo estándar si no usan cheques generados por DFlex.
                 continue
 
             if not payment._dflex_is_own_check_payment():
@@ -161,7 +154,6 @@ class AccountPayment(models.Model):
                     {
                         "state": "delivered",
                         "payment_id": payment.id,
-                        "payment_line_id": False,
                         "move_id": payment.move_id.id or False,
                         "issue_date": payment.date,
                         "payment_date": line.payment_date or payment.date,

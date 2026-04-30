@@ -6,7 +6,7 @@ class L10nLatamCheck(models.Model):
 
     dflex_check_id = fields.Many2one(
         "dflex.check",
-        string="Cheque propio disponible",
+        string="Cheque disponible",
         copy=False,
         index=True,
         domain="[('state', '=', 'available'), ('company_id', '=', company_id)]",
@@ -31,8 +31,8 @@ class L10nLatamCheck(models.Model):
     def _dflex_sync_from_selected_check(self):
         for rec in self.filtered("dflex_check_id"):
             check = rec.dflex_check_id
-
             vals = {}
+
             if "name" in rec._fields:
                 vals["name"] = check.name
             if "number" in rec._fields:
@@ -49,7 +49,6 @@ class L10nLatamCheck(models.Model):
             company_vat = company_partner.vat or ""
             company_name = company_partner.commercial_company_name or company_partner.name or company.display_name
 
-            # En cheques propios el emisor es la empresa que paga.
             for field_name in ("issuer_vat", "owner_vat"):
                 if field_name in rec._fields:
                     vals[field_name] = company_vat
@@ -57,8 +56,6 @@ class L10nLatamCheck(models.Model):
                 if field_name in rec._fields:
                     vals[field_name] = company_name
 
-            # El campo Studio Tipo puede ser obligatorio en algunas bases. Para cheques propios
-            # lo cargamos automáticamente desde la chequera y lo ocultamos en la vista.
             if "x_studio_tipo_cheque" in rec._fields and check.type:
                 selection = rec._fields["x_studio_tipo_cheque"].selection
                 if callable(selection):
@@ -70,21 +67,14 @@ class L10nLatamCheck(models.Model):
                     preferred = ("fisico", "físico", "physical")
                 selected_key = next((key for key in preferred if key in possible_keys), False)
                 if not selected_key:
-                    # Fallback por etiqueta, útil si Studio creó claves distintas.
-                    label_haystack = {
-                        key: str(label).lower().replace("í", "i")
-                        for key, label in selection
-                    }
+                    label_haystack = {key: str(label).lower().replace("í", "i") for key, label in selection}
                     if check.type == "echeq":
                         selected_key = next(
                             (key for key, label in label_haystack.items() if "e" in label and "cheq" in label),
                             False,
                         )
                     else:
-                        selected_key = next(
-                            (key for key, label in label_haystack.items() if "fis" in label),
-                            False,
-                        )
+                        selected_key = next((key for key, label in label_haystack.items() if "fis" in label), False)
                 if selected_key:
                     vals["x_studio_tipo_cheque"] = selected_key
 

@@ -13,7 +13,7 @@ class DflexCheckbook(models.Model):
         string="Diario banco",
         domain="[('type', 'in', ('bank', 'cash')), ('company_id', '=', company_id)]",
         check_company=True,
-        help="Diario desde el que se emitirán los cheques de esta chequera/cartera.",
+        help="Diario/banco desde el que se emiten los cheques propios de esta chequera.",
     )
     bank_id = fields.Many2one(
         "res.bank",
@@ -21,16 +21,14 @@ class DflexCheckbook(models.Model):
         compute="_compute_bank_id",
         store=True,
         readonly=False,
-        help="Banco asociado al diario. Se conserva por compatibilidad con chequeras existentes.",
+        help="Banco asociado al diario. Se conserva por compatibilidad con registros existentes.",
     )
     type = fields.Selection(
         [("fisico", "Físico"), ("echeq", "eCheq")],
-        string="Tipo de cheque",
+        string="Tipo",
         required=True,
         default="fisico",
-        help="Indica si esta chequera/cartera contiene cheques físicos o cheques electrónicos.",
     )
-
     start_number = fields.Integer(string="Número inicial", required=True)
     quantity = fields.Integer(string="Cantidad de cheques", required=True)
     last_number = fields.Integer(string="Último número", compute="_compute_last_number", store=True)
@@ -59,6 +57,8 @@ class DflexCheckbook(models.Model):
         for rec in self:
             if rec.journal_id and "bank_id" in rec.journal_id._fields:
                 rec.bank_id = rec.journal_id.bank_id
+            elif not rec.journal_id:
+                rec.bank_id = rec.bank_id
 
     @api.onchange("journal_id")
     def _onchange_journal_id(self):
@@ -71,28 +71,23 @@ class DflexCheckbook(models.Model):
         for rec in self:
             rec.last_number = rec.start_number + rec.quantity - 1 if rec.quantity and rec.start_number else 0
 
-    def _get_checkbook_overlap_domain(self):
-        self.ensure_one()
-        domain = [
-            ("id", "!=", self.id),
-            ("company_id", "=", self.company_id.id),
-            ("start_number", "<=", self.last_number),
-            ("last_number", ">=", self.start_number),
-        ]
-        if self.journal_id:
-            domain.append(("journal_id", "=", self.journal_id.id))
-        elif self.bank_id:
-            domain.append(("bank_id", "=", self.bank_id.id))
-        return domain
-
     def action_generate_checks(self):
         for book in self:
             if book.state != "draft":
                 raise ValidationError(_("Solo se pueden generar cheques desde el estado Borrador."))
             if not book.journal_id:
-                raise ValidationError(_("Debe indicar el diario banco de la chequera."))
+                raise ValidationError(_("Debe seleccionar un Diario banco para generar la chequera."))
 
-            overlap = self.search(book._get_checkbook_overlap_domain(), limit=1)
+            overlap = self.search(
+                [
+                    ("id", "!=", book.id),
+                    ("journal_id", "=", book.journal_id.id),
+                    ("company_id", "=", book.company_id.id),
+                    ("start_number", "<=", book.last_number),
+                    ("last_number", ">=", book.start_number),
+                ],
+                limit=1,
+            )
             if overlap:
                 raise ValidationError(
                     _("El rango de esta chequera se solapa con otra existente (%s).") % overlap.display_name
@@ -109,6 +104,7 @@ class DflexCheckbook(models.Model):
                         "type": book.type,
                         "company_id": book.company_id.id,
                         "checkbook_id": book.id,
+                        "state": "available",
                     }
                 )
             self.env["dflex.check"].create(vals_list)
@@ -117,21 +113,3 @@ class DflexCheckbook(models.Model):
     def action_close(self):
         for book in self:
             book.state = "closed"
-
-    @api.model
-    def _assign_missing_journals_from_bank(self):
-        """Best-effort migration for old records created when the model used res.bank only."""
-        checkbooks = self.search([("journal_id", "=", False), ("bank_id", "!=", False)])
-        for book in checkbooks:
-            journal = self.env["account.journal"].search(
-                [
-                    ("type", "in", ["bank", "cash"]),
-                    ("company_id", "=", book.company_id.id),
-                    ("bank_id", "=", book.bank_id.id),
-                ],
-                limit=1,
-            )
-            if journal:
-                book.journal_id = journal.id
-        self.env["dflex.check"]._assign_missing_journals_from_bank()
-        return True

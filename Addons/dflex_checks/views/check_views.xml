@@ -5,7 +5,6 @@
             parent="accountant.menu_accounting"
             sequence="90"/>
 
-  <!-- Acción y vistas de Chequeras -->
   <record id="action_dflex_checkbook" model="ir.actions.act_window">
     <field name="name">Chequeras</field>
     <field name="res_model">dflex.checkbook</field>
@@ -25,7 +24,8 @@
     <field name="arch" type="xml">
       <list>
         <field name="name"/>
-        <field name="journal_id" string="Diario banco"/>
+        <field name="journal_id"/>
+        <field name="bank_id" optional="hide"/>
         <field name="type"/>
         <field name="start_number"/>
         <field name="quantity"/>
@@ -43,10 +43,9 @@
         <sheet>
           <group>
             <field name="name"/>
-            <field name="company_id" groups="base.group_multi_company"/>
             <field name="journal_id" required="1"/>
-            <field name="bank_id" invisible="1"/>
-            <field name="type" required="1"/>
+            <field name="bank_id" readonly="1"/>
+            <field name="type"/>
             <field name="start_number"/>
             <field name="quantity"/>
             <field name="last_number" readonly="1"/>
@@ -65,15 +64,13 @@
           </group>
           <notebook>
             <page string="Cheques">
-              <field name="check_ids" context="{'default_journal_id': journal_id, 'default_type': type, 'default_company_id': company_id}">
+              <field name="check_ids" context="{'default_journal_id': journal_id, 'default_type': type}">
                 <list editable="bottom">
                   <field name="name"/>
                   <field name="number"/>
                   <field name="type"/>
                   <field name="journal_id"/>
-                  <field name="issue_date"/>
                   <field name="payment_date"/>
-                  <field name="delivery_date"/>
                   <field name="amount"/>
                   <field name="partner_id"/>
                   <field name="state"/>
@@ -86,7 +83,6 @@
     </field>
   </record>
 
-  <!-- Acción y vistas de Cheques -->
   <record id="action_dflex_check" model="ir.actions.act_window">
     <field name="name">Cheques</field>
     <field name="res_model">dflex.check</field>
@@ -106,18 +102,18 @@
     <field name="arch" type="xml">
       <list>
         <field name="name" string="Número"/>
-        <field name="checkbook_id" optional="show"/>
-        <field name="journal_id" string="Diario banco" optional="show"/>
-        <field name="type" optional="show"/>
+        <field name="partner_name" string="Proveedor" optional="show"/>
+        <field name="cuit_proveedor" string="CUIT" optional="show"/>
+        <field name="amount"/>
+        <field name="currency_id"/>
+        <field name="checkbook_id"/>
+        <field name="journal_id"/>
+        <field name="type" string="Tipo de cheque"/>
         <field name="state"/>
-        <field name="issue_date" optional="hide"/>
-        <field name="payment_date" optional="show"/>
-        <field name="delivery_date" optional="show"/>
-        <field name="amount" optional="show"/>
-        <field name="partner_id" string="Entregado a" optional="show"/>
-        <field name="cuit_proveedor" optional="hide"/>
-        <field name="payment_id" optional="show"/>
-        <field name="move_id" optional="hide"/>
+        <field name="payment_date"/>
+        <field name="delivery_date"/>
+        <field name="partner_id" string="Entregado a"/>
+        <field name="payment_id"/>
       </list>
     </field>
   </record>
@@ -132,8 +128,6 @@
                   invisible="state in ['available','debited']"/>
           <button name="action_deliver" type="object" string="Entregar" class="oe_highlight"
                   invisible="state != 'available'"/>
-          <button name="action_pending_entry" type="object" string="Por ingresar"
-                  invisible="state != 'delivered'"/>
           <button name="action_debit" type="object" string="Marcar pagado" class="oe_highlight"
                   invisible="state not in ['delivered','pending_entry','expired']"/>
           <button name="action_return" type="object" string="Marcar devuelto"
@@ -149,8 +143,8 @@
             <field name="name"/>
             <field name="number"/>
             <field name="type"/>
-            <field name="journal_id" string="Diario banco"/>
-            <field name="bank_id" invisible="1"/>
+            <field name="journal_id"/>
+            <field name="bank_id" readonly="1"/>
           </group>
           <group>
             <field name="issue_date"/>
@@ -160,14 +154,13 @@
             <field name="currency_id"/>
           </group>
           <group string="Entrega">
-            <field name="partner_id" string="Entregado a"/>
+            <field name="partner_id"/>
             <field name="cuit_proveedor" readonly="1"/>
             <field name="partner_name" readonly="1"/>
           </group>
           <group>
             <field name="move_id" readonly="1"/>
             <field name="payment_id" readonly="1"/>
-            <field name="payment_line_id" readonly="1"/>
             <field name="note"/>
           </group>
         </sheet>
@@ -182,7 +175,7 @@
       <search string="Buscar Cheques">
         <field name="name"/>
         <field name="partner_id"/>
-        <field name="journal_id" string="Diario banco"/>
+        <field name="journal_id"/>
         <filter name="available" string="En Cartera" domain="[('state','=','available')]"/>
         <filter name="delivered" string="Entregados" domain="[('state','=','delivered')]"/>
         <filter name="pending_entry" string="Por ingresar" domain="[('state','=','pending_entry')]"/>
@@ -193,7 +186,6 @@
         <group expand="0" string="Agrupar por">
           <filter name="group_journal" string="Diario banco" context="{'group_by':'journal_id'}"/>
           <filter name="group_state" string="Estado" context="{'group_by':'state'}"/>
-          <filter name="group_type" string="Tipo" context="{'group_by':'type'}"/>
           <filter name="group_book" string="Chequera" context="{'group_by':'checkbook_id'}"/>
         </group>
       </search>
