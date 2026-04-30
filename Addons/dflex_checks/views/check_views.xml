@@ -71,7 +71,7 @@
                   <field name="type"/>
                   <field name="journal_id"/>
                   <field name="payment_date"/>
-                  <field name="amount" sum="Total"/>
+                  <field name="amount" sum="Total" aggregator="sum"/>
                   <field name="partner_id"/>
                   <field name="state"/>
                 </list>
@@ -104,7 +104,7 @@
         <field name="name" string="Número"/>
         <field name="partner_name" string="Proveedor" optional="show"/>
         <field name="cuit_proveedor" string="CUIT" optional="show"/>
-        <field name="amount" sum="Total"/>
+        <field name="amount" sum="Total" aggregator="sum"/>
         <field name="currency_id"/>
         <field name="checkbook_id"/>
         <field name="journal_id"/>
@@ -152,7 +152,7 @@
             <field name="issue_date"/>
             <field name="payment_date"/>
             <field name="delivery_date" readonly="1"/>
-            <field name="amount" sum="Total"/>
+            <field name="amount" sum="Total" aggregator="sum"/>
             <field name="currency_id"/>
           </group>
           <group string="Entrega">

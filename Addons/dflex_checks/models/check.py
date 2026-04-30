@@ -45,7 +45,7 @@ class DflexCheck(models.Model):
         copy=False,
         help="Fecha en la que el cheque propio se entregó mediante un pago.",
     )
-    amount = fields.Monetary(string="Importe")
+    amount = fields.Monetary(string="Importe", aggregator="sum")
     currency_id = fields.Many2one("res.currency", default=lambda self: self.env.company.currency_id, required=True)
 
     partner_id = fields.Many2one("res.partner", string="Entregado a")
@@ -128,6 +128,9 @@ class DflexCheck(models.Model):
         for node in arch.xpath("//field[@name='amount']"):
             if node.get("sum") != "Total":
                 node.set("sum", "Total")
+                changed = True
+            if node.get("aggregator") != "sum":
+                node.set("aggregator", "sum")
                 changed = True
 
         if changed:
