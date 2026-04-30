@@ -83,6 +83,13 @@ class DflexCheck(models.Model):
         copy=False,
         help="Asiento creado al debitar este cheque propio contra el banco.",
     )
+    reversal_move_id = fields.Many2one(
+        "account.move",
+        string="Asiento anulación/devolución",
+        readonly=True,
+        copy=False,
+        help="Asiento contrario al asiento del pago, creado al anular o devolver este cheque propio.",
+    )
     payment_id = fields.Many2one(
         "account.payment",
         string="Pago relacionado",
@@ -284,6 +291,110 @@ class DflexCheck(models.Model):
                 raise ValidationError(_("Solo se pueden entregar cheques en estado En Cartera."))
             check.state = "delivered"
 
+    def _get_reverse_counterpart_account(self, pending_account):
+        self.ensure_one()
+
+        payment = self.payment_id
+        if not payment or not payment.move_id:
+            raise ValidationError(
+                _("El cheque %s no tiene un pago/asiento relacionado para reversar.") % self.display_name
+            )
+
+        move_lines = payment.move_id.line_ids.filtered(lambda line: line.account_id != pending_account)
+        partner_lines = move_lines.filtered(
+            lambda line: line.account_id.account_type in ("liability_payable", "asset_receivable")
+        )
+        if self.partner_id:
+            partner_lines = partner_lines.filtered(lambda line: line.partner_id == self.partner_id) or partner_lines
+
+        counterpart_line = partner_lines[:1] or move_lines.filtered(lambda line: line.balance)[:1]
+        if not counterpart_line:
+            raise ValidationError(
+                _("No se pudo determinar la cuenta de proveedor/contrapartida para el cheque %s.")
+                % self.display_name
+            )
+        return counterpart_line.account_id
+
+    def _prepare_reverse_payment_move_vals(self, reason):
+        self.ensure_one()
+
+        if not self.amount:
+            raise ValidationError(_("El cheque %s no tiene importe para reversar.") % self.display_name)
+        if not self.payment_id or not self.payment_id.move_id:
+            raise ValidationError(_("El cheque %s no tiene pago/asiento relacionado.") % self.display_name)
+
+        pending_account = self._get_own_check_pending_account()
+        counterpart_account = self._get_reverse_counterpart_account(pending_account)
+
+        payment_move = self.payment_id.move_id
+        pending_lines = payment_move.line_ids.filtered(lambda line: line.account_id == pending_account)
+        pending_balance = sum(pending_lines.mapped("balance"))
+        if not pending_lines or not pending_balance:
+            raise ValidationError(
+                _("No se encontró la línea de cuenta puente en el asiento del pago %s.")
+                % payment_move.display_name
+            )
+
+        partner = self.partner_id or self.payment_id.partner_id
+        date = fields.Date.context_today(self)
+        ref = _("%s cheque propio %s") % (reason, self.name or self.display_name)
+
+        # Asiento contrario al asiento del pago, solo por el importe de este cheque.
+        # Si el pago acreditó la cuenta puente, ahora se debita; si el pago la debitó,
+        # ahora se acredita.
+        if pending_balance < 0:
+            pending_debit = self.amount
+            pending_credit = 0.0
+            counterpart_debit = 0.0
+            counterpart_credit = self.amount
+        else:
+            pending_debit = 0.0
+            pending_credit = self.amount
+            counterpart_debit = self.amount
+            counterpart_credit = 0.0
+
+        return {
+            "move_type": "entry",
+            "journal_id": (self.journal_id or self.payment_id.journal_id).id,
+            "date": date,
+            "ref": ref,
+            "line_ids": [
+                (
+                    0,
+                    0,
+                    {
+                        "name": ref,
+                        "account_id": pending_account.id,
+                        "partner_id": partner.id or False,
+                        "debit": pending_debit,
+                        "credit": pending_credit,
+                    },
+                ),
+                (
+                    0,
+                    0,
+                    {
+                        "name": ref,
+                        "account_id": counterpart_account.id,
+                        "partner_id": partner.id or False,
+                        "debit": counterpart_debit,
+                        "credit": counterpart_credit,
+                    },
+                ),
+            ],
+        }
+
+    def _create_reverse_payment_move(self, reason):
+        for check in self:
+            if check.reversal_move_id:
+                if check.reversal_move_id.state != "posted":
+                    check.reversal_move_id.action_post()
+                continue
+
+            reverse_move = self.env["account.move"].create(check._prepare_reverse_payment_move_vals(reason))
+            reverse_move.action_post()
+            check.reversal_move_id = reverse_move.id
+
     def action_debit(self):
         for check in self:
             if check.state not in ["delivered", "pending_entry", "expired"]:
@@ -303,12 +414,15 @@ class DflexCheck(models.Model):
         for check in self:
             if check.state == "debited":
                 raise ValidationError(_("No se puede anular un cheque ya pagado."))
+            if check.state in ["delivered", "pending_entry", "expired"] and check.payment_id:
+                check._create_reverse_payment_move(_("Anulación"))
             check.state = "cancelled"
 
     def action_return(self):
         for check in self:
             if check.state not in ["delivered", "pending_entry", "expired"]:
                 raise ValidationError(_("Solo se pueden marcar como Devueltos cheques Entregados, Por ingresar o Vencidos."))
+            check._create_reverse_payment_move(_("Devolución"))
             check.state = "returned"
 
     def _clear_payment_usage_values(self):
@@ -317,6 +431,7 @@ class DflexCheck(models.Model):
             "payment_id": False,
             "move_id": False,
             "debit_move_id": False,
+            "reversal_move_id": False,
             "issue_date": False,
             "payment_date": False,
             "delivery_date": False,
@@ -328,6 +443,10 @@ class DflexCheck(models.Model):
         for check in self:
             if check.state == "debited":
                 raise ValidationError(_("No se puede volver a En Cartera un cheque ya pagado."))
+            if check.reversal_move_id:
+                raise ValidationError(
+                    _("No se puede volver a En Cartera porque el cheque ya tiene un asiento de anulación/devolución.")
+                )
             check.write(check._clear_payment_usage_values())
 
     @api.onchange("number")

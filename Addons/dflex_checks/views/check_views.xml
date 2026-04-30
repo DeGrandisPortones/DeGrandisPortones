@@ -115,6 +115,7 @@
         <field name="partner_id" string="Entregado a"/>
         <field name="payment_id"/>
         <field name="debit_move_id" string="Asiento débito" optional="show"/>
+        <field name="reversal_move_id" string="Asiento anulación/devolución" optional="show"/>
       </list>
     </field>
   </record>
@@ -162,6 +163,7 @@
           <group>
             <field name="move_id" readonly="1"/>
             <field name="debit_move_id" readonly="1"/>
+            <field name="reversal_move_id" readonly="1"/>
             <field name="payment_id" readonly="1"/>
             <field name="note"/>
           </group>
