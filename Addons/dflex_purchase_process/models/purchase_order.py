@@ -1,0 +1,229 @@
+from datetime import datetime, time, timedelta
+
+from odoo import _, api, fields, models
+from odoo.exceptions import UserError
+
+
+class PurchaseOrder(models.Model):
+    _inherit = "purchase.order"
+
+    dflex_purchase_process_state = fields.Selection(
+        [
+            ("authorized", "Autorizada"),
+            ("in_process", "En Proceso"),
+            ("received", "Recibida"),
+            ("redo", "Rehacer la orden"),
+        ],
+        string="Estado compras",
+        copy=False,
+        index=True,
+        tracking=True,
+        help=(
+            "Estado operativo interno de Compras. "
+            "No reemplaza el estado contable/nativo de Odoo."
+        ),
+    )
+    dflex_purchase_process_user_id = fields.Many2one(
+        "res.users",
+        string="Responsable compras",
+        copy=False,
+        tracking=True,
+    )
+    dflex_purchase_authorized_date = fields.Datetime(
+        string="Fecha autorización",
+        copy=False,
+        readonly=True,
+    )
+    dflex_purchase_in_process_date = fields.Datetime(
+        string="Fecha en proceso",
+        copy=False,
+        readonly=True,
+    )
+    dflex_purchase_received_date = fields.Datetime(
+        string="Fecha recibida",
+        copy=False,
+        readonly=True,
+    )
+    dflex_purchase_redo_date = fields.Datetime(
+        string="Fecha rehacer orden",
+        copy=False,
+        readonly=True,
+    )
+    dflex_purchase_redo_deadline_date = fields.Date(
+        string="Vence control de cotización",
+        compute="_compute_dflex_purchase_redo_deadline_date",
+        store=True,
+        help="Fecha límite + 15 días corridos.",
+    )
+
+    @api.depends("date_order")
+    def _compute_dflex_purchase_redo_deadline_date(self):
+        for order in self:
+            deadline = order._dflex_get_order_deadline_date()
+            order.dflex_purchase_redo_deadline_date = deadline + timedelta(days=15) if deadline else False
+
+    def _dflex_get_order_deadline_date(self):
+        """Return the order deadline date used to trigger Rehacer la orden.
+
+        In Odoo Purchase, date_order is labelled as Order Deadline / Fecha límite
+        in RFQ/purchase flows. If a database later adds a custom deadline field,
+        the method can be extended safely.
+        """
+        self.ensure_one()
+        value = self.date_order
+        if isinstance(value, datetime):
+            return value.date()
+        return value or False
+
+    def _dflex_should_mark_redo(self, today=None):
+        self.ensure_one()
+        if self.state in ("cancel", "done"):
+            return False
+        if self.dflex_purchase_process_state == "received":
+            return False
+
+        deadline = self._dflex_get_order_deadline_date()
+        if not deadline:
+            return False
+
+        today = today or fields.Date.context_today(self)
+        return today >= (deadline + timedelta(days=15))
+
+    def _dflex_set_purchase_process_state(self, state, message=None):
+        vals = {
+            "dflex_purchase_process_state": state,
+            "dflex_purchase_process_user_id": self.env.user.id,
+        }
+        now = fields.Datetime.now()
+        if state == "authorized":
+            vals["dflex_purchase_authorized_date"] = now
+        elif state == "in_process":
+            vals["dflex_purchase_in_process_date"] = now
+        elif state == "received":
+            vals["dflex_purchase_received_date"] = now
+        elif state == "redo":
+            vals["dflex_purchase_redo_date"] = now
+
+        self.write(vals)
+        if message:
+            self.message_post(body=message)
+
+    def action_dflex_set_authorized(self):
+        for order in self:
+            order._dflex_set_purchase_process_state(
+                "authorized",
+                _("Compra marcada como Autorizada por %s.") % self.env.user.display_name,
+            )
+        return True
+
+    def action_dflex_set_in_process(self):
+        for order in self:
+            if order.dflex_purchase_process_state == "received":
+                raise UserError(_("No se puede pasar a En Proceso una orden que ya está Recibida."))
+            order._dflex_set_purchase_process_state(
+                "in_process",
+                _("Compras inició la gestión con el proveedor."),
+            )
+        return True
+
+    def action_dflex_set_received(self):
+        for order in self:
+            if order.dflex_purchase_process_state == "redo":
+                raise UserError(
+                    _("La orden está en Rehacer la orden. Primero actualizá la cotización/presupuesto.")
+                )
+            order._dflex_set_purchase_process_state(
+                "received",
+                _("Compras marcó la orden como Recibida / acuse de recibo confirmado."),
+            )
+        return True
+
+    def action_dflex_force_redo(self):
+        for order in self:
+            order._dflex_set_purchase_process_state(
+                "redo",
+                _("La orden debe rehacerse y actualizar cotización/presupuesto."),
+            )
+        return True
+
+    @api.model
+    def _cron_dflex_update_purchase_process_states(self):
+        today = fields.Date.context_today(self)
+        orders = self.search(
+            [
+                ("state", "not in", ["cancel", "done"]),
+                ("date_order", "!=", False),
+                ("dflex_purchase_process_state", "!=", "received"),
+            ]
+        )
+        to_redo = orders.filtered(lambda order: order._dflex_should_mark_redo(today=today))
+        for order in to_redo:
+            if order.dflex_purchase_process_state != "redo":
+                order._dflex_set_purchase_process_state(
+                    "redo",
+                    _(
+                        "La orden pasó automáticamente a Rehacer la orden: "
+                        "pasaron 15 días corridos desde la fecha límite de la orden."
+                    ),
+                )
+        return True
+
+    def button_confirm(self):
+        res = super().button_confirm()
+        for order in self:
+            if order.state in ("purchase", "done") and not order.dflex_purchase_process_state:
+                order._dflex_set_purchase_process_state(
+                    "authorized",
+                    _("Compra marcada como Autorizada al confirmar la orden."),
+                )
+        return res
+
+    def button_approve(self, force=False):
+        res = super().button_approve(force=force)
+        for order in self:
+            if order.state in ("purchase", "done") and not order.dflex_purchase_process_state:
+                order._dflex_set_purchase_process_state(
+                    "authorized",
+                    _("Compra marcada como Autorizada al aprobar la orden."),
+                )
+        return res
+
+    def button_draft(self):
+        res = super().button_draft()
+        self.write(
+            {
+                "dflex_purchase_process_state": False,
+                "dflex_purchase_process_user_id": False,
+                "dflex_purchase_authorized_date": False,
+                "dflex_purchase_in_process_date": False,
+                "dflex_purchase_received_date": False,
+                "dflex_purchase_redo_date": False,
+            }
+        )
+        return res
+
+    def write(self, vals):
+        res = super().write(vals)
+
+        # Si cambian la fecha límite manualmente y la orden no está recibida,
+        # recalculamos el estado operativo de manera inmediata.
+        if "date_order" in vals:
+            today = fields.Date.context_today(self)
+            for order in self:
+                if order._dflex_should_mark_redo(today=today):
+                    if order.dflex_purchase_process_state != "redo":
+                        order._dflex_set_purchase_process_state(
+                            "redo",
+                            _(
+                                "La orden pasó a Rehacer la orden porque la nueva fecha límite "
+                                "ya supera los 15 días corridos."
+                            ),
+                        )
+                elif order.dflex_purchase_process_state == "redo" and order.state not in ("cancel", "done"):
+                    # Si el usuario actualiza la fecha límite/cotización, vuelve a Autorizada
+                    # para que Compras pueda iniciar el flujo nuevamente.
+                    order._dflex_set_purchase_process_state(
+                        "authorized",
+                        _("La fecha límite fue actualizada; la orden vuelve a Autorizada."),
+                    )
+        return res
