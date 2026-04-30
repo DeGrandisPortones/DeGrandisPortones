@@ -1,4 +1,5 @@
 from dateutil.relativedelta import relativedelta
+from lxml import etree
 
 from odoo import api, fields, models, _
 from odoo.exceptions import ValidationError
@@ -106,6 +107,32 @@ class DflexCheck(models.Model):
             "Ya existe un cheque con ese número para este diario y compañía.",
         ),
     ]
+
+    def get_view(self, view_id=None, view_type="form", **options):
+        """Force amount totals in list views, including Studio/custom inherited views.
+
+        The XML view already has sum="Total", but Studio/custom list variants may
+        replace the amount field and remove the aggregate attribute. This keeps the
+        footer total visible for the current search/filter, for example Vencidos.
+        """
+        res = super().get_view(view_id=view_id, view_type=view_type, **options)
+        if view_type not in ("list", "tree") or not res.get("arch"):
+            return res
+
+        try:
+            arch = etree.fromstring(res["arch"])
+        except Exception:
+            return res
+
+        changed = False
+        for node in arch.xpath("//field[@name='amount']"):
+            if node.get("sum") != "Total":
+                node.set("sum", "Total")
+                changed = True
+
+        if changed:
+            res["arch"] = etree.tostring(arch, encoding="unicode")
+        return res
 
     @api.depends("journal_id", "journal_id.bank_id")
     def _compute_bank_id(self):
