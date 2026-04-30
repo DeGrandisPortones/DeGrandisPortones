@@ -17,10 +17,14 @@
                         string="Acuse de recibo"
                         class="btn-primary"
                         invisible="dflex_purchase_process_state not in ['authorized', 'in_process'] or state in ['cancel', 'done']"/>
+                <button name="action_dflex_set_paid"
+                        type="object"
+                        string="Marcar pagada"
+                        invisible="dflex_purchase_process_state == 'paid' or state in ['cancel']"/>
                 <button name="action_dflex_force_redo"
                         type="object"
                         string="Rehacer orden"
-                        invisible="dflex_purchase_process_state == 'redo' or state in ['cancel', 'done']"/>
+                        invisible="dflex_purchase_process_state in ['redo', 'paid'] or state in ['cancel', 'done']"/>
             </xpath>
 
             <xpath expr="//sheet//group[1]" position="inside">
@@ -32,6 +36,7 @@
                     <field name="dflex_purchase_in_process_date" readonly="1" invisible="not dflex_purchase_in_process_date"/>
                     <field name="dflex_purchase_received_date" readonly="1" invisible="not dflex_purchase_received_date"/>
                     <field name="dflex_purchase_redo_date" readonly="1" invisible="not dflex_purchase_redo_date"/>
+                    <field name="dflex_purchase_paid_date" readonly="1" invisible="not dflex_purchase_paid_date"/>
                 </group>
             </xpath>
         </field>
@@ -48,7 +53,7 @@
                        string="Estado compras"
                        widget="badge"
                        optional="show"
-                       decoration-success="dflex_purchase_process_state == 'received'"
+                       decoration-success="dflex_purchase_process_state in ['received', 'paid']"
                        decoration-info="dflex_purchase_process_state == 'authorized'"
                        decoration-warning="dflex_purchase_process_state == 'in_process'"
                        decoration-danger="dflex_purchase_process_state == 'redo'"/>
@@ -74,7 +79,7 @@
                        string="Estado compras"
                        widget="badge"
                        optional="show"
-                       decoration-success="dflex_purchase_process_state == 'received'"
+                       decoration-success="dflex_purchase_process_state in ['received', 'paid']"
                        decoration-info="dflex_purchase_process_state == 'authorized'"
                        decoration-warning="dflex_purchase_process_state == 'in_process'"
                        decoration-danger="dflex_purchase_process_state == 'redo'"/>
@@ -104,6 +109,9 @@
                 <filter name="dflex_purchase_received"
                         string="Recibidas"
                         domain="[('dflex_purchase_process_state','=','received')]"/>
+                <filter name="dflex_purchase_paid"
+                        string="Pagadas"
+                        domain="[('dflex_purchase_process_state','=','paid')]"/>
                 <filter name="dflex_purchase_redo"
                         string="Rehacer la orden"
                         domain="[('dflex_purchase_process_state','=','redo')]"/>

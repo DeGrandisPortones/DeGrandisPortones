@@ -12,6 +12,7 @@ class PurchaseOrder(models.Model):
             ("authorized", "Autorizada"),
             ("in_process", "En Proceso"),
             ("received", "Recibida"),
+            ("paid", "Pagada"),
             ("redo", "Rehacer la orden"),
         ],
         string="Estado compras",
@@ -49,6 +50,11 @@ class PurchaseOrder(models.Model):
         copy=False,
         readonly=True,
     )
+    dflex_purchase_paid_date = fields.Datetime(
+        string="Fecha pagada",
+        copy=False,
+        readonly=True,
+    )
     dflex_purchase_redo_deadline_date = fields.Date(
         string="Vence control de cotización",
         compute="_compute_dflex_purchase_redo_deadline_date",
@@ -79,7 +85,7 @@ class PurchaseOrder(models.Model):
         self.ensure_one()
         if self.state in ("cancel", "done"):
             return False
-        if self.dflex_purchase_process_state == "received":
+        if self.dflex_purchase_process_state in ("received", "paid"):
             return False
 
         deadline = self._dflex_get_order_deadline_date()
@@ -103,10 +109,46 @@ class PurchaseOrder(models.Model):
             vals["dflex_purchase_received_date"] = now
         elif state == "redo":
             vals["dflex_purchase_redo_date"] = now
+        elif state == "paid":
+            vals["dflex_purchase_paid_date"] = now
 
         self.write(vals)
         if message:
             self.message_post(body=message)
+
+    def _dflex_get_related_vendor_bills(self):
+        self.ensure_one()
+        bills = self.env["account.move"]
+
+        if "invoice_ids" in self._fields:
+            bills |= self.invoice_ids
+
+        purchase_lines = self.order_line
+        invoice_lines = purchase_lines.mapped("invoice_lines")
+        if invoice_lines:
+            bills |= invoice_lines.mapped("move_id")
+
+        return bills.filtered(lambda move: move.move_type in ("in_invoice", "in_refund") and move.state != "cancel")
+
+    def _dflex_is_purchase_paid(self):
+        self.ensure_one()
+        bills = self._dflex_get_related_vendor_bills()
+        posted_bills = bills.filtered(lambda move: move.state == "posted")
+        if not posted_bills:
+            return False
+
+        # En Odoo, cuando Administración registra el pago puede quedar "in_payment"
+        # hasta la conciliación bancaria. Para el seguimiento operativo de Compras,
+        # ambos estados se consideran Pagada.
+        return all(move.payment_state in ("paid", "in_payment") for move in posted_bills)
+
+    def _dflex_update_paid_state_from_bills(self):
+        for order in self:
+            if order._dflex_is_purchase_paid() and order.dflex_purchase_process_state != "paid":
+                order._dflex_set_purchase_process_state(
+                    "paid",
+                    _("La orden fue marcada como Pagada porque sus facturas de proveedor están pagadas/en pago."),
+                )
 
     def action_dflex_set_authorized(self):
         for order in self:
@@ -138,6 +180,14 @@ class PurchaseOrder(models.Model):
             )
         return True
 
+    def action_dflex_set_paid(self):
+        for order in self:
+            order._dflex_set_purchase_process_state(
+                "paid",
+                _("Compra marcada como Pagada por %s.") % self.env.user.display_name,
+            )
+        return True
+
     def action_dflex_force_redo(self):
         for order in self:
             order._dflex_set_purchase_process_state(
@@ -153,7 +203,7 @@ class PurchaseOrder(models.Model):
             [
                 ("state", "not in", ["cancel", "done"]),
                 ("date_order", "!=", False),
-                ("dflex_purchase_process_state", "!=", "received"),
+                ("dflex_purchase_process_state", "not in", ["received", "paid"]),
             ]
         )
         to_redo = orders.filtered(lambda order: order._dflex_should_mark_redo(today=today))
@@ -176,6 +226,7 @@ class PurchaseOrder(models.Model):
                     "authorized",
                     _("Compra marcada como Autorizada al confirmar la orden."),
                 )
+        self._dflex_update_paid_state_from_bills()
         return res
 
     def button_approve(self, force=False):
@@ -186,6 +237,7 @@ class PurchaseOrder(models.Model):
                     "authorized",
                     _("Compra marcada como Autorizada al aprobar la orden."),
                 )
+        self._dflex_update_paid_state_from_bills()
         return res
 
     def button_draft(self):
@@ -198,6 +250,7 @@ class PurchaseOrder(models.Model):
                 "dflex_purchase_in_process_date": False,
                 "dflex_purchase_received_date": False,
                 "dflex_purchase_redo_date": False,
+                "dflex_purchase_paid_date": False,
             }
         )
         return res
@@ -219,7 +272,7 @@ class PurchaseOrder(models.Model):
                                 "ya supera los 15 días corridos."
                             ),
                         )
-                elif order.dflex_purchase_process_state == "redo" and order.state not in ("cancel", "done"):
+                elif order.dflex_purchase_process_state == "redo" and order.state not in ("cancel", "done") and not order._dflex_is_purchase_paid():
                     # Si el usuario actualiza la fecha límite/cotización, vuelve a Autorizada
                     # para que Compras pueda iniciar el flujo nuevamente.
                     order._dflex_set_purchase_process_state(
