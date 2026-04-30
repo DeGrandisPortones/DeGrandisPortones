@@ -209,7 +209,7 @@ class DflexCheck(models.Model):
         pending_account = self._get_own_check_pending_account()
         bank_account = self._get_bank_account_for_debit()
         partner = self.partner_id
-        date = fields.Date.context_today(self)
+        date = self.env.context.get("dflex_debit_date") or fields.Date.context_today(self)
         ref = _("Débito cheque propio %s") % (self.name or self.display_name)
 
         return {

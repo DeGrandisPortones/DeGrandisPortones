@@ -16,21 +16,52 @@ class AccountCheckActionWizard(models.TransientModel):
     )
 
     def action_confirm(self):
-        """Este método sirve para hacer el débito de cheques con cuenta outstanding desde los payments con método de pago de cheques."""
+        """Débito de cheques.
+
+        Si el cheque LATAM está vinculado a un cheque propio DFlex, usamos la
+        misma función de DFlex que crea el asiento individual:
+            Debe: cuenta puente de cheques propios
+            Haber: banco del diario del cheque
+
+        Para los demás cheques se conserva el comportamiento original del
+        módulo l10n_latam_check_ux.
+        """
         checks = self.env["l10n_latam.check"].browse(self._context.get("active_ids", False))
-        if checks.filtered(lambda x: not x.check_add_debit_button):
+
+        dflex_checks = checks.filtered(lambda check: "dflex_check_id" in check._fields and check.dflex_check_id)
+        normal_checks = checks - dflex_checks
+
+        for check in dflex_checks:
+            dflex_check = check.dflex_check_id
+            if self.date and dflex_check.payment_date and self.date < dflex_check.payment_date:
+                raise UserError(
+                    _("La fecha del débito del cheque %s no puede ser inferior a la fecha de pago %s.")
+                    % (dflex_check.name, dflex_check.payment_date)
+                )
+            dflex_check.with_context(dflex_debit_date=self.date).action_debit()
+            if dflex_check.debit_move_id:
+                check.message_post(
+                    body=(
+                        f'El cheque propio DFlex nro "{dflex_check.name}" ha sido debitado. '
+                        + dflex_check.debit_move_id._get_html_link()
+                    )
+                )
+            else:
+                check.message_post(body=f'El cheque propio DFlex nro "{dflex_check.name}" ha sido debitado.')
+
+        if not normal_checks:
+            return True
+
+        if normal_checks.filtered(lambda x: not x.check_add_debit_button):
             raise UserError(_("At least one check is in a journal where the 'Add Debit Date' option is not enabled."))
-        for check in checks:
+        for check in normal_checks:
             if self.date < check.payment_id.date:
                 raise UserError(
                     _("La fecha del débito del cheque %s no puede ser inferior a la fecha de emisión del mismo %s.")
                     % (self.date, check.payment_id.date)
                 )
-            # Línea del cheque a conciliar.
             move_line_id = check.outstanding_line_id.ids
-            # Obtenemos la cuenta outstanding del método de pago pentientes "manual" del diario del pago o bien la "Cuenta de pagos pentientes" de la compañía.
             outstanding_account = self._get_outstanding_account(check)
-            # Obtenemos fecha, importe, pasamos cuenta outstanding y el diario asignado es el mismo que se está editando.
             label = f"Débito cheque nro {check.name}"
             new_mv_line_dicts = {
                 "label": label,
@@ -40,7 +71,6 @@ class AccountCheckActionWizard(models.TransientModel):
                 "move_line_ids": move_line_id,
                 "date": self.date,
             }
-            # Aquí hacemos el asiento del débito.
             wizard = (
                 self.env["account.reconcile.wizard"]
                 .with_context(active_model="account.move.line", active_ids=move_line_id)
@@ -58,14 +88,10 @@ class AccountCheckActionWizard(models.TransientModel):
                 check.message_post(
                     body=f'El cheque nro "{check.name}" ha sido debitado, pero no se encontró el asiento asociado.'
                 )
+        return True
 
     def _get_outstanding_account(self, check):
-        """Obtenemos la cuenta para hacer el débito de cheques y hacemos las validaciones correspondientes.
-        Siempre necesitamos que se encuentre establecido un método de pago manual en el diario para poder
-        hacer el débito, no vamos a buscar la cuenta outstanding en configuración en caso de que no esté
-        establecido el método de pago manual. Primero buscamos método de pago con code manual y nombre
-        'Manual' y si no lo encuentra buscamos el primer método de pago manual que se creó.
-        """
+        """Obtenemos la cuenta para hacer el débito de cheques y hacemos las validaciones correspondientes."""
         journal = check.original_journal_id
         journal_manual_payment_method = journal.outbound_payment_method_line_ids.filtered(lambda x: x.code == "manual")
         if not journal_manual_payment_method:
@@ -73,7 +99,6 @@ class AccountCheckActionWizard(models.TransientModel):
                 _("No es posible crear un nuevo débito de cheque sin un método de pagos 'manual' en el diario %s.")
                 % (journal.display_name)
             )
-        # si hay mas de un método de pago con code code manual tratamos de buscar uno con name Manual, si no lo hay usamos el primero
         if len(journal_manual_payment_method) > 1:
             if journal_manual_payment_method.filtered(lambda x: x.name == "Manual"):
                 journal_manual_payment_method = journal_manual_payment_method.filtered(lambda x: x.name == "Manual")

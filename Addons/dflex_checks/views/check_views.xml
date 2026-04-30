@@ -114,7 +114,7 @@
         <field name="delivery_date"/>
         <field name="partner_id" string="Entregado a"/>
         <field name="payment_id"/>
-        <field name="debit_move_id" optional="hide"/>
+        <field name="debit_move_id" string="Asiento débito" optional="show"/>
       </list>
     </field>
   </record>
