@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="purchase_order_form_dflex_purchase_process" model="ir.ui.view">
+        <field name="name">purchase.order.form.dflex.purchase.process</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_form"/>
+        <field name="priority" eval="450"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button name="action_dflex_set_in_process"
+                        type="object"
+                        string="Pasar a En Proceso"
+                        class="btn-primary"
+                        invisible="dflex_purchase_process_state not in ['authorized', 'redo'] or state in ['cancel', 'done']"/>
+                <button name="action_dflex_set_received"
+                        type="object"
+                        string="Acuse de recibo"
+                        class="btn-primary"
+                        invisible="dflex_purchase_process_state not in ['authorized', 'in_process'] or state in ['cancel', 'done']"/>
+                <button name="action_dflex_force_redo"
+                        type="object"
+                        string="Rehacer orden"
+                        invisible="dflex_purchase_process_state == 'redo' or state in ['cancel', 'done']"/>
+            </xpath>
+
+            <xpath expr="//sheet//group[1]" position="inside">
+                <group string="Seguimiento de Compras">
+                    <field name="dflex_purchase_process_state" readonly="1"/>
+                    <field name="dflex_purchase_process_user_id" readonly="1"/>
+                    <field name="dflex_purchase_redo_deadline_date" readonly="1"/>
+                    <field name="dflex_purchase_authorized_date" readonly="1" invisible="not dflex_purchase_authorized_date"/>
+                    <field name="dflex_purchase_in_process_date" readonly="1" invisible="not dflex_purchase_in_process_date"/>
+                    <field name="dflex_purchase_received_date" readonly="1" invisible="not dflex_purchase_received_date"/>
+                    <field name="dflex_purchase_redo_date" readonly="1" invisible="not dflex_purchase_redo_date"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="purchase_order_list_dflex_purchase_process" model="ir.ui.view">
+        <field name="name">purchase.order.list.dflex.purchase.process</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_tree"/>
+        <field name="priority" eval="450"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='state']" position="before">
+                <field name="dflex_purchase_process_state"
+                       string="Estado compras"
+                       widget="badge"
+                       optional="show"
+                       decoration-success="dflex_purchase_process_state == 'received'"
+                       decoration-info="dflex_purchase_process_state == 'authorized'"
+                       decoration-warning="dflex_purchase_process_state == 'in_process'"
+                       decoration-danger="dflex_purchase_process_state == 'redo'"/>
+            </xpath>
+            <xpath expr="//field[@name='date_order']" position="after">
+                <field name="dflex_purchase_redo_deadline_date" optional="hide"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="purchase_order_search_dflex_purchase_process" model="ir.ui.view">
+        <field name="name">purchase.order.search.dflex.purchase.process</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.view_purchase_order_filter"/>
+        <field name="priority" eval="450"/>
+        <field name="arch" type="xml">
+            <xpath expr="//search" position="inside">
+                <separator/>
+                <filter name="dflex_purchase_authorized"
+                        string="Autorizadas"
+                        domain="[('dflex_purchase_process_state','=','authorized')]"/>
+                <filter name="dflex_purchase_in_process"
+                        string="En Proceso"
+                        domain="[('dflex_purchase_process_state','=','in_process')]"/>
+                <filter name="dflex_purchase_received"
+                        string="Recibidas"
+                        domain="[('dflex_purchase_process_state','=','received')]"/>
+                <filter name="dflex_purchase_redo"
+                        string="Rehacer la orden"
+                        domain="[('dflex_purchase_process_state','=','redo')]"/>
+                <group expand="0" string="Agrupar por">
+                    <filter name="group_dflex_purchase_process_state"
+                            string="Estado compras"
+                            context="{'group_by': 'dflex_purchase_process_state'}"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>
