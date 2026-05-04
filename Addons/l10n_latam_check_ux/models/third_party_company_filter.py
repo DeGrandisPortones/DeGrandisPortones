@@ -89,10 +89,6 @@ class L10nLatamCheck(models.Model):
 
     @api.depends(
         "issuer_vat",
-        "owner_vat",
-        "issuer_name",
-        "owner_name",
-        "x_studio_emisor_nombre",
         "payment_method_code",
         "payment_id",
         "payment_id.payment_method_line_id",
