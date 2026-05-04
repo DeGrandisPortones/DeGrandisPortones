@@ -3,23 +3,10 @@
 #    Copyright (C) 2015  ADHOC SA  (http://www.adhoc.com.ar)
 #    All Rights Reserved.
 #
-#    This program is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU Affero General Public License as
-#    published by the Free Software Foundation, either version 3 of the
-#    License, or (at your option) any later version.
-#
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU Affero General Public License for more details.
-#
-#    You should have received a copy of the GNU Affero General Public License
-#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
 ##############################################################################
 {
     "name": "Latam Check UX",
-    "version": "18.0.2.3.0",
+    "version": "18.0.2.3.2",
     "category": "Accounting",
     "sequence": 14,
     "summary": "",
@@ -37,14 +24,14 @@
         "wizards/checks_to_date_view.xml",
         "views/account_payment_view.xml",
         "views/l10n_latam_check_view.xml",
+        "views/third_party_check_filter_action.xml",
         "views/account_journal_view.xml",
-        # "views/report_payment_receipt_templates.xml",
         "views/res_partner_view.xml",
         "wizards/l10n_latam_payment_mass_transfer.xml",
         "reports/report_account_transfer.xml",
         "reports/report_checks_to_date.xml",
         "security/ir.model.access.csv",
-        "data/recompute_check_ux_state.xml",
+        "data/recompute_third_party_filter.xml",
     ],
     "demo": [],
     "installable": True,

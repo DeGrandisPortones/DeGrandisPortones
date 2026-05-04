@@ -183,18 +183,19 @@ class PurchaseOrder(models.Model):
         self.ensure_one()
         return bool(
             self._dflex_user_has_group_safe("account.group_account_manager")
-            or self._dflex_user_has_group_safe("purchase.group_purchase_manager")
             or self._dflex_user_has_group_safe("base.group_system")
         )
 
     def _dflex_validate_execution_deadline(self, vals):
         if not vals.get("dflex_purchase_executed"):
             return
+
         today = fields.Date.context_today(self)
         for order in self:
             deadline = vals.get("dflex_execution_deadline_date") or order.dflex_execution_deadline_date
             if deadline and isinstance(deadline, str):
                 deadline = fields.Date.to_date(deadline)
+
             if deadline and today > deadline and not order._dflex_user_can_execute_after_deadline():
                 raise UserError(
                     _(
@@ -319,6 +320,7 @@ class PurchaseOrder(models.Model):
 
     def write(self, vals):
         self._dflex_validate_execution_deadline(vals)
+
         if vals.get("dflex_purchase_executed"):
             vals = dict(vals)
             vals.setdefault("dflex_purchase_executed_date", fields.Datetime.now())
@@ -327,6 +329,7 @@ class PurchaseOrder(models.Model):
             vals = dict(vals)
             vals.setdefault("dflex_purchase_executed_date", False)
             vals.setdefault("dflex_purchase_executed_user_id", False)
+
         res = super().write(vals)
 
         # Si cambian la fecha límite manualmente y la orden no está recibida,
