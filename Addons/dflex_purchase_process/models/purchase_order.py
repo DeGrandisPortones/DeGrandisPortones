@@ -55,6 +55,29 @@ class PurchaseOrder(models.Model):
         copy=False,
         readonly=True,
     )
+    dflex_execution_deadline_date = fields.Date(
+        string="Fecha límite de ejecución",
+        copy=False,
+        tracking=True,
+        help="Fecha límite que carga Administración al autorizar la compra.",
+    )
+    dflex_purchase_executed = fields.Boolean(
+        string="Ejecutada con proveedor",
+        copy=False,
+        tracking=True,
+        help="Debe tildarlo Compras cuando ejecuta la compra con el proveedor.",
+    )
+    dflex_purchase_executed_date = fields.Datetime(
+        string="Fecha ejecutada",
+        copy=False,
+        readonly=True,
+    )
+    dflex_purchase_executed_user_id = fields.Many2one(
+        "res.users",
+        string="Ejecutada por",
+        copy=False,
+        readonly=True,
+    )
     dflex_purchase_redo_deadline_date = fields.Date(
         string="Vence control de cotización",
         compute="_compute_dflex_purchase_redo_deadline_date",
@@ -149,6 +172,45 @@ class PurchaseOrder(models.Model):
                     "paid",
                     _("La orden fue marcada como Pagada porque sus facturas de proveedor están pagadas/en pago."),
                 )
+
+    def _dflex_user_has_group_safe(self, xmlid):
+        try:
+            return self.env.user.has_group(xmlid)
+        except Exception:
+            return False
+
+    def _dflex_user_can_execute_after_deadline(self):
+        self.ensure_one()
+        return bool(
+            self._dflex_user_has_group_safe("account.group_account_manager")
+            or self._dflex_user_has_group_safe("purchase.group_purchase_manager")
+            or self._dflex_user_has_group_safe("base.group_system")
+        )
+
+    def _dflex_validate_execution_deadline(self, vals):
+        if not vals.get("dflex_purchase_executed"):
+            return
+        today = fields.Date.context_today(self)
+        for order in self:
+            deadline = vals.get("dflex_execution_deadline_date") or order.dflex_execution_deadline_date
+            if deadline and isinstance(deadline, str):
+                deadline = fields.Date.to_date(deadline)
+            if deadline and today > deadline and not order._dflex_user_can_execute_after_deadline():
+                raise UserError(
+                    _(
+                        "No podés marcar la compra %s como ejecutada porque la fecha límite de ejecución (%s) ya pasó. "
+                        "Debe marcarla Administración."
+                    )
+                    % (order.display_name, deadline)
+                )
+
+    def action_dflex_mark_executed(self):
+        self.write({"dflex_purchase_executed": True})
+        return True
+
+    def action_dflex_unmark_executed(self):
+        self.write({"dflex_purchase_executed": False})
+        return True
 
     def action_dflex_set_authorized(self):
         for order in self:
@@ -256,6 +318,15 @@ class PurchaseOrder(models.Model):
         return res
 
     def write(self, vals):
+        self._dflex_validate_execution_deadline(vals)
+        if vals.get("dflex_purchase_executed"):
+            vals = dict(vals)
+            vals.setdefault("dflex_purchase_executed_date", fields.Datetime.now())
+            vals.setdefault("dflex_purchase_executed_user_id", self.env.user.id)
+        elif "dflex_purchase_executed" in vals and not vals.get("dflex_purchase_executed"):
+            vals = dict(vals)
+            vals.setdefault("dflex_purchase_executed_date", False)
+            vals.setdefault("dflex_purchase_executed_user_id", False)
         res = super().write(vals)
 
         # Si cambian la fecha límite manualmente y la orden no está recibida,
