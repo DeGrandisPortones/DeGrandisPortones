@@ -7,7 +7,7 @@ class L10nLatamCheck(models.Model):
     ux_is_company_issuer = fields.Boolean(
         string="Cheque propio / emisor empresa",
         compute="_compute_ux_is_company_issuer",
-        store=True,
+        search="_search_ux_is_company_issuer",
         index=True,
         help=(
             "Campo técnico para excluir cheques propios de la acción Cheques de Terceros. "
@@ -26,16 +26,39 @@ class L10nLatamCheck(models.Model):
         self.ensure_one()
         return self[field_name] if field_name in self._fields else False
 
+    def _ux_get_nested_field_value_safe(self, record, field_path):
+        current = record
+        for field_name in field_path.split("."):
+            if not current or field_name not in current._fields:
+                return False
+            current = current[field_name]
+        return current
+
+    def _ux_get_company_issuer_names(self):
+        self.ensure_one()
+        partner = self.company_id.partner_id
+        names = {
+            self._ux_normalize_text(self.company_id.name),
+            self._ux_normalize_text(partner.name),
+            self._ux_normalize_text(partner.commercial_company_name),
+            self._ux_normalize_text(partner.display_name),
+        }
+        names.discard("")
+        return names
+
     def _ux_is_own_company_check_line(self):
         self.ensure_one()
 
+        # Si el cheque LATAM está relacionado con un cheque propio DFlex, no es cheque de terceros.
         if "dflex_check_id" in self._fields and self.dflex_check_id:
             return True
 
         payment = self.payment_id
+
+        # En esta base algunos cheques propios quedan como new_third_party_checks en el cheque,
+        # pero el pago OP-X muestra el método real "Cheques propios".
         method_line = payment.payment_method_line_id if payment else self.env["account.payment.method.line"]
         method = method_line.payment_method_id if method_line else self.env["account.payment.method"]
-
         method_parts = [
             self._ux_get_field_value_safe("payment_method_code"),
             method_line.code if method_line else False,
@@ -54,29 +77,26 @@ class L10nLatamCheck(models.Model):
 
         company_partner = self.company_id.partner_id
         company_vat = self._ux_normalize_vat(company_partner.vat)
-        issuer_vat = self._ux_normalize_vat(
-            self._ux_get_field_value_safe("issuer_vat")
-            or self._ux_get_field_value_safe("owner_vat")
-        )
-        if issuer_vat and company_vat and issuer_vat == company_vat:
+
+        issuer_vats = {
+            self._ux_normalize_vat(self._ux_get_field_value_safe("issuer_vat")),
+            self._ux_normalize_vat(self._ux_get_field_value_safe("owner_vat")),
+            self._ux_normalize_vat(self._ux_get_field_value_safe("ux_history_issuer_vat")),
+        }
+        issuer_vats.discard("")
+        if company_vat and company_vat in issuer_vats:
             return True
 
-        company_names = {
-            self._ux_normalize_text(self.company_id.name),
-            self._ux_normalize_text(company_partner.name),
-            self._ux_normalize_text(company_partner.commercial_company_name),
-            self._ux_normalize_text(company_partner.display_name),
-        }
-        company_names.discard("")
-
+        company_names = self._ux_get_company_issuer_names()
         issuer_names = {
             self._ux_normalize_text(self._ux_get_field_value_safe("issuer_name")),
             self._ux_normalize_text(self._ux_get_field_value_safe("owner_name")),
             self._ux_normalize_text(self._ux_get_field_value_safe("x_studio_emisor_nombre")),
+            self._ux_normalize_text(self._ux_get_field_value_safe("ux_history_issuer_name")),
         }
         issuer_names.discard("")
 
-        # Casos vistos en producción: el emisor puede venir como "VERT" o como razón social completa.
+        # Casos vistos: el emisor puede venir como "VERT" mientras la empresa es "Vert Deco Cercos".
         for issuer_name in issuer_names:
             if issuer_name in company_names:
                 return True
@@ -108,29 +128,98 @@ class L10nLatamCheck(models.Model):
         for check in self:
             check.ux_is_company_issuer = check._ux_is_own_company_check_line()
 
+    def _search_ux_is_company_issuer(self, operator, value):
+        """Search helper for the non-stored flag.
+
+        The domain is used only in a small accounting action. Computing matching IDs
+        is safer than depending on optional Studio/localization fields being stored.
+        """
+        checks = self.sudo().with_context(active_test=False).search([])
+        own_ids = checks.filtered(lambda check: check._ux_is_own_company_check_line()).ids
+
+        positive = (operator in ("=", "==") and bool(value)) or (operator in ("!=", "<>") and not bool(value))
+        if positive:
+            return [("id", "in", own_ids or [0])]
+        if not own_ids:
+            return []
+        return [("id", "not in", own_ids)]
+
+    def _dflex_own_check_destination_label(self):
+        self.ensure_one()
+        dflex_state = False
+        if "dflex_check_id" in self._fields and self.dflex_check_id:
+            dflex_state = self.dflex_check_id.state
+
+        if dflex_state == "available":
+            return "En cartera"
+        if dflex_state == "debited":
+            return "Depositado"
+        if self.payment_id and self.payment_id.state not in ("draft", "canceled"):
+            return "Entregado"
+        if dflex_state in ("delivered", "pending_entry", "expired", "returned", "cancelled"):
+            return "Entregado"
+        return False
+
     def _compute_ux_check_state(self):
         res = super()._compute_ux_check_state()
+        for check in self:
+            label = check._dflex_own_check_destination_label() if check._ux_is_own_company_check_line() else False
+            if label == "En cartera":
+                check.ux_check_state = "in_wallet"
+            elif label == "Depositado":
+                check.ux_check_state = "deposited"
+            elif label == "Entregado":
+                check.ux_check_state = "delivered"
+        return res
+
+    def _compute_ux_history_summary_fields(self):
+        res = super()._compute_ux_history_summary_fields()
         for check in self:
             if not check._ux_is_own_company_check_line():
                 continue
 
-            dflex_state = False
-            if "dflex_check_id" in check._fields and check.dflex_check_id:
-                dflex_state = check.dflex_check_id.state
+            label = check._dflex_own_check_destination_label()
+            if not label:
+                continue
 
-            if dflex_state == "available":
-                check.ux_check_state = "in_wallet"
-            elif dflex_state in ("delivered", "pending_entry", "expired", "returned", "cancelled"):
-                check.ux_check_state = "delivered"
-            elif dflex_state == "debited":
-                check.ux_check_state = "deposited"
-            elif check.payment_id and check.payment_id.state not in ("draft", "canceled"):
-                # Un cheque propio emitido en una orden de pago ya no está en cartera.
-                check.ux_check_state = "delivered"
+            check.ux_destination_type = label
+
+            if label == "En cartera":
+                destination = check.payment_id.journal_id.display_name if check.payment_id else False
+                check.ux_destination = "Ingreso: %s" % destination if destination else False
+            else:
+                partner = check.payment_id.partner_id if check.payment_id else self.env["res.partner"]
+                check.ux_destination = partner.display_name or label
+
+            operation_date = False
+            if check.payment_id:
+                operation_date = check.payment_id.l10n_latam_move_check_ids_operation_date
+                if not operation_date and check.payment_id.date:
+                    operation_date = fields.Datetime.to_datetime(check.payment_id.date)
+            check.ux_destination_movement_date = operation_date
         return res
 
     @api.model
+    def _dflex_update_third_party_check_actions(self):
+        domain = (
+            "[('payment_method_code', '=', 'new_third_party_checks'), "
+            "('payment_state', '!=', 'draft'), "
+            "('ux_is_company_issuer', '=', False)]"
+        )
+        actions = self.env["ir.actions.act_window"].sudo().search([("res_model", "=", "l10n_latam.check")])
+        actions = actions.filtered(
+            lambda action: (
+                "new_third_party_checks" in (action.domain or "")
+                or "tercer" in (action.name or "").lower()
+                or "third" in (action.name or "").lower()
+            )
+        )
+        actions.write({"domain": domain})
+        return True
+
+    @api.model
     def _dflex_recompute_third_party_filter_fields(self):
+        self._dflex_update_third_party_check_actions()
         checks = self.search([])
         if checks:
             checks._compute_ux_is_company_issuer()
