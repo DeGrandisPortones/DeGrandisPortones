@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="l10n_latam_check.action_third_party_check" model="ir.actions.act_window">
+        <field name="domain">[('payment_method_code', '=', 'new_third_party_checks'), ('payment_state', '!=', 'draft'), ('ux_is_company_issuer', '=', False)]</field>
+    </record>
+</odoo>
