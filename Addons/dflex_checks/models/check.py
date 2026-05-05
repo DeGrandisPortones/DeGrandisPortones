@@ -63,7 +63,7 @@ class DflexCheck(models.Model):
 
     state = fields.Selection(
         [
-            ("available", "En Cartera"),
+            ("available", "Disponible"),
             ("delivered", "Entregado"),
             ("pending_entry", "Por ingresar"),
             ("expired", "Vencido"),
@@ -333,7 +333,7 @@ class DflexCheck(models.Model):
     def action_deliver(self):
         for check in self:
             if check.state != "available":
-                raise ValidationError(_("Solo se pueden entregar cheques en estado En Cartera."))
+                raise ValidationError(_("Solo se pueden entregar cheques en estado Disponible."))
             check.state = "delivered"
 
     def _get_reverse_counterpart_account(self, pending_account):
@@ -487,10 +487,10 @@ class DflexCheck(models.Model):
     def action_reset_available(self):
         for check in self:
             if check.state == "debited":
-                raise ValidationError(_("No se puede volver a En Cartera un cheque ya pagado."))
+                raise ValidationError(_("No se puede volver a Disponible un cheque ya pagado."))
             if check.reversal_move_id:
                 raise ValidationError(
-                    _("No se puede volver a En Cartera porque el cheque ya tiene un asiento de anulación/devolución.")
+                    _("No se puede volver a Disponible porque el cheque ya tiene un asiento de anulación/devolución.")
                 )
             check.write(check._clear_payment_usage_values())
 
