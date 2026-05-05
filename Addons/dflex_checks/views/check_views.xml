@@ -126,7 +126,7 @@
     <field name="arch" type="xml">
       <form string="Cheque Propio">
         <header>
-          <button name="action_reset_available" type="object" string="Volver a En Cartera"
+          <button name="action_reset_available" type="object" string="Volver a Disponible"
                   invisible="state in ['available','debited']"/>
           <button name="action_deliver" type="object" string="Entregar" class="oe_highlight"
                   invisible="state != 'available'"/>
@@ -180,7 +180,7 @@
         <field name="name"/>
         <field name="partner_id"/>
         <field name="journal_id"/>
-        <filter name="available" string="En Cartera" domain="[('state','=','available')]"/>
+        <filter name="available" string="Disponible" domain="[('state','=','available')]"/>
         <filter name="delivered" string="Entregados" domain="[('state','=','delivered')]"/>
         <filter name="pending_entry" string="Por ingresar" domain="[('state','=','pending_entry')]"/>
         <filter name="expired" string="Vencidos" domain="[('state','=','expired')]"/>

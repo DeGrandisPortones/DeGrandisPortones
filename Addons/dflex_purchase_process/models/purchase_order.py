@@ -139,6 +139,32 @@ class PurchaseOrder(models.Model):
         if message:
             self.message_post(body=message)
 
+    def _dflex_get_deadline_snapshot(self):
+        """Guarda fechas límite antes de autorizar/confirmar."""
+        snapshot = {}
+        for order in self:
+            snapshot[order.id] = {
+                "date_order": order.date_order,
+                "dflex_execution_deadline_date": order.dflex_execution_deadline_date,
+            }
+        return snapshot
+
+    def _dflex_restore_deadline_snapshot(self, snapshot):
+        for order in self:
+            values = snapshot.get(order.id, {})
+            vals = {}
+
+            old_date_order = values.get("date_order")
+            old_execution_deadline = values.get("dflex_execution_deadline_date")
+
+            if old_date_order and order.date_order != old_date_order:
+                vals["date_order"] = old_date_order
+            if old_execution_deadline and order.dflex_execution_deadline_date != old_execution_deadline:
+                vals["dflex_execution_deadline_date"] = old_execution_deadline
+
+            if vals:
+                order.with_context(dflex_skip_deadline_restore=True).write(vals)
+
     def _dflex_get_related_vendor_bills(self):
         self.ensure_one()
         bills = self.env["account.move"]
@@ -214,11 +240,13 @@ class PurchaseOrder(models.Model):
         return True
 
     def action_dflex_set_authorized(self):
+        deadline_snapshot = self._dflex_get_deadline_snapshot()
         for order in self:
             order._dflex_set_purchase_process_state(
                 "authorized",
                 _("Compra marcada como Autorizada por %s.") % self.env.user.display_name,
             )
+        self._dflex_restore_deadline_snapshot(deadline_snapshot)
         return True
 
     def action_dflex_set_in_process(self):
@@ -282,7 +310,9 @@ class PurchaseOrder(models.Model):
         return True
 
     def button_confirm(self):
+        deadline_snapshot = self._dflex_get_deadline_snapshot()
         res = super().button_confirm()
+        self._dflex_restore_deadline_snapshot(deadline_snapshot)
         for order in self:
             if order.state in ("purchase", "done") and not order.dflex_purchase_process_state:
                 order._dflex_set_purchase_process_state(
@@ -293,7 +323,9 @@ class PurchaseOrder(models.Model):
         return res
 
     def button_approve(self, force=False):
+        deadline_snapshot = self._dflex_get_deadline_snapshot()
         res = super().button_approve(force=force)
+        self._dflex_restore_deadline_snapshot(deadline_snapshot)
         for order in self:
             if order.state in ("purchase", "done") and not order.dflex_purchase_process_state:
                 order._dflex_set_purchase_process_state(
