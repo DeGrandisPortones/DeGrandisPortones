@@ -2,6 +2,8 @@
 import logging
 import re
 
+from psycopg2 import IntegrityError
+
 from odoo import api, models
 from odoo.exceptions import UserError
 
@@ -12,10 +14,7 @@ class DflexTacaTacaCordobesaRateUpdater(models.AbstractModel):
     _name = "dflex.taca.taca.cordobesa.rate.updater"
     _description = "Actualizador tasas Cordobesa Taca Taca"
 
-    # Valores nuevos solicitados.
-    #
-    # Nota: 2 cuotas no venía en el listado de porcentajes informado. Se agrega
-    # con 0% de recargo para que aparezca como alternativa sin interés/recargo.
+    # 2 cuotas no tenía porcentaje informado. Se mantiene/crea con 0%.
     TARGET_RATES = {
         2: 0.0,
         4: 10.0,
@@ -74,9 +73,16 @@ class DflexTacaTacaCordobesaRateUpdater(models.AbstractModel):
 
     def _looks_like_cordobesa_record(self, record):
         text = self._record_text(record).lower()
+        card_type = ""
+        if "card_type" in record._fields:
+            try:
+                card_type = str(record.card_type or "").lower()
+            except Exception:
+                card_type = ""
         return (
             "cordobesa" in text
             or "tarjeta cordobesa" in text
+            or "cordobesa" in card_type
             or "taca taca" in text
             or "taca" in text
         )
@@ -84,9 +90,7 @@ class DflexTacaTacaCordobesaRateUpdater(models.AbstractModel):
     def _get_installment_field(self, record):
         for field_name in self.INSTALLMENT_FIELDS:
             field = record._fields.get(field_name)
-            if not field:
-                continue
-            if field.type not in ("integer", "float", "monetary", "selection", "char"):
+            if not field or field.type not in ("integer", "float", "monetary", "selection", "char"):
                 continue
             try:
                 value = record[field_name]
@@ -125,11 +129,8 @@ class DflexTacaTacaCordobesaRateUpdater(models.AbstractModel):
     def _get_rate_field(self, record):
         for field_name in self.RATE_FIELDS:
             field = record._fields.get(field_name)
-            if not field:
-                continue
-            if field.type not in ("float", "monetary", "integer"):
-                continue
-            return field_name
+            if field and field.type in ("float", "monetary", "integer"):
+                return field_name
 
         for field_name, field in record._fields.items():
             if field.type not in ("float", "monetary", "integer"):
@@ -143,31 +144,40 @@ class DflexTacaTacaCordobesaRateUpdater(models.AbstractModel):
     def _get_name_default(self, template, installments):
         text = self._record_text(template)
         replacement = "%s cuotas" % installments
-
         if text:
             new_text = re.sub(r"\d+\s*(cuota|cuotas|c\.|x)", replacement, text, count=1, flags=re.I)
             if new_text != text:
                 return new_text
-
         return "Tarjeta Cordobesa - %s cuotas" % installments
 
     @api.model
     def _get_original_taca_records(self):
+        records_by_model = {}
+
         data_records = self.env["ir.model.data"].sudo().search([
             ("module", "=", "dflex_sale_financing_taca_taca"),
         ])
-
-        records_by_model = {}
         for data in data_records:
-            if not data.model or not data.res_id:
-                continue
-            if data.model not in self.env:
+            if not data.model or not data.res_id or data.model not in self.env:
                 continue
             record = self.env[data.model].sudo().browse(data.res_id).exists()
             if not record:
                 continue
             records_by_model.setdefault(data.model, self.env[data.model].sudo().browse())
             records_by_model[data.model] |= record
+
+        # En algunas bases hay registros creados manualmente o por actualización y
+        # no tienen ir.model.data del módulo original. Los incluimos para no intentar
+        # duplicarlos y romper la restricción única.
+        if "sale.financing.rate" in self.env:
+            model = self.env["sale.financing.rate"].sudo()
+            extra_domain = []
+            if "card_type" in model._fields:
+                extra_domain.append(("card_type", "=", "cordobesa"))
+            extra_records = model.search(extra_domain)
+            if extra_records:
+                records_by_model.setdefault("sale.financing.rate", model.browse())
+                records_by_model["sale.financing.rate"] |= extra_records
 
         return records_by_model
 
@@ -178,9 +188,6 @@ class DflexTacaTacaCordobesaRateUpdater(models.AbstractModel):
             rate_field = self._get_rate_field(record)
             if not installments or not rate_field:
                 continue
-            if not self._looks_like_cordobesa_record(record):
-                # Igual puede servir si el XML del módulo sólo tenía "4 cuotas", etc.
-                pass
             candidates.append((abs(installments - target_installments), record))
 
         if not candidates:
@@ -189,9 +196,78 @@ class DflexTacaTacaCordobesaRateUpdater(models.AbstractModel):
         candidates.sort(key=lambda item: item[0])
         return candidates[0][1]
 
+    def _find_existing_rate_record(self, template, installments):
+        model = template.__class__
+        env_model = self.env[template._name].sudo()
+
+        # Caso conocido del error: sale.financing.rate_uniq_rate
+        # unique(plan_id, card_type, installments)
+        if all(field in template._fields for field in ("plan_id", "card_type", "installments")):
+            domain = [
+                ("plan_id", "=", template.plan_id.id),
+                ("card_type", "=", template.card_type),
+                ("installments", "=", installments),
+            ]
+            return env_model.search(domain, limit=1)
+
+        installment_field = self._get_installment_field(template)
+        if installment_field:
+            domain = [(installment_field, "=", installments)]
+            if "card_type" in template._fields:
+                domain.append(("card_type", "=", getattr(template, "card_type", False)))
+            if "plan_id" in template._fields and template.plan_id:
+                domain.append(("plan_id", "=", template.plan_id.id))
+            return env_model.search(domain, limit=1)
+
+        return env_model.browse()
+
+    def _ensure_xmlid(self, record, installments):
+        if not record:
+            return
+        xmlid_name = "cordobesa_%s_cuotas" % installments
+        existing = self.env["ir.model.data"].sudo().search([
+            ("module", "=", "dflex_taca_taca_cordobesa_rates"),
+            ("name", "=", xmlid_name),
+        ], limit=1)
+        if existing:
+            if existing.model != record._name or existing.res_id != record.id:
+                existing.write({"model": record._name, "res_id": record.id})
+            return
+
+        self.env["ir.model.data"].sudo().create({
+            "module": "dflex_taca_taca_cordobesa_rates",
+            "name": xmlid_name,
+            "model": record._name,
+            "res_id": record.id,
+            "noupdate": True,
+        })
+
+    def _write_rate(self, record, installments, rate):
+        rate_field = self._get_rate_field(record)
+        if not rate_field:
+            return False
+        record.write({rate_field: rate})
+        self._ensure_xmlid(record, installments)
+        return True
+
     def _create_missing_rate_record(self, model_records, installments, rate):
         template = self._get_best_template(model_records, installments)
         if not template:
+            return False
+
+        # Primero revisar si ya existe el registro único. Esto evita:
+        # duplicate key value violates sale_financing_rate_uniq_rate
+        existing = self._find_existing_rate_record(template, installments)
+        if existing:
+            if self._write_rate(existing, installments, rate):
+                _logger.info(
+                    "Taca Taca Cordobesa: actualizado registro existente %s/%s para %s cuotas -> %s%%",
+                    existing._name,
+                    existing.id,
+                    installments,
+                    rate,
+                )
+                return existing
             return False
 
         rate_field = self._get_rate_field(template)
@@ -199,31 +275,29 @@ class DflexTacaTacaCordobesaRateUpdater(models.AbstractModel):
         if not rate_field:
             return False
 
-        defaults = {
-            rate_field: rate,
-        }
+        defaults = {rate_field: rate}
 
         if installment_field:
             field = template._fields[installment_field]
-            if field.type in ("integer", "float", "monetary"):
-                defaults[installment_field] = installments
-            else:
-                defaults[installment_field] = str(installments)
+            defaults[installment_field] = installments if field.type in ("integer", "float", "monetary") else str(installments)
 
         if "name" in template._fields:
             defaults["name"] = self._get_name_default(template, installments)
         if "description" in template._fields:
             defaults["description"] = self._get_name_default(template, installments)
 
-        new_record = template.copy(default=defaults)
+        # Última protección: si entre search y copy aparece duplicado, hacemos rollback
+        # del savepoint y actualizamos el registro existente.
+        try:
+            with self.env.cr.savepoint():
+                new_record = template.copy(default=defaults)
+        except IntegrityError:
+            existing = self._find_existing_rate_record(template, installments)
+            if existing and self._write_rate(existing, installments, rate):
+                return existing
+            raise
 
-        self.env["ir.model.data"].sudo().create({
-            "module": "dflex_taca_taca_cordobesa_rates",
-            "name": "cordobesa_%s_cuotas" % installments,
-            "model": new_record._name,
-            "res_id": new_record.id,
-            "noupdate": True,
-        })
+        self._ensure_xmlid(new_record, installments)
 
         _logger.info(
             "Taca Taca Cordobesa: creado registro %s/%s para %s cuotas -> %s%%",
@@ -246,14 +320,6 @@ class DflexTacaTacaCordobesaRateUpdater(models.AbstractModel):
                 if not installments:
                     continue
 
-                if not self._looks_like_cordobesa_record(record):
-                    _logger.info(
-                        "Actualizando candidato Taca Taca sin etiqueta Cordobesa explícita: %s/%s (%s)",
-                        model_name,
-                        record.id,
-                        self._safe_display_name(record),
-                    )
-
                 rate_field = self._get_rate_field(record)
                 if not rate_field:
                     inspected.append("%s,%s,%s" % (model_name, record.id, self._safe_display_name(record)))
@@ -261,6 +327,7 @@ class DflexTacaTacaCordobesaRateUpdater(models.AbstractModel):
 
                 new_rate = self.TARGET_RATES[installments]
                 record.write({rate_field: new_rate})
+                self._ensure_xmlid(record, installments)
                 updated[installments] = updated.get(installments, 0) + 1
 
                 _logger.info(
@@ -272,25 +339,23 @@ class DflexTacaTacaCordobesaRateUpdater(models.AbstractModel):
                     rate_field,
                 )
 
-        # Crear cuotas que no existían en el módulo original, por ejemplo 2 y 12.
         missing = sorted(set(self.TARGET_RATES) - set(updated))
         if missing:
-            # Elegimos el modelo con mayor cantidad de registros detectados.
             candidate_models = sorted(records_by_model.items(), key=lambda item: len(item[1]), reverse=True)
             for installments in list(missing):
-                created = False
+                created_or_updated = False
                 for _model_name, model_records in candidate_models:
-                    new_record = self._create_missing_rate_record(
+                    record = self._create_missing_rate_record(
                         model_records,
                         installments,
                         self.TARGET_RATES[installments],
                     )
-                    if new_record:
-                        updated[installments] = 1
-                        created = True
+                    if record:
+                        updated[installments] = updated.get(installments, 0) + 1
+                        created_or_updated = True
                         break
-                if not created:
-                    inspected.append("No se pudo crear %s cuotas" % installments)
+                if not created_or_updated:
+                    inspected.append("No se pudo crear/actualizar %s cuotas" % installments)
 
         missing = sorted(set(self.TARGET_RATES) - set(updated))
         if missing:
