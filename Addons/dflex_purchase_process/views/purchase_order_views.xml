@@ -40,6 +40,7 @@
                 <group string="Seguimiento de Compras">
                     <field name="dflex_purchase_process_state" readonly="1"/>
                     <field name="dflex_purchase_process_user_id" readonly="1"/>
+                    <field name="dflex_order_deadline_date"/>
                     <field name="dflex_purchase_redo_deadline_date" readonly="1"/>
                     <field name="dflex_execution_deadline_date"/>
                     <field name="dflex_purchase_executed"/>
@@ -72,6 +73,9 @@
                        decoration-danger="dflex_purchase_process_state == 'redo'"/>
             </xpath>
             <xpath expr="//list/field[@name='date_order'] | //tree/field[@name='date_order']" position="after">
+                <field name="dflex_order_deadline_date"
+                       string="Fecha límite orden"
+                       optional="show"/>
                 <field name="dflex_purchase_redo_deadline_date"
                        string="Control cotización"
                        optional="hide"/>
@@ -104,6 +108,9 @@
                        decoration-danger="dflex_purchase_process_state == 'redo'"/>
             </xpath>
             <xpath expr="//list/field[@name='date_order'] | //tree/field[@name='date_order']" position="after">
+                <field name="dflex_order_deadline_date"
+                       string="Fecha límite orden"
+                       optional="show"/>
                 <field name="dflex_purchase_redo_deadline_date"
                        string="Control cotización"
                        optional="hide"/>
