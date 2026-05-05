@@ -2,7 +2,7 @@
 {
     "name": "DFlex - Tasas Cordobesa Taca Taca",
     "summary": "Actualiza porcentajes de recargo de Tarjeta Cordobesa en Taca Taca",
-    "version": "18.0.1.0.0",
+    "version": "18.0.1.1.0",
     "author": "DFLEX Argentina SAS",
     "category": "Sales",
     "license": "LGPL-3",
