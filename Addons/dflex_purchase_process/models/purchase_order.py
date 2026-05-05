@@ -139,6 +139,34 @@ class PurchaseOrder(models.Model):
         if message:
             self.message_post(body=message)
 
+    def _dflex_protect_deadline_dates_in_vals(self, vals):
+        """Evita que Odoo/Studio borre fechas límite al confirmar/aprobar.
+
+        Permite cambiar la fecha por otra fecha, pero si llega un write con
+        date_order=False o dflex_execution_deadline_date=False y el registro ya
+        tenía valor, se ignora ese borrado.
+        """
+        if self.env.context.get("dflex_allow_clear_deadline_dates"):
+            return vals
+
+        protected_vals = dict(vals)
+
+        if (
+            "date_order" in protected_vals
+            and not protected_vals.get("date_order")
+            and any(self.mapped("date_order"))
+        ):
+            protected_vals.pop("date_order", None)
+
+        if (
+            "dflex_execution_deadline_date" in protected_vals
+            and not protected_vals.get("dflex_execution_deadline_date")
+            and any(self.mapped("dflex_execution_deadline_date"))
+        ):
+            protected_vals.pop("dflex_execution_deadline_date", None)
+
+        return protected_vals
+
     def _dflex_get_deadline_snapshot(self):
         """Guarda fechas límite antes de autorizar/confirmar."""
         snapshot = {}
@@ -157,9 +185,9 @@ class PurchaseOrder(models.Model):
             old_date_order = values.get("date_order")
             old_execution_deadline = values.get("dflex_execution_deadline_date")
 
-            if old_date_order and order.date_order != old_date_order:
+            if old_date_order and not order.date_order:
                 vals["date_order"] = old_date_order
-            if old_execution_deadline and order.dflex_execution_deadline_date != old_execution_deadline:
+            if old_execution_deadline and not order.dflex_execution_deadline_date:
                 vals["dflex_execution_deadline_date"] = old_execution_deadline
 
             if vals:
@@ -351,6 +379,7 @@ class PurchaseOrder(models.Model):
         return res
 
     def write(self, vals):
+        vals = self._dflex_protect_deadline_dates_in_vals(vals)
         self._dflex_validate_execution_deadline(vals)
 
         if vals.get("dflex_purchase_executed"):
