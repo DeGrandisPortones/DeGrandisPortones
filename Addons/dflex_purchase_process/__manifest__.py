@@ -2,7 +2,7 @@
 {
     "name": "DFlex - Seguimiento de Compras",
     "summary": "Estados operativos de compras: autorizada, en proceso, recibida y rehacer orden",
-    "version": "18.0.1.1.2",
+    "version": "18.0.1.1.3",
     "author": "DFLEX Argentina SAS",
     "category": "Purchases",
     "license": "LGPL-3",

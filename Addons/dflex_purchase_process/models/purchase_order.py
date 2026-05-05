@@ -84,8 +84,17 @@ class PurchaseOrder(models.Model):
         store=True,
         help="Fecha límite + 15 días corridos.",
     )
+    dflex_order_deadline_date = fields.Date(
+        string="Fecha límite orden",
+        copy=False,
+        tracking=True,
+        help=(
+            "Copia persistente de la Fecha límite de la orden de Odoo. "
+            "Se completa automáticamente desde esa fecha y no se borra al aprobar/confirmar."
+        ),
+    )
 
-    @api.depends("date_order")
+    @api.depends("dflex_order_deadline_date")
     def _compute_dflex_purchase_redo_deadline_date(self):
         for order in self:
             deadline = order._dflex_get_order_deadline_date()
@@ -99,6 +108,10 @@ class PurchaseOrder(models.Model):
         the method can be extended safely.
         """
         self.ensure_one()
+        value = self.dflex_order_deadline_date
+        if value:
+            return value
+
         value = self.date_order
         if isinstance(value, datetime):
             return value.date()
@@ -139,6 +152,34 @@ class PurchaseOrder(models.Model):
         if message:
             self.message_post(body=message)
 
+    def _dflex_date_order_to_deadline_date(self, value):
+        if not value:
+            return False
+        if isinstance(value, datetime):
+            return value.date()
+        return fields.Date.to_date(value)
+
+    def _dflex_sync_order_deadline_from_date_order(self, vals=None):
+        """Completa Fecha límite orden desde la fecha límite nativa de Odoo.
+
+        No pisa un valor cargado manualmente si el usuario ya puso dflex_order_deadline_date.
+        """
+        vals = vals or {}
+        if vals.get("dflex_order_deadline_date"):
+            return vals
+
+        if vals.get("date_order"):
+            vals = dict(vals)
+            vals["dflex_order_deadline_date"] = self._dflex_date_order_to_deadline_date(vals["date_order"])
+            return vals
+
+        for order in self:
+            if order.date_order and not order.dflex_order_deadline_date:
+                order.with_context(dflex_allow_clear_deadline_dates=True).write(
+                    {"dflex_order_deadline_date": order._dflex_date_order_to_deadline_date(order.date_order)}
+                )
+        return vals
+
     def _dflex_protect_deadline_dates_in_vals(self, vals):
         """Evita que Odoo/Studio borre fechas límite al confirmar/aprobar.
 
@@ -159,6 +200,13 @@ class PurchaseOrder(models.Model):
             protected_vals.pop("date_order", None)
 
         if (
+            "dflex_order_deadline_date" in protected_vals
+            and not protected_vals.get("dflex_order_deadline_date")
+            and any(self.mapped("dflex_order_deadline_date"))
+        ):
+            protected_vals.pop("dflex_order_deadline_date", None)
+
+        if (
             "dflex_execution_deadline_date" in protected_vals
             and not protected_vals.get("dflex_execution_deadline_date")
             and any(self.mapped("dflex_execution_deadline_date"))
@@ -173,6 +221,7 @@ class PurchaseOrder(models.Model):
         for order in self:
             snapshot[order.id] = {
                 "date_order": order.date_order,
+                "dflex_order_deadline_date": order.dflex_order_deadline_date,
                 "dflex_execution_deadline_date": order.dflex_execution_deadline_date,
             }
         return snapshot
@@ -183,10 +232,13 @@ class PurchaseOrder(models.Model):
             vals = {}
 
             old_date_order = values.get("date_order")
+            old_order_deadline = values.get("dflex_order_deadline_date")
             old_execution_deadline = values.get("dflex_execution_deadline_date")
 
             if old_date_order and not order.date_order:
                 vals["date_order"] = old_date_order
+            if old_order_deadline and not order.dflex_order_deadline_date:
+                vals["dflex_order_deadline_date"] = old_order_deadline
             if old_execution_deadline and not order.dflex_execution_deadline_date:
                 vals["dflex_execution_deadline_date"] = old_execution_deadline
 
@@ -321,7 +373,7 @@ class PurchaseOrder(models.Model):
         orders = self.search(
             [
                 ("state", "not in", ["cancel", "done"]),
-                ("date_order", "!=", False),
+                ("dflex_order_deadline_date", "!=", False),
                 ("dflex_purchase_process_state", "not in", ["received", "paid"]),
             ]
         )
@@ -341,6 +393,7 @@ class PurchaseOrder(models.Model):
         deadline_snapshot = self._dflex_get_deadline_snapshot()
         res = super().button_confirm()
         self._dflex_restore_deadline_snapshot(deadline_snapshot)
+        self._dflex_sync_order_deadline_from_date_order()
         for order in self:
             if order.state in ("purchase", "done") and not order.dflex_purchase_process_state:
                 order._dflex_set_purchase_process_state(
@@ -354,6 +407,7 @@ class PurchaseOrder(models.Model):
         deadline_snapshot = self._dflex_get_deadline_snapshot()
         res = super().button_approve(force=force)
         self._dflex_restore_deadline_snapshot(deadline_snapshot)
+        self._dflex_sync_order_deadline_from_date_order()
         for order in self:
             if order.state in ("purchase", "done") and not order.dflex_purchase_process_state:
                 order._dflex_set_purchase_process_state(
@@ -378,7 +432,15 @@ class PurchaseOrder(models.Model):
         )
         return res
 
+    @api.model_create_multi
+    def create(self, vals_list):
+        fixed_vals_list = []
+        for vals in vals_list:
+            fixed_vals_list.append(self._dflex_sync_order_deadline_from_date_order(dict(vals)))
+        return super().create(fixed_vals_list)
+
     def write(self, vals):
+        vals = self._dflex_sync_order_deadline_from_date_order(vals)
         vals = self._dflex_protect_deadline_dates_in_vals(vals)
         self._dflex_validate_execution_deadline(vals)
 
