@@ -1,23 +1,52 @@
 # -*- coding: utf-8 -*-
-from odoo import models
+from odoo import _, fields, models
 
 
 class AccountPayment(models.Model):
     _inherit = "account.payment"
 
-    def _dg_is_same_amount(self, amount_a, amount_b):
+    dg_bundle_withholding_adjustment_move_id = fields.Many2one(
+        comodel_name="account.move",
+        string="Payment Bundle Withholding Adjustment",
+        readonly=True,
+        copy=False,
+        index=True,
+    )
+
+    def action_post(self):
+        res = super().action_post()
+        for payment in self:
+            payment._dg_create_bundle_withholding_adjustment_move()
+        return res
+
+    def action_draft(self):
+        for payment in self:
+            payment._dg_remove_bundle_withholding_adjustment_move()
+        return super().action_draft()
+
+    def action_cancel(self):
+        for payment in self:
+            payment._dg_remove_bundle_withholding_adjustment_move()
+        return super().action_cancel()
+
+    def _dg_compare_amounts(self, amount_a, amount_b):
         self.ensure_one()
         currency = self.company_currency_id or self.company_id.currency_id
-        return currency.compare_amounts(abs(amount_a), abs(amount_b)) == 0
+        return currency.compare_amounts(amount_a, amount_b)
 
-    def _dg_get_bundle_bridge_account_ids(self):
-        """Accounts that must not receive the withholding counterpart on a bundle.
+    def _dg_is_bundle_withholding_adjustable(self):
+        self.ensure_one()
+        return (
+            self.payment_method_code == "payment_bundle"
+            and self.is_main_payment
+            and self.withholdings_amount
+            and self.move_id
+            and self.move_id.state == "posted"
+            and self.destination_account_id
+            and self.destination_account_id.account_type in ("asset_receivable", "liability_payable")
+        )
 
-        The original payment bundle flow uses a bridge/outstanding account for the
-        main payment. That is correct for the payment method itself, but not for the
-        withholding counterpart: the withholding must reduce the partner receivable
-        or payable line so it can be reconciled against the invoice/bill.
-        """
+    def _dg_get_bundle_bridge_accounts(self):
         self.ensure_one()
         accounts = self.env["account.account"]
 
@@ -31,63 +60,191 @@ class AccountPayment(models.Model):
         if getattr(journal, "suspense_account_id", False):
             accounts |= journal.suspense_account_id
 
-        return accounts.ids
+        return accounts
 
-    def _dg_should_replace_bundle_line(self, line_vals, bridge_account_ids, withholding_amount):
+    def _dg_get_bundle_bridge_line_to_adjust(self):
         self.ensure_one()
 
-        if line_vals.get("account_id") not in bridge_account_ids:
-            return False
+        bridge_accounts = self._dg_get_bundle_bridge_accounts()
+        if not bridge_accounts:
+            return self.env["account.move.line"]
 
-        debit = line_vals.get("debit", 0.0) or 0.0
-        credit = line_vals.get("credit", 0.0) or 0.0
-        balance = debit - credit
-
-        if not self._dg_is_same_amount(balance, withholding_amount):
-            return False
+        withholding_amount = abs(self.withholdings_amount)
+        candidate_lines = self.move_id.line_ids.filtered(
+            lambda line: (
+                line.account_id in bridge_accounts
+                and self._dg_compare_amounts(abs(line.balance), withholding_amount) >= 0
+            )
+        )
 
         if self.payment_type == "inbound":
-            # Customer receipt: withholding debits the withholding asset account
-            # and must credit the customer's receivable account.
-            return credit > 0.0
+            candidate_lines = candidate_lines.filtered(lambda line: line.credit > 0.0)
+        elif self.payment_type == "outbound":
+            candidate_lines = candidate_lines.filtered(lambda line: line.debit > 0.0)
+        else:
+            return self.env["account.move.line"]
+
+        return candidate_lines[:1]
+
+    def _dg_destination_line_already_exists(self):
+        self.ensure_one()
+
+        withholding_amount = abs(self.withholdings_amount)
+        destination_lines = self.move_id.line_ids.filtered(
+            lambda line: (
+                line.account_id == self.destination_account_id
+                and line.partner_id == self.partner_id
+            )
+        )
+
+        if self.payment_type == "inbound":
+            return any(
+                self._dg_compare_amounts(line.credit, withholding_amount) >= 0
+                for line in destination_lines
+            )
 
         if self.payment_type == "outbound":
-            # Supplier payment: withholding credits the withholding liability account
-            # and must debit the supplier's payable account.
-            return debit > 0.0
+            return any(
+                self._dg_compare_amounts(line.debit, withholding_amount) >= 0
+                for line in destination_lines
+            )
 
         return False
 
-    def _prepare_move_line_default_vals(self, write_off_line_vals=None, force_balance=None):
-        res = super()._prepare_move_line_default_vals(
-            write_off_line_vals=write_off_line_vals,
-            force_balance=force_balance,
-        )
-
+    def _dg_prepare_bundle_withholding_adjustment_move_vals(self, bridge_account):
         self.ensure_one()
 
-        if (
-            self.payment_method_code != "payment_bundle"
-            or not self.is_main_payment
-            or not self.withholdings_amount
-            or not self.destination_account_id
-        ):
-            return res
+        amount = abs(self.withholdings_amount)
+        name = _("Reclasificación retenciones - %s") % (self.name or self.ref or self.id)
 
-        if self.destination_account_id.account_type not in ("asset_receivable", "liability_payable"):
-            return res
+        bridge_line_vals = {
+            "name": name,
+            "account_id": bridge_account.id,
+            "partner_id": self.partner_id.id,
+        }
+        destination_line_vals = {
+            "name": name,
+            "account_id": self.destination_account_id.id,
+            "partner_id": self.partner_id.id,
+        }
 
-        bridge_account_ids = self._dg_get_bundle_bridge_account_ids()
-        if not bridge_account_ids:
-            return res
+        if self.payment_type == "inbound":
+            bridge_line_vals.update({
+                "debit": amount,
+                "credit": 0.0,
+            })
+            destination_line_vals.update({
+                "debit": 0.0,
+                "credit": amount,
+            })
+        else:
+            bridge_line_vals.update({
+                "debit": 0.0,
+                "credit": amount,
+            })
+            destination_line_vals.update({
+                "debit": amount,
+                "credit": 0.0,
+            })
 
-        withholding_amount = self.withholdings_amount
+        return {
+            "move_type": "entry",
+            "date": self.date or fields.Date.context_today(self),
+            "journal_id": self.journal_id.id,
+            "company_id": self.company_id.id,
+            "ref": name,
+            "dg_bundle_withholding_payment_id": self.id,
+            "line_ids": [
+                (0, 0, bridge_line_vals),
+                (0, 0, destination_line_vals),
+            ],
+        }
 
-        for line_vals in res:
-            if self._dg_should_replace_bundle_line(line_vals, bridge_account_ids, withholding_amount):
-                line_vals["account_id"] = self.destination_account_id.id
-                line_vals["partner_id"] = self.partner_id.id
-                line_vals["name"] = line_vals.get("name") or "Contrapartida retenciones"
-                break
+    def _dg_create_bundle_withholding_adjustment_move(self):
+        self.ensure_one()
 
-        return res
+        if not self._dg_is_bundle_withholding_adjustable():
+            return False
+
+        if self.dg_bundle_withholding_adjustment_move_id:
+            return self.dg_bundle_withholding_adjustment_move_id
+
+        existing_move = self.env["account.move"].search(
+            [
+                ("dg_bundle_withholding_payment_id", "=", self.id),
+                ("state", "!=", "cancel"),
+            ],
+            limit=1,
+        )
+        if existing_move:
+            self.dg_bundle_withholding_adjustment_move_id = existing_move.id
+            return existing_move
+
+        if self._dg_destination_line_already_exists():
+            return False
+
+        bridge_line = self._dg_get_bundle_bridge_line_to_adjust()
+        if not bridge_line:
+            return False
+
+        move_vals = self._dg_prepare_bundle_withholding_adjustment_move_vals(bridge_line.account_id)
+        adjustment_move = self.env["account.move"].create(move_vals)
+        adjustment_move.action_post()
+        self.dg_bundle_withholding_adjustment_move_id = adjustment_move.id
+
+        self._dg_reconcile_bundle_withholding_adjustment_move(adjustment_move)
+
+        return adjustment_move
+
+    def _dg_reconcile_bundle_withholding_adjustment_move(self, adjustment_move):
+        self.ensure_one()
+
+        destination_line = adjustment_move.line_ids.filtered(
+            lambda line: (
+                line.account_id == self.destination_account_id
+                and line.partner_id == self.partner_id
+                and not line.reconciled
+            )
+        )[:1]
+
+        if not destination_line:
+            return False
+
+        invoice_lines = self.to_pay_move_line_ids.filtered(
+            lambda line: (
+                line.account_id == self.destination_account_id
+                and line.partner_id == self.partner_id
+                and not line.reconciled
+            )
+        )
+
+        if not invoice_lines:
+            return False
+
+        (invoice_lines + destination_line).reconcile()
+        return True
+
+    def _dg_remove_bundle_withholding_adjustment_move(self):
+        self.ensure_one()
+
+        move = self.dg_bundle_withholding_adjustment_move_id
+        if not move:
+            move = self.env["account.move"].search(
+                [
+                    ("dg_bundle_withholding_payment_id", "=", self.id),
+                    ("state", "!=", "cancel"),
+                ],
+                limit=1,
+            )
+
+        if not move:
+            return False
+
+        move.line_ids.remove_move_reconcile()
+
+        if move.state == "posted":
+            move.button_draft()
+
+        move.unlink()
+        self.dg_bundle_withholding_adjustment_move_id = False
+        return True
