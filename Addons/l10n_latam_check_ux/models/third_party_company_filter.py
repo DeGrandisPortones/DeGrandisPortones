@@ -10,8 +10,8 @@ class L10nLatamCheck(models.Model):
         search="_search_ux_is_company_issuer",
         index=True,
         help=(
-            "Campo técnico para excluir cheques propios de la acción Cheques de Terceros. "
-            "Se marca cuando el cheque está vinculado a un cheque propio DFlex, cuando el método "
+            "Campo tecnico para excluir cheques propios de la accion Cheques de Terceros. "
+            "Se marca cuando el cheque esta vinculado a un cheque propio DFlex, cuando el metodo "
             "del pago es Cheques propios, o cuando el emisor coincide con la empresa."
         ),
     )
@@ -49,14 +49,10 @@ class L10nLatamCheck(models.Model):
     def _ux_is_own_company_check_line(self):
         self.ensure_one()
 
-        # Si el cheque LATAM está relacionado con un cheque propio DFlex, no es cheque de terceros.
         if "dflex_check_id" in self._fields and self.dflex_check_id:
             return True
 
         payment = self.payment_id
-
-        # En esta base algunos cheques propios quedan como new_third_party_checks en el cheque,
-        # pero el pago OP-X muestra el método real "Cheques propios".
         method_line = payment.payment_method_line_id if payment else self.env["account.payment.method.line"]
         method = method_line.payment_method_id if method_line else self.env["account.payment.method"]
         method_parts = [
@@ -96,7 +92,6 @@ class L10nLatamCheck(models.Model):
         }
         issuer_names.discard("")
 
-        # Casos vistos: el emisor puede venir como "VERT" mientras la empresa es "Vert Deco Cercos".
         for issuer_name in issuer_names:
             if issuer_name in company_names:
                 return True
@@ -129,11 +124,6 @@ class L10nLatamCheck(models.Model):
             check.ux_is_company_issuer = check._ux_is_own_company_check_line()
 
     def _search_ux_is_company_issuer(self, operator, value):
-        """Search helper for the non-stored flag.
-
-        The domain is used only in a small accounting action. Computing matching IDs
-        is safer than depending on optional Studio/localization fields being stored.
-        """
         checks = self.sudo().with_context(active_test=False).search([])
         own_ids = checks.filtered(lambda check: check._ux_is_own_company_check_line()).ids
 
@@ -200,12 +190,17 @@ class L10nLatamCheck(models.Model):
         return res
 
     @api.model
-    def _dflex_update_third_party_check_actions(self):
-        domain = (
+    def _dflex_third_party_in_wallet_domain(self):
+        return (
             "[('payment_method_code', '=', 'new_third_party_checks'), "
             "('payment_state', '!=', 'draft'), "
-            "('ux_is_company_issuer', '=', False)]"
+            "('ux_is_company_issuer', '=', False), "
+            "('ux_destination_type', '=', 'En cartera')]"
         )
+
+    @api.model
+    def _dflex_update_third_party_check_actions(self):
+        domain = self._dflex_third_party_in_wallet_domain()
         actions = self.env["ir.actions.act_window"].sudo().search([("res_model", "=", "l10n_latam.check")])
         actions = actions.filtered(
             lambda action: (
