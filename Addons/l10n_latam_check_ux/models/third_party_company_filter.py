@@ -190,7 +190,7 @@ class L10nLatamCheck(models.Model):
         return res
 
     @api.model
-    def _dflex_third_party_in_wallet_domain(self):
+    def _dflex_third_party_all_domain(self):
         return (
             "[('payment_method_code', '=', 'new_third_party_checks'), "
             "('payment_state', '!=', 'draft'), "
@@ -199,8 +199,15 @@ class L10nLatamCheck(models.Model):
         )
 
     @api.model
+    def _dflex_third_party_in_wallet_domain(self):
+        # Backward-compatible method name. The main Cheques de terceros menu
+        # must show all third-party checks; use the search filters to narrow
+        # to En cartera / Entregado / Depositado / Vendido.
+        return self._dflex_third_party_all_domain()
+
+    @api.model
     def _dflex_update_third_party_check_actions(self):
-        domain = self._dflex_third_party_in_wallet_domain()
+        domain = self._dflex_third_party_all_domain()
         actions = self.env["ir.actions.act_window"].sudo().search([("res_model", "=", "l10n_latam.check")])
         actions = actions.filtered(
             lambda action: (
