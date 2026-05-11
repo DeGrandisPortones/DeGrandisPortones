@@ -194,7 +194,8 @@ class L10nLatamCheck(models.Model):
         return (
             "[('payment_method_code', '=', 'new_third_party_checks'), "
             "('payment_state', '!=', 'draft'), "
-            "('ux_is_company_issuer', '=', False)]"
+            "('ux_is_company_issuer', '=', False), "
+            "('ux_destination_type', '=', 'En cartera')]"
         )
 
     @api.model
