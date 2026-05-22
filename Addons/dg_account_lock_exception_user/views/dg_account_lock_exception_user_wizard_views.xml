@@ -67,7 +67,6 @@
             <form string="Excepción de bloqueo contable" create="0" edit="0" delete="0">
                 <header>
                     <button name="action_revoke" string="Revocar" type="object" class="btn-primary" invisible="state != 'active'"/>
-                    <button name="action_show_audit_trail_during_exception" string="Ver auditoría" type="object" class="btn-secondary" invisible="state == 'revoked'"/>
                     <field name="state" widget="statusbar" statusbar_visible="active,expired,revoked"/>
                 </header>
                 <sheet>
