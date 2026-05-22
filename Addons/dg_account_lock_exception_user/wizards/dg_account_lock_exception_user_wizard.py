@@ -95,13 +95,10 @@ class DgAccountLockExceptionUserWizard(models.TransientModel):
             "end_datetime": self.end_datetime,
             self.lock_date_field: self.lock_date,
         }
-        exception = self.env["account.lock_exception"].create(vals)
+        self.env["account.lock_exception"].create(vals)
 
-        return {
-            "type": "ir.actions.act_window",
-            "name": _("Excepción de bloqueo contable"),
-            "res_model": "account.lock_exception",
-            "res_id": exception.id,
-            "view_mode": "form",
-            "target": "current",
-        }
+        action = self.env["ir.actions.actions"]._for_xml_id(
+            "dg_account_lock_exception_user.action_dg_account_lock_exception_history"
+        )
+        action["target"] = "current"
+        return action

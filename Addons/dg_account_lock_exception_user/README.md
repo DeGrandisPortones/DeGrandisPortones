@@ -1,13 +1,25 @@
 # DG Account Lock Exception by User
 
-Módulo para Odoo 18 que agrega un asistente para crear excepciones de bloqueo contable para un usuario específico.
+Módulo para Odoo 18 que agrega un historial de excepciones de bloqueo contable y permite crear desbloqueos para un usuario específico.
+
+## Ubicación del menú
+
+**Contabilidad > Contabilidad > Desbloqueos contables**
+
+El menú abre primero el listado/historial de excepciones. Desde ahí se puede:
+
+- ver excepciones activas, revocadas o expiradas;
+- seleccionar registros y usar **Revocar**;
+- entrar al formulario del registro y usar **Revocar** desde el encabezado;
+- crear una nueva excepción con **Nuevo desbloqueo por usuario**.
 
 ## Uso
 
-1. Instalar el módulo.
-2. Ir a **Contabilidad > Configuración > Desbloqueos por usuario**.
-3. Elegir el usuario, el tipo de bloqueo a flexibilizar y la nueva fecha de bloqueo para ese usuario.
-4. Crear la excepción.
+1. Instalar o actualizar el módulo.
+2. Ir a **Contabilidad > Contabilidad > Desbloqueos contables**.
+3. Click en **Nuevo desbloqueo por usuario**.
+4. Elegir el usuario, el tipo de bloqueo a flexibilizar y la nueva fecha de bloqueo para ese usuario.
+5. Crear la excepción. Al confirmar, vuelve al historial.
 
 ## Ejemplo
 
