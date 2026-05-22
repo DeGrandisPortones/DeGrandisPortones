@@ -2,7 +2,7 @@
 {
     "name": "DG Account Lock Exception by User",
     "summary": "Permite crear excepciones de bloqueo contable para un usuario específico.",
-    "version": "18.0.1.1.0",
+    "version": "18.0.1.2.0",
     "category": "Accounting/Accounting",
     "author": "Dflex Argentina SAS",
     "license": "LGPL-3",
