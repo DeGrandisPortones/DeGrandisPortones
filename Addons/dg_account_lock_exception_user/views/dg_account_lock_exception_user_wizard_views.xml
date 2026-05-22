@@ -31,18 +31,104 @@
     </record>
 
     <record id="action_dg_account_lock_exception_user_wizard" model="ir.actions.act_window">
-        <field name="name">Desbloqueos contables por usuario</field>
+        <field name="name">Nuevo desbloqueo por usuario</field>
         <field name="res_model">dg.account.lock.exception.user.wizard</field>
         <field name="view_mode">form</field>
         <field name="target">new</field>
         <field name="groups_id" eval="[(4, ref('account.group_account_manager'))]"/>
     </record>
 
+    <record id="view_dg_account_lock_exception_history_list" model="ir.ui.view">
+        <field name="name">account.lock.exception.history.list</field>
+        <field name="model">account.lock_exception</field>
+        <field name="arch" type="xml">
+            <list string="Historial de desbloqueos contables" create="0" edit="0" delete="0" default_order="create_date desc">
+                <header>
+                    <button name="%(action_dg_account_lock_exception_user_wizard)d" string="Nuevo desbloqueo por usuario" type="action" class="btn-primary" display="always"/>
+                    <button name="action_revoke" string="Revocar" type="object" class="btn-secondary"/>
+                </header>
+                <field name="create_date" string="Creado"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+                <field name="user_id" string="Usuario"/>
+                <field name="lock_date_field" string="Tipo de bloqueo"/>
+                <field name="company_lock_date" string="Fecha original"/>
+                <field name="lock_date" string="Fecha excepcional"/>
+                <field name="end_datetime" string="Vigente hasta"/>
+                <field name="reason" string="Motivo"/>
+                <field name="state" string="Estado" widget="badge" decoration-success="state == 'active'" decoration-muted="state == 'revoked'" decoration-warning="state == 'expired'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_dg_account_lock_exception_history_form" model="ir.ui.view">
+        <field name="name">account.lock.exception.history.form</field>
+        <field name="model">account.lock_exception</field>
+        <field name="arch" type="xml">
+            <form string="Excepción de bloqueo contable" create="0" edit="0" delete="0">
+                <header>
+                    <button name="action_revoke" string="Revocar" type="object" class="btn-primary" invisible="state != 'active'"/>
+                    <button name="action_show_audit_trail_during_exception" string="Ver auditoría" type="object" class="btn-secondary" invisible="state == 'revoked'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="active,expired,revoked"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="company_id" readonly="1" groups="base.group_multi_company"/>
+                            <field name="user_id" readonly="1"/>
+                            <field name="lock_date_field" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="company_lock_date" readonly="1"/>
+                            <field name="lock_date" readonly="1"/>
+                            <field name="end_datetime" readonly="1"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="reason" readonly="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_dg_account_lock_exception_history_search" model="ir.ui.view">
+        <field name="name">account.lock.exception.history.search</field>
+        <field name="model">account.lock_exception</field>
+        <field name="arch" type="xml">
+            <search string="Buscar desbloqueos contables">
+                <field name="user_id"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+                <field name="reason"/>
+                <filter name="active_exceptions" string="Activas" domain="[('state', '=', 'active')]"/>
+                <filter name="revoked_exceptions" string="Revocadas" domain="[('state', '=', 'revoked')]"/>
+                <filter name="expired_exceptions" string="Expiradas" domain="[('state', '=', 'expired')]"/>
+                <separator/>
+                <filter name="my_exceptions" string="Mi usuario" domain="[('user_id', '=', uid)]"/>
+                <group expand="0" string="Agrupar por">
+                    <filter name="group_by_user" string="Usuario" context="{'group_by': 'user_id'}"/>
+                    <filter name="group_by_company" string="Compañía" context="{'group_by': 'company_id'}" groups="base.group_multi_company"/>
+                    <filter name="group_by_state" string="Estado" context="{'group_by': 'state'}"/>
+                    <filter name="group_by_lock_date_field" string="Tipo de bloqueo" context="{'group_by': 'lock_date_field'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_dg_account_lock_exception_history" model="ir.actions.act_window">
+        <field name="name">Desbloqueos contables</field>
+        <field name="res_model">account.lock_exception</field>
+        <field name="view_mode">list,form</field>
+        <field name="views" eval="[(ref('view_dg_account_lock_exception_history_list'), 'list'), (ref('view_dg_account_lock_exception_history_form'), 'form')]"/>
+        <field name="search_view_id" ref="view_dg_account_lock_exception_history_search"/>
+        <field name="groups_id" eval="[(4, ref('account.group_account_manager'))]"/>
+        <field name="context">{'search_default_active_exceptions': 1}</field>
+    </record>
+
     <menuitem
         id="menu_dg_account_lock_exception_user_wizard"
-        name="Desbloqueos por usuario"
-        parent="account.menu_finance_configuration"
-        action="action_dg_account_lock_exception_user_wizard"
+        name="Desbloqueos contables"
+        parent="account.menu_finance_entries"
+        action="action_dg_account_lock_exception_history"
         groups="account.group_account_manager"
-        sequence="90"/>
+        sequence="95"/>
 </odoo>
