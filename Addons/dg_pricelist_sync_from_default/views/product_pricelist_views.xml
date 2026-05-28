@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="dg_product_pricelist_view_sync_from_default" model="ir.ui.view">
+        <field name="name">product.pricelist.form.dg.sync.from.default</field>
+        <field name="model">product.pricelist</field>
+        <field name="inherit_id" ref="product.product_pricelist_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="inside">
+                <group string="Sincronizacion DG desde lista principal" name="dg_pricelist_sync_group">
+                    <group>
+                        <field name="dg_sync_enabled"/>
+                        <field name="dg_sync_from_pricelist_id" invisible="not dg_sync_enabled" required="dg_sync_enabled"/>
+                        <field name="dg_sync_discount" invisible="not dg_sync_enabled" required="dg_sync_enabled"/>
+                        <field name="dg_sync_product_scope" invisible="not dg_sync_enabled"/>
+                        <field name="dg_sync_delete_obsolete" invisible="not dg_sync_enabled"/>
+                    </group>
+                    <group invisible="not dg_sync_enabled">
+                        <field name="dg_sync_last_at" readonly="1"/>
+                        <field name="dg_sync_item_count" readonly="1"/>
+                        <button name="action_dg_sync_prices_from_source"
+                                type="object"
+                                string="Actualizar ahora"
+                                class="oe_highlight"/>
+                    </group>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>
