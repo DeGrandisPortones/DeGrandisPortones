@@ -9,7 +9,8 @@
                     <group>
                         <group>
                             <field name="company_id" groups="base.group_multi_company"/>
-                            <field name="partner_ids" widget="many2many_tags" options="{'no_create': True}"/>
+                            <field name="partner_id" options="{'no_create': True}"/>
+                            <field name="partner_ids" invisible="1"/>
                         </group>
                         <group>
                             <field name="date_from"/>
@@ -18,12 +19,11 @@
                         </group>
                     </group>
                     <p class="text-muted">
-                        Primero genera el listado. Luego se puede seleccionar uno o varios clientes y descargar el PDF de cuenta corriente.
+                        Primero ver el detalle. Luego, desde el listado de movimientos, usar Descargar resumen para imprimir el PDF.
                     </p>
                 </sheet>
                 <footer>
-                    <button name="action_view_summary" type="object" string="Ver listado" class="btn-primary"/>
-                    <button name="action_print_pdf" type="object" string="Imprimir PDF directo" class="btn-secondary"/>
+                    <button name="action_view_detail" type="object" string="Ver detalle" class="btn-primary"/>
                     <button string="Cancelar" class="btn-secondary" special="cancel"/>
                 </footer>
             </form>

@@ -1,6 +1,6 @@
 {
     "name": "Resumen Cta Cte",
-    "version": "18.0.1.1.0",
+    "version": "18.0.1.2.0",
     "category": "Accounting/Reporting",
     "summary": "Resumen de cuenta corriente de clientes separado por FCA e Internas",
     "author": "Dflex",
@@ -14,6 +14,7 @@
         "report/report_account_statement_templates.xml",
         "report/report_actions.xml",
         "views/account_statement_wizard_views.xml",
+        "views/account_statement_line_views.xml",
         "views/account_statement_summary_views.xml",
     ],
     "installable": True,
