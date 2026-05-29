@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="view_dg_client_sales_report_line_search" model="ir.ui.view">
+        <field name="name">dg.client.sales.report.line.search</field>
+        <field name="model">dg.client.sales.report.line</field>
+        <field name="arch" type="xml">
+            <search string="Reporte de clientes">
+                <field name="partner_id"/>
+                <field name="move_id"/>
+                <field name="move_name"/>
+                <field name="journal_id"/>
+                <field name="invoice_date"/>
+                <filter string="Subtotal FCA" name="filter_fca" domain="[('report_group', '=', 'fca')]"/>
+                <filter string="Subtotal Internas" name="filter_internas" domain="[('report_group', '=', 'internas')]"/>
+                <separator/>
+                <filter string="Facturas" name="filter_out_invoice" domain="[('move_type', '=', 'out_invoice')]"/>
+                <filter string="Notas de crédito" name="filter_out_refund" domain="[('move_type', '=', 'out_refund')]"/>
+                <filter string="Pendientes" name="filter_unpaid" domain="[('payment_state', 'in', ('not_paid', 'partial', 'in_payment'))]"/>
+                <separator/>
+                <filter string="Agrupar por cliente" name="group_by_partner" context="{'group_by': 'partner_id'}"/>
+                <filter string="Agrupar por subtotal" name="group_by_report_group" context="{'group_by': 'report_group'}"/>
+                <filter string="Agrupar por diario" name="group_by_journal" context="{'group_by': 'journal_id'}"/>
+                <filter string="Agrupar por mes" name="group_by_invoice_month" context="{'group_by': 'invoice_date:month'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_dg_client_sales_report_line_list" model="ir.ui.view">
+        <field name="name">dg.client.sales.report.line.list</field>
+        <field name="model">dg.client.sales.report.line</field>
+        <field name="arch" type="xml">
+            <list string="Reporte de clientes" create="0" edit="0" delete="0" default_order="partner_id, report_group, invoice_date, move_id">
+                <field name="partner_id"/>
+                <field name="report_group"/>
+                <field name="invoice_date"/>
+                <field name="invoice_date_due" optional="show"/>
+                <field name="move_id"/>
+                <field name="journal_id" optional="show"/>
+                <field name="move_type" optional="hide"/>
+                <field name="payment_state" optional="show"/>
+                <field name="amount_untaxed_signed" widget="monetary" sum="Base imponible"/>
+                <field name="amount_tax_signed" widget="monetary" sum="Impuestos"/>
+                <field name="amount_total_signed" widget="monetary" sum="Total"/>
+                <field name="amount_residual_signed" widget="monetary" sum="Saldo"/>
+                <field name="company_currency_id" column_invisible="1"/>
+                <field name="company_id" optional="hide" groups="base.group_multi_company"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_dg_client_sales_report_line_form" model="ir.ui.view">
+        <field name="name">dg.client.sales.report.line.form</field>
+        <field name="model">dg.client.sales.report.line</field>
+        <field name="arch" type="xml">
+            <form string="Reporte de clientes" create="0" edit="0" delete="0">
+                <header>
+                    <button name="action_open_move" type="object" string="Abrir comprobante" class="btn-primary"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="partner_id"/>
+                            <field name="report_group"/>
+                            <field name="move_id"/>
+                            <field name="journal_id"/>
+                            <field name="move_type"/>
+                            <field name="payment_state"/>
+                        </group>
+                        <group>
+                            <field name="invoice_date"/>
+                            <field name="accounting_date"/>
+                            <field name="invoice_date_due"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="currency_id"/>
+                            <field name="company_currency_id"/>
+                        </group>
+                    </group>
+                    <group string="Importes">
+                        <field name="amount_untaxed_signed" widget="monetary"/>
+                        <field name="amount_tax_signed" widget="monetary"/>
+                        <field name="amount_total_signed" widget="monetary"/>
+                        <field name="amount_residual_signed" widget="monetary"/>
+                    </group>
+                    <group string="Referencias">
+                        <field name="move_name"/>
+                        <field name="ref"/>
+                        <field name="invoice_origin"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_dg_client_sales_report_line" model="ir.actions.act_window">
+        <field name="name">Reporte de clientes</field>
+        <field name="res_model">dg.client.sales.report.line</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_dg_client_sales_report_line_search"/>
+        <field name="context">{'search_default_group_by_partner': 1, 'search_default_group_by_report_group': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No hay movimientos publicados en los diarios Diario Ventas Preimpreso o Diario Ventas Internas.
+            </p>
+        </field>
+    </record>
+
+    <menuitem id="menu_dg_client_sales_report_line"
+              name="Reporte de clientes"
+              parent="account.menu_finance_reports"
+              action="action_dg_client_sales_report_line"
+              sequence="35"
+              groups="account.group_account_user"/>
+</odoo>
