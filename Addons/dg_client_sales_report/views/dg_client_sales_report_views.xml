@@ -11,6 +11,19 @@
             </xpath>
         </field>
     </record>
+
+
+    <record id="view_move_form_dg_client_sales_report_group" model="ir.ui.view">
+        <field name="name">account.move.form.dg.client.sales.report.group</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_move_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='line_ids']//field[@name='partner_id']" position="after">
+                <field name="dg_client_sales_report_group" optional="show"/>
+            </xpath>
+        </field>
+    </record>
+
     <record id="view_dg_client_sales_report_line_search" model="ir.ui.view">
         <field name="name">dg.client.sales.report.line.search</field>
         <field name="model">dg.client.sales.report.line</field>

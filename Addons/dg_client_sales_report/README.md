@@ -77,3 +77,9 @@ Copiar la carpeta `dg_client_sales_report` dentro de la carpeta `Addons`, actual
 - Los pagos aplicados reducen el saldo de la factura del grupo correspondiente.
 - Se agrego soporte para pagos/creditos sin aplicar cuando se puedan clasificar o inferir.
 - Se agrego regla multiempresa.
+
+
+## 18.0.1.2.1
+
+- Se agrego el campo **Grupo reporte clientes** en las lineas de **Asientos contables > Apuntes contables**.
+- El campo queda disponible como columna para cargar saldos iniciales FCA o Internas directamente desde el asiento de apertura.
