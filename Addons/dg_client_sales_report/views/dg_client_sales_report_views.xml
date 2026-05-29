@@ -15,10 +15,12 @@
                 <separator/>
                 <filter string="Facturas" name="filter_out_invoice" domain="[('move_type', '=', 'out_invoice')]"/>
                 <filter string="Notas de crédito" name="filter_out_refund" domain="[('move_type', '=', 'out_refund')]"/>
+                <filter string="Saldos iniciales / ajustes" name="filter_opening_balance" domain="[('source_type', '=', 'opening_balance')]"/>
                 <filter string="Pendientes" name="filter_unpaid" domain="[('payment_state', 'in', ('not_paid', 'partial', 'in_payment'))]"/>
                 <separator/>
                 <filter string="Agrupar por cliente" name="group_by_partner" context="{'group_by': 'partner_id'}"/>
                 <filter string="Agrupar por subtotal" name="group_by_report_group" context="{'group_by': 'report_group'}"/>
+                <filter string="Agrupar por origen" name="group_by_source_type" context="{'group_by': 'source_type'}"/>
                 <filter string="Agrupar por diario" name="group_by_journal" context="{'group_by': 'journal_id'}"/>
                 <filter string="Agrupar por mes" name="group_by_invoice_month" context="{'group_by': 'invoice_date:month'}"/>
             </search>
@@ -32,9 +34,11 @@
             <list string="Reporte de clientes" create="0" edit="0" delete="0" default_order="partner_id, report_group, invoice_date, move_id">
                 <field name="partner_id"/>
                 <field name="report_group"/>
+                <field name="source_type" optional="show"/>
                 <field name="invoice_date"/>
                 <field name="invoice_date_due" optional="show"/>
                 <field name="move_id"/>
+                <field name="line_id" optional="hide"/>
                 <field name="journal_id" optional="show"/>
                 <field name="move_type" optional="hide"/>
                 <field name="payment_state" optional="show"/>
@@ -61,7 +65,9 @@
                         <group>
                             <field name="partner_id"/>
                             <field name="report_group"/>
+                            <field name="source_type"/>
                             <field name="move_id"/>
+                            <field name="line_id"/>
                             <field name="journal_id"/>
                             <field name="move_type"/>
                             <field name="payment_state"/>
@@ -99,7 +105,7 @@
         <field name="context">{'search_default_group_by_partner': 1, 'search_default_group_by_report_group': 1}</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
-                No hay movimientos publicados en los diarios Diario Ventas Preimpreso o Diario Ventas Internas.
+                No hay movimientos publicados en los diarios configurados ni saldos iniciales clasificados.
             </p>
         </field>
     </record>
