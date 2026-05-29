@@ -1,2 +1,3 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_dg_account_statement_wizard,dg.account.statement.wizard,model_dg_account_statement_wizard,account.group_account_user,1,1,1,1
+access_dg_resumen_cta_cte_summary,dg.resumen.cta.cte.summary,model_dg_resumen_cta_cte_summary,account.group_account_user,1,1,1,1

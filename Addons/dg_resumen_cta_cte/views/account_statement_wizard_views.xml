@@ -18,11 +18,12 @@
                         </group>
                     </group>
                     <p class="text-muted">
-                        El reporte imprime la cuenta corriente separada en Subtotal FCA e Internas. Los pagos se clasifican segun la factura o saldo inicial contra el que esten conciliados.
+                        Primero genera el listado. Luego se puede seleccionar uno o varios clientes y descargar el PDF de cuenta corriente.
                     </p>
                 </sheet>
                 <footer>
-                    <button name="action_print_pdf" type="object" string="Imprimir PDF" class="btn-primary"/>
+                    <button name="action_view_summary" type="object" string="Ver listado" class="btn-primary"/>
+                    <button name="action_print_pdf" type="object" string="Imprimir PDF directo" class="btn-secondary"/>
                     <button string="Cancelar" class="btn-secondary" special="cancel"/>
                 </footer>
             </form>

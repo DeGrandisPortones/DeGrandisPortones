@@ -1,6 +1,6 @@
 # Resumen Cta Cte
 
-Modulo para Odoo 18 que imprime un PDF de cuenta corriente por cliente, separado en Subtotal FCA y Subtotal Internas.
+Modulo para Odoo 18 que permite generar un listado de cuenta corriente por cliente y descargar un PDF separado en Subtotal FCA y Subtotal Internas.
 
 ## Dependencias
 
@@ -11,13 +11,10 @@ Modulo para Odoo 18 que imprime un PDF de cuenta corriente por cliente, separado
 
 Contabilidad > Reportes > Resumen Cta Cte
 
-Filtros:
-
-- Empresa
-- Clientes
-- Fecha desde
-- Fecha hasta
-- Incluir saldo anterior
+1. Elegir empresa, rango de fechas y clientes opcionales.
+2. Presionar **Ver listado**.
+3. Desde el listado, seleccionar uno o varios clientes o usar el boton de la fila.
+4. Presionar **Descargar resumen** para imprimir el PDF.
 
 El PDF se imprime con el titulo **Reporte de cuenta corriente** y separa los movimientos en:
 
