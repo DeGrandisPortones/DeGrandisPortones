@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <template id="report_account_statement">
+        <t t-call="web.html_container">
+            <t t-if="not statements">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <h2>Reporte de cuenta corriente</h2>
+                        <p>No se encontraron movimientos para los filtros seleccionados.</p>
+                    </div>
+                </t>
+            </t>
+            <t t-foreach="statements" t-as="statement">
+                <t t-set="o" t-value="statement['partner']"/>
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <h2 class="text-center">Reporte de cuenta corriente</h2>
+                        <div class="row mt-3 mb-3">
+                            <div class="col-7">
+                                <strong>Cliente:</strong>
+                                <span t-esc="statement['partner'].display_name"/>
+                                <br/>
+                                <strong>Empresa:</strong>
+                                <span t-esc="statement['company'].display_name"/>
+                            </div>
+                            <div class="col-5 text-end">
+                                <strong>Desde:</strong>
+                                <span t-esc="format_report_date(statement['date_from']) or '-'"/>
+                                <br/>
+                                <strong>Hasta:</strong>
+                                <span t-esc="format_report_date(statement['date_to']) or '-'"/>
+                            </div>
+                        </div>
+
+                        <t t-foreach="statement['groups']" t-as="group">
+                            <h4 class="mt-4" t-esc="group['label']"/>
+                            <table class="table table-sm o_main_table" style="font-size: 12px;">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 13%;">Fecha</th>
+                                        <th style="width: 37%;">Documento</th>
+                                        <th class="text-end" style="width: 16%;">Debe</th>
+                                        <th class="text-end" style="width: 16%;">Haber</th>
+                                        <th class="text-end" style="width: 18%;">Saldo</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <t t-if="not group['lines']">
+                                        <tr>
+                                            <td colspan="5" class="text-muted">Sin movimientos.</td>
+                                        </tr>
+                                    </t>
+                                    <t t-foreach="group['lines']" t-as="line">
+                                        <tr>
+                                            <td t-esc="format_report_date(line['date'])"/>
+                                            <td>
+                                                <span t-esc="line['document']"/>
+                                                <t t-if="line['description']">
+                                                    <br/>
+                                                    <small class="text-muted" t-esc="line['description']"/>
+                                                </t>
+                                            </td>
+                                            <td class="text-end" t-esc="format_amount(line['debit'], statement['currency'])"/>
+                                            <td class="text-end" t-esc="format_amount(line['credit'], statement['currency'])"/>
+                                            <td class="text-end" t-esc="format_amount(line['balance'], statement['currency'])"/>
+                                        </tr>
+                                    </t>
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="2"><strong t-esc="group['label']"/></td>
+                                        <td class="text-end"><strong t-esc="format_amount(group['debit'], statement['currency'])"/></td>
+                                        <td class="text-end"><strong t-esc="format_amount(group['credit'], statement['currency'])"/></td>
+                                        <td class="text-end"><strong t-esc="format_amount(group['balance'], statement['currency'])"/></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </t>
+
+                        <table class="table table-sm mt-4" style="font-size: 13px;">
+                            <tr>
+                                <td class="text-end"><strong>Total</strong></td>
+                                <td class="text-end" style="width: 25%;"><strong t-esc="format_amount(statement['total_balance'], statement['currency'])"/></td>
+                            </tr>
+                        </table>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

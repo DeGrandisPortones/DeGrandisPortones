@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="action_report_dg_account_statement" model="ir.actions.report">
+        <field name="name">Reporte de cuenta corriente</field>
+        <field name="model">dg.account.statement.wizard</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">dg_resumen_cta_cte.report_account_statement</field>
+        <field name="report_file">dg_resumen_cta_cte.report_account_statement</field>
+        <field name="print_report_name">'Reporte de cuenta corriente'</field>
+    </record>
+</odoo>
