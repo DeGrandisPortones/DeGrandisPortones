@@ -13,13 +13,14 @@
                             <field name="partner_ids" invisible="1"/>
                         </group>
                         <group>
-                            <field name="date_from"/>
+                            <field name="date_from" required="1"/>
                             <field name="date_to" required="1"/>
                             <field name="include_initial_balance"/>
+                            <field name="print_group"/>
                         </group>
                     </group>
                     <p class="text-muted">
-                        Primero ver el detalle. Luego, desde el listado de movimientos, usar Descargar resumen para imprimir el PDF.
+                        Primero ver el detalle de ventas y cobranzas. Luego, desde el subtotal FCA, el subtotal Internas o el total, descargar el PDF correspondiente.
                     </p>
                 </sheet>
                 <footer>

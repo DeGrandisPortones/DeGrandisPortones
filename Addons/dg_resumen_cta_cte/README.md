@@ -1,24 +1,23 @@
 # Resumen Cta Cte
 
-Modulo para Odoo 18 que permite ver e imprimir la cuenta corriente de un cliente, separada en Subtotal FCA y Subtotal Internas.
+Modulo Odoo 18 para consultar e imprimir el resumen de cuenta corriente de un cliente, separado en FCA e Internas.
 
-## Dependencias
+## Flujo
 
-- account
-- dg_client_sales_report
+1. Contabilidad > Reportes > Resumen Cta Cte.
+2. Elegir empresa, cliente y rango de fechas.
+3. Ver detalle.
+4. El listado muestra solo movimientos de cuenta corriente:
+   - Facturas de cliente.
+   - Notas de credito de cliente.
+   - Notas de debito de cliente.
+   - Recibos / cobranzas.
+5. El listado muestra un unico subtotal por FCA, un unico subtotal por Internas y un unico total.
+6. Solo esas tres filas tienen boton de descarga:
+   - Descargar FCA.
+   - Descargar Internas.
+   - Descargar ambas.
 
-## Uso
+## Version
 
-Contabilidad > Reportes > Resumen Cta Cte
-
-1. Elegir empresa, cliente y rango de fechas.
-2. Presionar **Ver detalle**.
-3. Odoo muestra el detalle de la cuenta corriente separado por:
-   - Subtotal FCA
-   - Subtotal Internas
-   - Total general
-4. Desde el listado, presionar **Descargar resumen** para imprimir el PDF.
-
-El PDF se imprime con el titulo **Reporte de cuenta corriente**.
-
-Los pagos conciliados se asignan al grupo de la factura o saldo inicial contra el que fueron aplicados. Si un pago cancela movimientos de ambos grupos, el reporte lo reparte entre FCA e Internas segun el importe conciliado con cada grupo.
+18.0.1.4.0

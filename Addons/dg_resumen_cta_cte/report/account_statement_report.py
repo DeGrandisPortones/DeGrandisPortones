@@ -19,7 +19,8 @@ class ReportDgAccountStatement(models.AbstractModel):
         wizards = self.env["dg.account.statement.wizard"].browse(docids)
         statements = []
         for wizard in wizards:
-            statements.extend(self._get_wizard_statements(wizard))
+            for statement in self._get_wizard_statements(wizard):
+                statements.append(self._filter_statement_for_print(statement, wizard.print_group))
         return {
             "doc_ids": docids,
             "doc_model": "dg.account.statement.wizard",
@@ -68,10 +69,7 @@ class ReportDgAccountStatement(models.AbstractModel):
         group = line.dg_client_sales_report_group
         if group in ("fca", "internas"):
             return group
-        move = line.move_id
-        if move.move_type in ("out_invoice", "out_refund"):
-            return self._journal_group(move.journal_id)
-        return self._line_direct_group(line)
+        return self._journal_group(line.move_id.journal_id)
 
     def _counterpart_group(self, line):
         group = line.dg_client_sales_report_group
@@ -99,8 +97,8 @@ class ReportDgAccountStatement(models.AbstractModel):
             document = "%s (%s)" % (document, label)
         return document
 
-    def _append_statement_line(self, bucket, line, group, amount, split=False):
-        if group not in ("fca", "internas") or not amount:
+    def _append_statement_line(self, bucket, line, group, amount, entry_type, split=False):
+        if group not in ("fca", "internas") or abs(amount or 0.0) < 0.005:
             return
         bucket.append(
             {
@@ -109,6 +107,7 @@ class ReportDgAccountStatement(models.AbstractModel):
                 "document": self._get_document_name(line, group=group, split=split),
                 "description": line.ref or line.move_id.ref or line.move_id.invoice_origin or "",
                 "amount": amount,
+                "entry_type": entry_type,
                 "move_id": line.move_id.id,
                 "line_id": line.id,
             }
@@ -117,41 +116,48 @@ class ReportDgAccountStatement(models.AbstractModel):
     def _classify_and_append_line(self, bucket, line):
         move = line.move_id
 
-        # Facturas y notas de credito de cliente: se clasifican por el diario de venta.
+        # Ventas, notas de credito y notas de debito de cliente.
         if move.move_type in ("out_invoice", "out_refund"):
             group = self._invoice_line_group(line)
-            self._append_statement_line(bucket, line, group, line.balance)
+            self._append_statement_line(bucket, line, group, line.balance, "sale")
             return
 
         direct_group = line.dg_client_sales_report_group
-        if direct_group in ("fca", "internas"):
-            self._append_statement_line(bucket, line, direct_group, line.balance)
-            return
-
-        # Saldos iniciales o ajustes manuales: se pueden clasificar por diario.
         journal_group = self._journal_group(move.journal_id)
-        if journal_group in ("fca", "internas") and not line.payment_id:
-            self._append_statement_line(bucket, line, journal_group, line.balance)
+
+        # Saldos iniciales/apertura: no se muestran como movimientos del periodo.
+        # Solo forman saldo anterior cuando quedan antes de Fecha desde.
+        group = direct_group if direct_group in ("fca", "internas") else journal_group
+        if not line.payment_id:
+            if group in ("fca", "internas"):
+                self._append_statement_line(bucket, line, group, line.balance, "opening")
             return
 
-        # Pagos, recibos y notas manuales: si estan conciliados, se reparten segun
-        # la factura/apunte de apertura contra el que fueron aplicados.
+        # Cobranzas/recibos. Si estan conciliados, se reparten segun la factura,
+        # nota o saldo inicial contra el que se aplicaron.
         partials = self._get_partial_reconcile_records(line)
         if partials:
             amount_by_group = defaultdict(float)
             sign = 1.0 if line.balance >= 0.0 else -1.0
             for partial in partials:
                 counterpart = self._get_counterpart_line(partial, line)
-                group = self._counterpart_group(counterpart)
-                if group in ("fca", "internas"):
-                    amount_by_group[group] += sign * partial.amount
-            for group, amount in amount_by_group.items():
-                self._append_statement_line(bucket, line, group, amount, split=len(amount_by_group) > 1)
+                counterpart_group = self._counterpart_group(counterpart)
+                if counterpart_group in ("fca", "internas"):
+                    amount_by_group[counterpart_group] += sign * partial.amount
+            for counterpart_group, amount in amount_by_group.items():
+                self._append_statement_line(
+                    bucket,
+                    line,
+                    counterpart_group,
+                    amount,
+                    "collection",
+                    split=len(amount_by_group) > 1,
+                )
             return
 
-        # Anticipos o pagos sin imputar: se incluyen solo si el diario esta clasificado.
-        if journal_group in ("fca", "internas"):
-            self._append_statement_line(bucket, line, journal_group, line.balance)
+        # Recibos/anticipos sin imputar: solo entran si se pueden clasificar.
+        if group in ("fca", "internas"):
+            self._append_statement_line(bucket, line, group, line.balance, "collection")
 
     def _get_lines_for_wizard(self, wizard):
         domain = [
@@ -162,7 +168,9 @@ class ReportDgAccountStatement(models.AbstractModel):
         ]
         if wizard.date_to:
             domain.append(("date", "<=", wizard.date_to))
-        if wizard.partner_ids:
+        if wizard.partner_id:
+            domain.append(("partner_id", "child_of", wizard.partner_id.commercial_partner_id.id))
+        elif wizard.partner_ids:
             domain.append(("partner_id", "child_of", wizard.partner_ids.ids))
 
         lines = self.env["account.move.line"].search(domain, order="date asc, id asc")
@@ -172,6 +180,8 @@ class ReportDgAccountStatement(models.AbstractModel):
         return bucket
 
     def _get_partners_from_lines(self, wizard, lines):
+        if wizard.partner_id:
+            return wizard.partner_id.commercial_partner_id
         if wizard.partner_ids:
             partners = wizard.partner_ids.mapped("commercial_partner_id")
             return partners.sorted(lambda p: p.name or "")
@@ -207,7 +217,11 @@ class ReportDgAccountStatement(models.AbstractModel):
             for item in raw_lines:
                 if date_from and item["date"] and item["date"] < date_from:
                     previous_balance += item["amount"]
-                elif not date_from or not item["date"] or item["date"] >= date_from:
+                elif (
+                    (not date_from or not item["date"] or item["date"] >= date_from)
+                    and item.get("entry_type") in ("sale", "collection")
+                    and abs(item.get("amount") or 0.0) >= 0.005
+                ):
                     period_lines.append(item.copy())
 
             period_lines.sort(key=lambda item: (item["date"] or fields.Date.today(), item["line_id"], item["id"]))
@@ -228,6 +242,7 @@ class ReportDgAccountStatement(models.AbstractModel):
                         "date": False,
                         "document": _("Saldo anterior"),
                         "description": "",
+                        "entry_type": "opening",
                         "debit": previous_balance if previous_balance > 0.0 else 0.0,
                         "credit": abs(previous_balance) if previous_balance < 0.0 else 0.0,
                         "balance": running_balance,
@@ -246,6 +261,7 @@ class ReportDgAccountStatement(models.AbstractModel):
                         "date": item["date"],
                         "document": item["document"],
                         "description": item["description"],
+                        "entry_type": item.get("entry_type") or "",
                         "debit": debit,
                         "credit": credit,
                         "balance": running_balance,
@@ -262,6 +278,7 @@ class ReportDgAccountStatement(models.AbstractModel):
                     "debit": total_debit,
                     "credit": total_credit,
                     "balance": group_balance,
+                    "has_data": bool(prepared_lines) or abs(total_debit) > 0.004 or abs(total_credit) > 0.004 or abs(group_balance) > 0.004,
                 }
             )
 
@@ -274,7 +291,18 @@ class ReportDgAccountStatement(models.AbstractModel):
             "date_to": wizard.date_to,
             "groups": groups_data,
             "total_balance": total_balance,
+            "has_data": any(group["has_data"] for group in groups_data),
         }
+
+    def _filter_statement_for_print(self, statement, print_group):
+        if print_group in ("fca", "internas"):
+            groups = [group for group in statement["groups"] if group["key"] == print_group and group.get("has_data")]
+        else:
+            groups = [group for group in statement["groups"] if group.get("has_data")]
+        filtered = dict(statement)
+        filtered["groups"] = groups
+        filtered["total_balance"] = sum(group["balance"] for group in groups)
+        return filtered
 
     def _line_group_from_item(self, item):
         identifier = item.get("id") or ""

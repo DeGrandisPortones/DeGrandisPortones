@@ -6,7 +6,7 @@ class DgAccountStatementWizard(models.TransientModel):
     _name = "dg.account.statement.wizard"
     _description = "Resumen Cta Cte"
 
-    date_from = fields.Date(string="Desde")
+    date_from = fields.Date(string="Desde", required=True)
     date_to = fields.Date(string="Hasta", default=fields.Date.context_today, required=True)
     partner_id = fields.Many2one(
         "res.partner",
@@ -29,6 +29,18 @@ class DgAccountStatementWizard(models.TransientModel):
         string="Incluir saldo anterior",
         default=True,
         help="Si se indica una fecha desde, agrega el saldo anterior de cada cuenta antes del rango.",
+    )
+
+    print_group = fields.Selection(
+        selection=[
+            ("all", "FCA e Internas"),
+            ("fca", "Solo FCA"),
+            ("internas", "Solo Internas"),
+        ],
+        string="Resumen a imprimir",
+        default="all",
+        required=True,
+        help="Define que cuenta se imprime en el PDF. El listado siempre muestra el detalle completo del cliente.",
     )
 
     def _check_dates(self):
@@ -79,8 +91,15 @@ class DgAccountStatementWizard(models.TransientModel):
         sequence = 10
 
         for statement in statements:
+            if not statement.get("has_data"):
+                continue
             base_vals = self._line_base_vals(statement)
+            any_group_data = False
+
             for group in statement["groups"]:
+                if not group.get("has_data"):
+                    continue
+                any_group_data = True
                 for line in group["lines"]:
                     vals = dict(base_vals)
                     vals.update(
@@ -91,9 +110,13 @@ class DgAccountStatementWizard(models.TransientModel):
                             "date": line["date"],
                             "document": line["document"],
                             "description": line.get("description") or "",
+                            "entry_type": line.get("entry_type") or "",
                             "debit": line["debit"],
                             "credit": line["credit"],
                             "balance": line["balance"],
+                            "show_download_fca": False,
+                            "show_download_internas": False,
+                            "show_download_all": False,
                         }
                     )
                     vals_list.append(vals)
@@ -109,23 +132,30 @@ class DgAccountStatementWizard(models.TransientModel):
                         "debit": group["debit"],
                         "credit": group["credit"],
                         "balance": group["balance"],
+                        "show_download_fca": group["key"] == "fca",
+                        "show_download_internas": group["key"] == "internas",
+                        "show_download_all": False,
                     }
                 )
                 vals_list.append(vals)
                 sequence += 10
 
-            vals = dict(base_vals)
-            vals.update(
-                {
-                    "sequence": sequence,
-                    "report_group": "total",
-                    "display_type": "total",
-                    "document": _("Total"),
-                    "balance": statement["total_balance"],
-                }
-            )
-            vals_list.append(vals)
-            sequence += 10
+            if any_group_data:
+                vals = dict(base_vals)
+                vals.update(
+                    {
+                        "sequence": sequence,
+                        "report_group": "total",
+                        "display_type": "total",
+                        "document": _("Total"),
+                        "balance": statement["total_balance"],
+                        "show_download_fca": False,
+                        "show_download_internas": False,
+                        "show_download_all": True,
+                    }
+                )
+                vals_list.append(vals)
+                sequence += 10
 
         if vals_list:
             self.env["dg.resumen.cta.cte.line"].create(vals_list)
@@ -137,7 +167,6 @@ class DgAccountStatementWizard(models.TransientModel):
             "view_mode": "list,form",
             "domain": [("wizard_id", "=", self.id)],
             "context": {
-                "search_default_group_by_report_group": 1,
                 "create": False,
                 "edit": False,
                 "delete": False,

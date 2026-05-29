@@ -42,6 +42,15 @@ class DgResumenCtaCteLine(models.TransientModel):
     date = fields.Date(string="Fecha", readonly=True)
     document = fields.Char(string="Documento", readonly=True)
     description = fields.Char(string="Descripcion", readonly=True)
+    entry_type = fields.Selection(
+        selection=[
+            ("sale", "Venta"),
+            ("collection", "Cobranza"),
+            ("opening", "Saldo anterior"),
+        ],
+        string="Tipo",
+        readonly=True,
+    )
     debit = fields.Monetary(
         string="Debe",
         currency_field="currency_id",
@@ -61,12 +70,31 @@ class DgResumenCtaCteLine(models.TransientModel):
         group_operator="sum",
     )
 
-    def action_download_resumen(self):
-        if not self:
-            raise UserError(_("Seleccione al menos una linea para descargar el resumen."))
+    show_download_fca = fields.Boolean(string="Mostrar descargar FCA", readonly=True)
+    show_download_internas = fields.Boolean(string="Mostrar descargar Internas", readonly=True)
+    show_download_all = fields.Boolean(string="Mostrar descargar ambas", readonly=True)
 
+    def _get_single_wizard(self):
+        if not self:
+            raise UserError(_("Seleccione una linea del resumen."))
         wizards = self.mapped("wizard_id")
         if len(wizards) != 1:
             raise UserError(_("Seleccione lineas del mismo resumen."))
+        return wizards
 
-        return wizards.action_print_pdf()
+    def _download_with_group(self, print_group):
+        wizard = self._get_single_wizard()
+        wizard.write({"print_group": print_group})
+        return wizard.action_print_pdf()
+
+    def action_download_resumen(self):
+        return self._download_with_group("all")
+
+    def action_download_all(self):
+        return self._download_with_group("all")
+
+    def action_download_fca(self):
+        return self._download_with_group("fca")
+
+    def action_download_internas(self):
+        return self._download_with_group("internas")
