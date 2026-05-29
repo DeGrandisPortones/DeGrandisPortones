@@ -1,6 +1,23 @@
 from odoo import fields, models, tools
 
 
+class AccountJournal(models.Model):
+    _inherit = "account.journal"
+
+    dg_client_sales_report_group = fields.Selection(
+        selection=[
+            ("fca", "Subtotal FCA"),
+            ("internas", "Subtotal Internas"),
+        ],
+        string="Grupo reporte clientes",
+        help=(
+            "Clasifica los movimientos de este diario en el reporte de clientes. "
+            "Si se deja vacio, el reporte intenta clasificar por nombre del diario."
+        ),
+        copy=False,
+    )
+
+
 class AccountMoveLine(models.Model):
     _inherit = "account.move.line"
 
@@ -11,8 +28,9 @@ class AccountMoveLine(models.Model):
         ],
         string="Grupo reporte clientes",
         help=(
-            "Usar para clasificar saldos iniciales o ajustes manuales en el reporte "
-            "de clientes. Si se deja vacio, el reporte clasifica por diario."
+            "Usar para clasificar saldos iniciales, ajustes manuales o pagos/creditos "
+            "sin imputar en el reporte de clientes. Si se deja vacio, el reporte "
+            "clasifica por diario o por la factura conciliada cuando sea posible."
         ),
         copy=False,
     )
@@ -37,6 +55,7 @@ class DgClientSalesReportLine(models.Model):
         selection=[
             ("invoice", "Factura / NC"),
             ("opening_balance", "Saldo inicial / ajuste"),
+            ("payment_credit", "Pago / credito sin aplicar"),
         ],
         string="Origen del saldo",
         readonly=True,
@@ -115,114 +134,171 @@ class DgClientSalesReportLine(models.Model):
         self.env.cr.execute(
             f"""
             CREATE OR REPLACE VIEW {self._table} AS (
-                SELECT
-                    am.id AS id,
-                    COALESCE(rp.commercial_partner_id, am.partner_id) AS partner_id,
-                    CASE
-                        -- Odoo 18 stores translatable journal names as JSON/JSONB; compare extracted text values only.
-                        WHEN ajn.journal_name = 'Diario Ventas Preimpreso' THEN 'fca'
-                        WHEN ajn.journal_name = 'Diario Ventas Internas' THEN 'internas'
-                    END AS report_group,
-                    'invoice'::varchar AS source_type,
-                    am.id AS move_id,
-                    NULL::integer AS line_id,
-                    am.name AS move_name,
-                    am.ref AS ref,
-                    am.invoice_origin AS invoice_origin,
-                    am.invoice_date AS invoice_date,
-                    am.date AS accounting_date,
-                    am.invoice_date_due AS invoice_date_due,
-                    am.journal_id AS journal_id,
-                    am.company_id AS company_id,
-                    company.currency_id AS company_currency_id,
-                    am.currency_id AS currency_id,
-                    am.move_type AS move_type,
-                    am.payment_state AS payment_state,
-                    am.amount_untaxed_signed AS amount_untaxed_signed,
-                    am.amount_tax_signed AS amount_tax_signed,
-                    am.amount_total_signed AS amount_total_signed,
-                    am.amount_residual_signed AS amount_residual_signed
-                FROM account_move am
-                JOIN account_journal aj ON aj.id = am.journal_id
-                LEFT JOIN LATERAL (
-                    SELECT COALESCE(
-                        aj.name->>'es_AR',
-                        aj.name->>'es_ES',
-                        aj.name->>'es_419',
-                        aj.name->>'en_US',
-                        (
-                            SELECT journal_name_any.value
-                            FROM jsonb_each_text(aj.name) AS journal_name_any(lang, value)
-                            LIMIT 1
-                        )
-                    ) AS journal_name
-                ) ajn ON TRUE
-                JOIN res_company company ON company.id = am.company_id
-                LEFT JOIN res_partner rp ON rp.id = am.partner_id
-                WHERE am.state = 'posted'
-                    AND am.move_type IN ('out_invoice', 'out_refund')
-                    AND aj.type = 'sale'
-                    AND ajn.journal_name IN ('Diario Ventas Preimpreso', 'Diario Ventas Internas')
+                WITH invoice_moves AS (
+                    SELECT
+                        am.id AS id,
+                        COALESCE(rp.commercial_partner_id, am.partner_id) AS partner_id,
+                        COALESCE(
+                            aj.dg_client_sales_report_group,
+                            CASE
+                                WHEN ajn.normalized_journal_name IN ('ventas preimpreso', 'diario ventas preimpreso') THEN 'fca'
+                                WHEN ajn.normalized_journal_name IN ('ventas internas', 'diario ventas internas') THEN 'internas'
+                            END
+                        ) AS report_group,
+                        'invoice'::varchar AS source_type,
+                        am.id AS move_id,
+                        NULL::integer AS line_id,
+                        am.name AS move_name,
+                        am.ref AS ref,
+                        am.invoice_origin AS invoice_origin,
+                        am.invoice_date AS invoice_date,
+                        am.date AS accounting_date,
+                        am.invoice_date_due AS invoice_date_due,
+                        am.journal_id AS journal_id,
+                        am.company_id AS company_id,
+                        company.currency_id AS company_currency_id,
+                        am.currency_id AS currency_id,
+                        am.move_type AS move_type,
+                        am.payment_state AS payment_state,
+                        am.amount_untaxed_signed AS amount_untaxed_signed,
+                        am.amount_tax_signed AS amount_tax_signed,
+                        am.amount_total_signed AS amount_total_signed,
+                        am.amount_residual_signed AS amount_residual_signed
+                    FROM account_move am
+                    JOIN account_journal aj ON aj.id = am.journal_id
+                    LEFT JOIN LATERAL (
+                        SELECT
+                            LOWER(TRIM(COALESCE(
+                                aj.name->>'es_AR',
+                                aj.name->>'es_ES',
+                                aj.name->>'es_419',
+                                aj.name->>'en_US',
+                                (
+                                    SELECT journal_name_any.value
+                                    FROM jsonb_each_text(aj.name) AS journal_name_any(lang, value)
+                                    LIMIT 1
+                                )
+                            ))) AS normalized_journal_name
+                    ) ajn ON TRUE
+                    JOIN res_company company ON company.id = am.company_id
+                    LEFT JOIN res_partner rp ON rp.id = am.partner_id
+                    WHERE am.state = 'posted'
+                        AND am.move_type IN ('out_invoice', 'out_refund')
+                        AND aj.type = 'sale'
+                        AND ABS(am.amount_residual_signed) > 0.004
+                ),
+                receivable_entry_lines AS (
+                    SELECT
+                        1000000000 + aml.id AS id,
+                        COALESCE(rp.commercial_partner_id, aml.partner_id) AS partner_id,
+                        COALESCE(
+                            aml.dg_client_sales_report_group,
+                            inferred_group.report_group,
+                            aj.dg_client_sales_report_group,
+                            CASE
+                                WHEN ajn.normalized_journal_name IN ('saldos iniciales fca', 'ventas preimpreso', 'diario ventas preimpreso') THEN 'fca'
+                                WHEN ajn.normalized_journal_name IN ('saldos iniciales internas', 'ventas internas', 'diario ventas internas') THEN 'internas'
+                            END
+                        ) AS report_group,
+                        CASE
+                            WHEN aml.payment_id IS NOT NULL THEN 'payment_credit'::varchar
+                            ELSE 'opening_balance'::varchar
+                        END AS source_type,
+                        am.id AS move_id,
+                        aml.id AS line_id,
+                        am.name AS move_name,
+                        COALESCE(aml.ref, am.ref) AS ref,
+                        am.invoice_origin AS invoice_origin,
+                        COALESCE(am.invoice_date, am.date) AS invoice_date,
+                        aml.date AS accounting_date,
+                        aml.date_maturity AS invoice_date_due,
+                        am.journal_id AS journal_id,
+                        aml.company_id AS company_id,
+                        company.currency_id AS company_currency_id,
+                        COALESCE(aml.currency_id, company.currency_id) AS currency_id,
+                        am.move_type AS move_type,
+                        am.payment_state AS payment_state,
+                        0.0 AS amount_untaxed_signed,
+                        0.0 AS amount_tax_signed,
+                        aml.balance AS amount_total_signed,
+                        aml.amount_residual AS amount_residual_signed
+                    FROM account_move_line aml
+                    JOIN account_move am ON am.id = aml.move_id
+                    JOIN account_journal aj ON aj.id = am.journal_id
+                    LEFT JOIN LATERAL (
+                        SELECT
+                            LOWER(TRIM(COALESCE(
+                                aj.name->>'es_AR',
+                                aj.name->>'es_ES',
+                                aj.name->>'es_419',
+                                aj.name->>'en_US',
+                                (
+                                    SELECT journal_name_any.value
+                                    FROM jsonb_each_text(aj.name) AS journal_name_any(lang, value)
+                                    LIMIT 1
+                                )
+                            ))) AS normalized_journal_name
+                    ) ajn ON TRUE
+                    LEFT JOIN LATERAL (
+                        SELECT
+                            CASE
+                                WHEN COUNT(DISTINCT matched_groups.report_group) = 1 THEN MIN(matched_groups.report_group)
+                                ELSE NULL
+                            END AS report_group
+                        FROM (
+                            SELECT DISTINCT
+                                COALESCE(
+                                    counterpart_journal.dg_client_sales_report_group,
+                                    CASE
+                                        WHEN counterpart_journal_names.normalized_journal_name IN ('ventas preimpreso', 'diario ventas preimpreso') THEN 'fca'
+                                        WHEN counterpart_journal_names.normalized_journal_name IN ('ventas internas', 'diario ventas internas') THEN 'internas'
+                                    END
+                                ) AS report_group
+                            FROM account_partial_reconcile apr
+                            JOIN account_move_line counterpart_line
+                                ON counterpart_line.id = CASE
+                                    WHEN apr.debit_move_id = aml.id THEN apr.credit_move_id
+                                    ELSE apr.debit_move_id
+                                END
+                            JOIN account_move counterpart_move ON counterpart_move.id = counterpart_line.move_id
+                            JOIN account_journal counterpart_journal ON counterpart_journal.id = counterpart_move.journal_id
+                            LEFT JOIN LATERAL (
+                                SELECT
+                                    LOWER(TRIM(COALESCE(
+                                        counterpart_journal.name->>'es_AR',
+                                        counterpart_journal.name->>'es_ES',
+                                        counterpart_journal.name->>'es_419',
+                                        counterpart_journal.name->>'en_US',
+                                        (
+                                            SELECT counterpart_journal_name_any.value
+                                            FROM jsonb_each_text(counterpart_journal.name) AS counterpart_journal_name_any(lang, value)
+                                            LIMIT 1
+                                        )
+                                    ))) AS normalized_journal_name
+                            ) counterpart_journal_names ON TRUE
+                            WHERE (apr.debit_move_id = aml.id OR apr.credit_move_id = aml.id)
+                                AND counterpart_move.move_type IN ('out_invoice', 'out_refund')
+                        ) matched_groups
+                        WHERE matched_groups.report_group IS NOT NULL
+                    ) inferred_group ON TRUE
+                    JOIN account_account aa ON aa.id = aml.account_id
+                    JOIN res_company company ON company.id = aml.company_id
+                    LEFT JOIN res_partner rp ON rp.id = aml.partner_id
+                    WHERE am.state = 'posted'
+                        AND am.move_type = 'entry'
+                        AND aa.account_type = 'asset_receivable'
+                        AND aml.partner_id IS NOT NULL
+                        AND ABS(aml.amount_residual) > 0.004
+                )
+                SELECT *
+                FROM invoice_moves
+                WHERE report_group IN ('fca', 'internas')
 
                 UNION ALL
 
-                SELECT
-                    1000000000 + aml.id AS id,
-                    COALESCE(rp.commercial_partner_id, aml.partner_id) AS partner_id,
-                    COALESCE(
-                        aml.dg_client_sales_report_group,
-                        CASE
-                            WHEN ajn.journal_name = 'Saldos Iniciales FCA' THEN 'fca'
-                            WHEN ajn.journal_name = 'Saldos Iniciales Internas' THEN 'internas'
-                        END
-                    ) AS report_group,
-                    'opening_balance'::varchar AS source_type,
-                    am.id AS move_id,
-                    aml.id AS line_id,
-                    am.name AS move_name,
-                    COALESCE(aml.ref, am.ref) AS ref,
-                    am.invoice_origin AS invoice_origin,
-                    COALESCE(am.invoice_date, am.date) AS invoice_date,
-                    aml.date AS accounting_date,
-                    aml.date_maturity AS invoice_date_due,
-                    am.journal_id AS journal_id,
-                    aml.company_id AS company_id,
-                    company.currency_id AS company_currency_id,
-                    COALESCE(aml.currency_id, company.currency_id) AS currency_id,
-                    am.move_type AS move_type,
-                    am.payment_state AS payment_state,
-                    0.0 AS amount_untaxed_signed,
-                    0.0 AS amount_tax_signed,
-                    aml.balance AS amount_total_signed,
-                    aml.amount_residual AS amount_residual_signed
-                FROM account_move_line aml
-                JOIN account_move am ON am.id = aml.move_id
-                JOIN account_journal aj ON aj.id = am.journal_id
-                LEFT JOIN LATERAL (
-                    SELECT COALESCE(
-                        aj.name->>'es_AR',
-                        aj.name->>'es_ES',
-                        aj.name->>'es_419',
-                        aj.name->>'en_US',
-                        (
-                            SELECT journal_name_any.value
-                            FROM jsonb_each_text(aj.name) AS journal_name_any(lang, value)
-                            LIMIT 1
-                        )
-                    ) AS journal_name
-                ) ajn ON TRUE
-                JOIN account_account aa ON aa.id = aml.account_id
-                JOIN res_company company ON company.id = aml.company_id
-                LEFT JOIN res_partner rp ON rp.id = aml.partner_id
-                WHERE am.state = 'posted'
-                    AND am.move_type = 'entry'
-                    AND aa.account_type = 'asset_receivable'
-                    AND aml.partner_id IS NOT NULL
-                    AND (
-                        aml.dg_client_sales_report_group IN ('fca', 'internas')
-                        OR ajn.journal_name IN ('Saldos Iniciales FCA', 'Saldos Iniciales Internas')
-                    )
-                    AND (aml.balance != 0.0 OR aml.amount_residual != 0.0)
+                SELECT *
+                FROM receivable_entry_lines
+                WHERE report_group IN ('fca', 'internas')
             )
             """
         )

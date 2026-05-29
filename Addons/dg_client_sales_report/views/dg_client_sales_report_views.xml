@@ -1,5 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
+
+    <record id="view_account_journal_form_dg_client_sales_report" model="ir.ui.view">
+        <field name="name">account.journal.form.dg.client.sales.report</field>
+        <field name="model">account.journal</field>
+        <field name="inherit_id" ref="account.view_account_journal_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='type']" position="after">
+                <field name="dg_client_sales_report_group"/>
+            </xpath>
+        </field>
+    </record>
     <record id="view_dg_client_sales_report_line_search" model="ir.ui.view">
         <field name="name">dg.client.sales.report.line.search</field>
         <field name="model">dg.client.sales.report.line</field>
@@ -16,7 +27,8 @@
                 <filter string="Facturas" name="filter_out_invoice" domain="[('move_type', '=', 'out_invoice')]"/>
                 <filter string="Notas de crédito" name="filter_out_refund" domain="[('move_type', '=', 'out_refund')]"/>
                 <filter string="Saldos iniciales / ajustes" name="filter_opening_balance" domain="[('source_type', '=', 'opening_balance')]"/>
-                <filter string="Pendientes" name="filter_unpaid" domain="[('payment_state', 'in', ('not_paid', 'partial', 'in_payment'))]"/>
+                <filter string="Pagos / creditos sin aplicar" name="filter_payment_credit" domain="[('source_type', '=', 'payment_credit')]"/>
+                <filter string="Con saldo" name="filter_unpaid" domain="[('amount_residual_signed', '!=', 0)]"/>
                 <separator/>
                 <filter string="Agrupar por cliente" name="group_by_partner" context="{'group_by': 'partner_id'}"/>
                 <filter string="Agrupar por subtotal" name="group_by_report_group" context="{'group_by': 'report_group'}"/>
