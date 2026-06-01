@@ -20,7 +20,7 @@
                         </group>
                     </group>
                     <p class="text-muted">
-                        Primero ver el detalle de ventas y cobranzas. Luego, desde el subtotal FCA, el subtotal Internas o el total, descargar el PDF correspondiente.
+                        Primero se muestran tres lineas: Subtotal FCA, Subtotal Internas y Total. Con Abrir detalle se ve la cuenta corriente de ventas, notas y cobranzas; con Descargar se imprime el PDF correspondiente.
                     </p>
                 </sheet>
                 <footer>

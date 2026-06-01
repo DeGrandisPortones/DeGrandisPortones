@@ -44,7 +44,7 @@ class DgResumenCtaCteLine(models.TransientModel):
     description = fields.Char(string="Descripcion", readonly=True)
     entry_type = fields.Selection(
         selection=[
-            ("sale", "Venta"),
+            ("sale", "Venta / Nota"),
             ("collection", "Cobranza"),
             ("opening", "Saldo anterior"),
         ],
@@ -70,6 +70,7 @@ class DgResumenCtaCteLine(models.TransientModel):
         group_operator="sum",
     )
 
+    show_open_detail = fields.Boolean(string="Mostrar detalle", readonly=True)
     show_download_fca = fields.Boolean(string="Mostrar descargar FCA", readonly=True)
     show_download_internas = fields.Boolean(string="Mostrar descargar Internas", readonly=True)
     show_download_all = fields.Boolean(string="Mostrar descargar ambas", readonly=True)
@@ -98,3 +99,43 @@ class DgResumenCtaCteLine(models.TransientModel):
 
     def action_download_internas(self):
         return self._download_with_group("internas")
+
+    def action_open_detail(self):
+        self.ensure_one()
+        if self.display_type not in ("subtotal", "total"):
+            raise UserError(_("Abra el detalle desde Subtotal FCA, Subtotal Internas o Total."))
+
+        if self.report_group == "fca":
+            title = _("Detalle cuenta corriente - FCA")
+            domain = [
+                ("wizard_id", "=", self.wizard_id.id),
+                ("report_group", "=", "fca"),
+                ("display_type", "in", ["line", "subtotal"]),
+            ]
+        elif self.report_group == "internas":
+            title = _("Detalle cuenta corriente - Internas")
+            domain = [
+                ("wizard_id", "=", self.wizard_id.id),
+                ("report_group", "=", "internas"),
+                ("display_type", "in", ["line", "subtotal"]),
+            ]
+        else:
+            title = _("Detalle cuenta corriente - Total")
+            domain = [
+                ("wizard_id", "=", self.wizard_id.id),
+                ("display_type", "in", ["line", "subtotal", "total"]),
+            ]
+
+        return {
+            "type": "ir.actions.act_window",
+            "name": title,
+            "res_model": "dg.resumen.cta.cte.line",
+            "view_mode": "list,form",
+            "domain": domain,
+            "context": {
+                "create": False,
+                "edit": False,
+                "delete": False,
+            },
+            "target": "current",
+        }
