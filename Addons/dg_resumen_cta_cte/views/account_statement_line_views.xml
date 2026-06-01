@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="view_dg_resumen_cta_cte_line_search" model="ir.ui.view">
+        <field name="name">dg.resumen.cta.cte.line.search</field>
+        <field name="model">dg.resumen.cta.cte.line</field>
+        <field name="arch" type="xml">
+            <search string="Resumen de cuenta corriente">
+                <field name="partner_id"/>
+                <field name="date"/>
+                <field name="document"/>
+                <field name="report_group"/>
+                <field name="entry_type"/>
+                <filter string="Ventas / NC / ND" name="sales" domain="[('entry_type', '=', 'sale')]"/>
+                <filter string="Cobranzas" name="collections" domain="[('entry_type', '=', 'collection')]"/>
+                <filter string="FCA" name="fca" domain="[('report_group', '=', 'fca')]"/>
+                <filter string="Internas" name="internas" domain="[('report_group', '=', 'internas')]"/>
+                <group expand="0" string="Agrupar por">
+                    <filter string="Cuenta" name="group_report_group" context="{'group_by': 'report_group'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_dg_resumen_cta_cte_line_list" model="ir.ui.view">
+        <field name="name">dg.resumen.cta.cte.line.list</field>
+        <field name="model">dg.resumen.cta.cte.line</field>
+        <field name="arch" type="xml">
+            <list string="Resumen de cuenta corriente"
+                  create="0"
+                  edit="0"
+                  delete="0"
+                  default_order="sequence"
+                  decoration-bf="display_type in ('subtotal', 'total')">
+                <field name="sequence" column_invisible="1"/>
+                <field name="partner_id" optional="hide"/>
+                <field name="report_group" string="Cuenta"/>
+                <field name="entry_type" string="Tipo" optional="show"/>
+                <field name="date" string="Fecha"/>
+                <field name="document" string="Documento"/>
+                <field name="description" string="Detalle" optional="hide"/>
+                <field name="debit" widget="monetary" string="Debe"/>
+                <field name="credit" widget="monetary" string="Haber"/>
+                <field name="balance" widget="monetary" string="Saldo"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="display_type" column_invisible="1"/>
+                <field name="show_open_detail" column_invisible="1"/>
+                <field name="show_download_fca" column_invisible="1"/>
+                <field name="show_download_internas" column_invisible="1"/>
+                <field name="show_download_all" column_invisible="1"/>
+                <field name="company_id" optional="hide" groups="base.group_multi_company"/>
+                <button name="action_open_detail" type="object" string="Abrir detalle" class="btn-link" invisible="not show_open_detail"/>
+                <button name="action_download_fca" type="object" string="Descargar FCA" class="btn-link" invisible="not show_download_fca"/>
+                <button name="action_download_internas" type="object" string="Descargar Internas" class="btn-link" invisible="not show_download_internas"/>
+                <button name="action_download_all" type="object" string="Descargar ambas" class="btn-link" invisible="not show_download_all"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_dg_resumen_cta_cte_line_form" model="ir.ui.view">
+        <field name="name">dg.resumen.cta.cte.line.form</field>
+        <field name="model">dg.resumen.cta.cte.line</field>
+        <field name="arch" type="xml">
+            <form string="Resumen de cuenta corriente" create="0" edit="0" delete="0">
+                <header>
+                    <button name="action_open_detail" type="object" string="Abrir detalle" class="btn-secondary" invisible="not show_open_detail"/>
+                    <button name="action_download_fca" type="object" string="Descargar FCA" class="btn-secondary" invisible="not show_download_fca"/>
+                    <button name="action_download_internas" type="object" string="Descargar Internas" class="btn-secondary" invisible="not show_download_internas"/>
+                    <button name="action_download_all" type="object" string="Descargar ambas" class="btn-primary" invisible="not show_download_all"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="partner_id"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="report_group"/>
+                            <field name="entry_type"/>
+                            <field name="date"/>
+                            <field name="document"/>
+                            <field name="description"/>
+                        </group>
+                        <group>
+                            <field name="debit" widget="monetary"/>
+                            <field name="credit" widget="monetary"/>
+                            <field name="balance" widget="monetary"/>
+                            <field name="currency_id" invisible="1"/>
+                            <field name="show_open_detail" invisible="1"/>
+                            <field name="show_download_fca" invisible="1"/>
+                            <field name="show_download_internas" invisible="1"/>
+                            <field name="show_download_all" invisible="1"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_dg_resumen_cta_cte_line" model="ir.actions.act_window">
+        <field name="name">Resumen de cuenta corriente</field>
+        <field name="res_model">dg.resumen.cta.cte.line</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_dg_resumen_cta_cte_line_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No hay ventas, notas ni cobranzas para los filtros seleccionados.
+            </p>
+        </field>
+    </record>
+</odoo>
