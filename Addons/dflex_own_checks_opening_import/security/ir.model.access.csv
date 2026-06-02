@@ -1,0 +1,2 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_dflex_own_check_opening_import_wizard,dflex.own.check.opening.import.wizard,model_dflex_own_check_opening_import_wizard,account.group_account_manager,1,1,1,1
