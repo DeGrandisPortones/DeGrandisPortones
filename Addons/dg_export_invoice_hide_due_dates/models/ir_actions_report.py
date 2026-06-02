@@ -30,10 +30,12 @@ class IrActionsReport(models.Model):
         "cae vence",
     )
 
-    def _render_qweb_html(self, report_ref, res_ids=None, data=None):
-        result = super()._render_qweb_html(report_ref, res_ids=res_ids, data=data)
+    def _render_qweb_html(self, report_ref, docids=None, data=None):
+        # Odoo 18 llama a este metodo con los ids como segundo argumento posicional.
+        # No usamos res_ids= porque algunas versiones no aceptan ese keyword.
+        result = super()._render_qweb_html(report_ref, docids, data=data)
         try:
-            if self._dg_should_hide_due_dates(report_ref, res_ids=res_ids, data=data):
+            if self._dg_should_hide_due_dates(report_ref, res_ids=docids, data=data):
                 result = self._dg_strip_due_dates_from_result(result)
         except Exception:
             # No se bloquea la impresion si cambia el HTML del reporte.
