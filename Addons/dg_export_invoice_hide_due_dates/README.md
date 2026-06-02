@@ -16,3 +16,6 @@ No modifica los datos contables ni fiscales del comprobante; solamente limpia el
 ## Instalacion
 
 Copiar la carpeta `dg_export_invoice_hide_due_dates` dentro de `Addons/`, actualizar lista de aplicaciones e instalar el modulo **DG Factura E sin fechas de vencimiento**.
+
+
+Version 18.0.1.0.1: corrige compatibilidad con la firma de _render_qweb_html en Odoo 18.
