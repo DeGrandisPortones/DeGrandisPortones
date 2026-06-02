@@ -41,7 +41,7 @@
     </record>
 
     <menuitem id="menu_dflex_third_party_checks_opening_import"
-              name="Importar cheques en cartera"
+              name="Importar cheques de terceros en cartera"
               parent="l10n_latam_check.menu_third_party_check"
               action="action_dflex_third_party_checks_opening_import_wizard"
               sequence="95"/>

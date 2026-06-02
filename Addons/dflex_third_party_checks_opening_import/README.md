@@ -14,7 +14,7 @@ Haber: `3.1.1.01.002 Capital integrado`.
 2. Reiniciar Odoo.
 3. Actualizar lista de apps.
 4. Instalar `DFlex - Importar cheques de terceros en cartera`.
-5. Ir a `Contabilidad > Cheques de terceros > Importar cheques en cartera`.
+5. Ir a `Contabilidad > Clientes > Importar cheques de terceros en cartera`.
 6. Elegir compañía `DFLEX ARGENTINA S.A.S.`, diario `Cheques de Terceros`, método `new_third_party_checks`, cuenta `3.1.1.01.002 Capital integrado`.
 7. Subir el CSV.
 8. Simular primero.
