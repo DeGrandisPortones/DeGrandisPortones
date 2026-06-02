@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="view_dflex_third_party_checks_opening_import_wizard_form" model="ir.ui.view">
+        <field name="name">dflex.third.party.checks.opening.import.wizard.form</field>
+        <field name="model">dflex.third.party.checks.opening.import.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Importar cheques de terceros en cartera">
+                <sheet>
+                    <group>
+                        <field name="company_id"/>
+                        <field name="journal_id"/>
+                        <field name="payment_method_line_id"/>
+                        <field name="capital_account_id"/>
+                        <field name="partner_id"/>
+                        <field name="accounting_date"/>
+                        <field name="post_payments"/>
+                        <field name="dry_run"/>
+                    </group>
+                    <group>
+                        <field name="csv_file" filename="csv_filename"/>
+                        <field name="csv_filename" invisible="1"/>
+                    </group>
+                    <group string="Resultado">
+                        <field name="result" nolabel="1" readonly="1"/>
+                    </group>
+                </sheet>
+                <footer>
+                    <button name="action_import" type="object" string="Importar / Simular" class="btn-primary"/>
+                    <button string="Cerrar" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_dflex_third_party_checks_opening_import_wizard" model="ir.actions.act_window">
+        <field name="name">Importar cheques en cartera</field>
+        <field name="res_model">dflex.third.party.checks.opening.import.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="context">{}</field>
+    </record>
+
+    <menuitem id="menu_dflex_third_party_checks_opening_import"
+              name="Importar cheques en cartera"
+              parent="l10n_latam_check.menu_third_party_check"
+              action="action_dflex_third_party_checks_opening_import_wizard"
+              sequence="95"/>
+</odoo>
