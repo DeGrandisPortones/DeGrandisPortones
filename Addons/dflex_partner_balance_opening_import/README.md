@@ -23,3 +23,10 @@ Contabilidad > Clientes > Importar saldos iniciales de contactos
 Columnas mínimas: `grupo;razsoc;cuit;saldo`.
 
 El CSV incluido es `templates/DG_saldos_contactos_fca_interno.csv`.
+
+
+## Version 18.0.1.1.0
+
+Esta version crea un unico asiento de apertura con:
+- una linea por contacto/saldo contra la cuenta de clientes FCA o Interno;
+- una o dos lineas de contrapartida contra Capital integrado, segun haya saldos positivos y/o negativos.
