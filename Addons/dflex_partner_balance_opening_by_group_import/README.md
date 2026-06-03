@@ -14,3 +14,8 @@ La contrapartida acumulada usa la cuenta Capital integrado elegida antes de impo
 3. Ejecutar primero con `Solo simular`.
 4. Hacer una importacion para FCA con `DG_saldos_contactos_FCA.csv`.
 5. Hacer otra importacion para Interno con `DG_saldos_contactos_INTERNO.csv`.
+
+
+## Version 18.0.2.1.0
+
+La cuenta de ajuste / Capital integrado se carga una sola vez por asiento, por la diferencia neta entre el Debe y el Haber de las lineas de clientes.

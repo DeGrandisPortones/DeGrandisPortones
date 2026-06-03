@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 {
     "name": "DFlex - Importar saldos clientes por grupo reporte",
-    "summary": "Importa saldos iniciales de clientes FCA o Interno en un asiento de apertura",
-    "version": "18.0.2.0.0",
+    "summary": "Importa saldos iniciales de clientes FCA o Interno con un ajuste neto unico",
+    "version": "18.0.2.1.0",
     "author": "DFLEX Argentina SAS",
     "website": "https://dflex.com.ar",
     "category": "Accounting",
