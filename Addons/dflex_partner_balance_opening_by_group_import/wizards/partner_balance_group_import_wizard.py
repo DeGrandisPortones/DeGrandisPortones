@@ -44,10 +44,10 @@ class DflexPartnerBalanceGroupImportWizard(models.TransientModel):
     )
     capital_account_id = fields.Many2one(
         "account.account",
-        string="Cuenta Capital integrado",
+        string="Cuenta ajuste / Capital integrado",
         required=True,
         domain="[('company_ids', 'in', company_id)]",
-        help="Contrapartida acumulada para este grupo. Se elige antes de importar.",
+        help="Contrapartida acumulada para este grupo. Se carga una sola línea por la diferencia neta.",
     )
     accounting_date = fields.Date(
         string="Fecha contable",
@@ -91,7 +91,7 @@ class DflexPartnerBalanceGroupImportWizard(models.TransientModel):
             raise UserError(_("El diario no pertenece a la compañía seleccionada."))
         for account, label in [
             (self.receivable_account_id, _("Cuenta saldo cliente")),
-            (self.capital_account_id, _("Cuenta Capital integrado")),
+            (self.capital_account_id, _("Cuenta ajuste / Capital integrado")),
         ]:
             if not account:
                 raise UserError(_("Falta configurar %s.") % label)
@@ -99,6 +99,7 @@ class DflexPartnerBalanceGroupImportWizard(models.TransientModel):
                 raise UserError(_("%s no pertenece a la compañía seleccionada.") % label)
             if "company_id" in account._fields and account.company_id != company:
                 raise UserError(_("%s no pertenece a la compañía seleccionada.") % label)
+
         Line = self.env["account.move.line"]
         if "dg_client_sales_report_group" not in Line._fields:
             raise UserError(
@@ -225,8 +226,9 @@ class DflexPartnerBalanceGroupImportWizard(models.TransientModel):
         return csv_group in accepted
 
     def _prepare_partner_line(self, row, partner, amount):
+        group_label = dict(self._fields["report_group"].selection)[self.report_group]
         name = row.get("razsoc") or partner.display_name
-        label = "Apertura saldo cliente %s - %s" % (dict(self._fields["report_group"].selection)[self.report_group], name)
+        label = "Apertura saldo cliente %s - %s" % (group_label, name)
         abs_amount = abs(amount)
         if amount >= 0:
             debit = abs_amount
@@ -243,7 +245,7 @@ class DflexPartnerBalanceGroupImportWizard(models.TransientModel):
             "credit": float(credit),
         })
 
-    def _prepare_capital_line(self, label, debit, credit):
+    def _prepare_adjustment_line(self, label, debit, credit):
         return (0, 0, {
             "name": label,
             "account_id": self.capital_account_id.id,
@@ -261,6 +263,9 @@ class DflexPartnerBalanceGroupImportWizard(models.TransientModel):
             "ref": "Apertura saldos clientes %s" % group_label,
             "line_ids": line_ids,
         }
+
+    def _format_money(self, amount):
+        return "$ %.2f" % amount
 
     def action_import(self):
         self.ensure_one()
@@ -282,10 +287,13 @@ class DflexPartnerBalanceGroupImportWizard(models.TransientModel):
         result_lines = []
         errors = []
         missing_partners = []
-        total = Decimal("0.00")
-        capital_debit = Decimal("0.00")
-        capital_credit = Decimal("0.00")
+
+        expected_debit = Decimal("0.00")
+        expected_credit = Decimal("0.00")
+        actual_debit = Decimal("0.00")
+        actual_credit = Decimal("0.00")
         count = 0
+        found_or_created_count = 0
 
         for row in selected_rows:
             line_number = row["_line_number"]
@@ -294,6 +302,12 @@ class DflexPartnerBalanceGroupImportWizard(models.TransientModel):
             amount = wizard._parse_amount(row.get("saldo"), line_number)
             if amount == 0:
                 continue
+
+            count += 1
+            if amount >= 0:
+                expected_debit += abs(amount)
+            else:
+                expected_credit += abs(amount)
 
             partner, match_method = wizard._find_partner(name, cuit)
             if not partner:
@@ -304,22 +318,33 @@ class DflexPartnerBalanceGroupImportWizard(models.TransientModel):
                     missing_partners.append("Línea %s | %s | CUIT %s" % (line_number, name, cuit or "sin CUIT"))
                     match_method = "no_encontrado"
 
-            count += 1
-            total += amount
             result_lines.append("%s | $ %.2f | %s | %s" % (name, amount, cuit or "sin CUIT", match_method))
 
             if partner:
+                found_or_created_count += 1
                 partner_lines.append(wizard._prepare_partner_line(row, partner, amount))
                 if amount >= 0:
-                    capital_credit += abs(amount)
+                    actual_debit += abs(amount)
                 else:
-                    capital_debit += abs(amount)
+                    actual_credit += abs(amount)
 
         if missing_partners and not wizard.create_missing_partners:
             errors.append(
-                _("Contactos no encontrados. Corregí/importá contactos primero o activá 'Crear contactos faltantes' después de revisar la simulación.\n%s")
+                _("Contactos no encontrados. En producción deberían encontrarse si ya importaste contactos. Si querés crearlos automáticamente, activá 'Crear contactos faltantes' después de revisar la simulación.\n%s")
                 % "\n".join(missing_partners[:100])
             )
+
+        # La línea de ajuste/capital se calcula como una sola línea por la diferencia neta
+        # entre el Debe y el Haber de las líneas de cliente que efectivamente se pueden crear.
+        net_to_balance = actual_debit - actual_credit
+        adjustment_debit = Decimal("0.00")
+        adjustment_credit = Decimal("0.00")
+        if net_to_balance > 0:
+            adjustment_credit = net_to_balance
+        elif net_to_balance < 0:
+            adjustment_debit = abs(net_to_balance)
+
+        expected_net = expected_debit - expected_credit
 
         output = [
             "SIMULACIÓN: no se creó nada." if wizard.dry_run else "IMPORTACIÓN REAL ejecutada.",
@@ -327,11 +352,20 @@ class DflexPartnerBalanceGroupImportWizard(models.TransientModel):
             "Diario: %s" % wizard.journal_id.display_name,
             "Grupo reporte cliente: %s" % dict(wizard._fields["report_group"].selection)[wizard.report_group],
             "Cuenta saldo cliente: %s" % wizard.receivable_account_id.display_name,
-            "Capital integrado: %s" % wizard.capital_account_id.display_name,
-            "Cantidad de saldos: %s" % count,
-            "Total grupo: $ %.2f" % total,
-            "Capital integrado al Debe: $ %.2f" % capital_debit,
-            "Capital integrado al Haber: $ %.2f" % capital_credit,
+            "Cuenta ajuste / Capital integrado: %s" % wizard.capital_account_id.display_name,
+            "Cantidad de saldos del CSV: %s" % count,
+            "Contactos encontrados/creables: %s" % found_or_created_count,
+            "",
+            "Totales esperados del CSV:",
+            "Clientes al Debe: %s" % wizard._format_money(expected_debit),
+            "Clientes al Haber: %s" % wizard._format_money(expected_credit),
+            "Neto esperado: %s" % wizard._format_money(expected_net),
+            "",
+            "Totales que se crearían según contactos encontrados:",
+            "Clientes al Debe: %s" % wizard._format_money(actual_debit),
+            "Clientes al Haber: %s" % wizard._format_money(actual_credit),
+            "Ajuste único al Debe: %s" % wizard._format_money(adjustment_debit),
+            "Ajuste único al Haber: %s" % wizard._format_money(adjustment_credit),
             "Asiento: único",
             "Estado asiento: %s" % ("publicado" if wizard.post_move else "borrador"),
         ]
@@ -346,11 +380,9 @@ class DflexPartnerBalanceGroupImportWizard(models.TransientModel):
 
         if not wizard.dry_run:
             line_ids = list(partner_lines)
-            capital_label = "Apertura saldos clientes %s - Capital integrado" % dict(wizard._fields["report_group"].selection)[wizard.report_group]
-            if capital_debit:
-                line_ids.append(wizard._prepare_capital_line(capital_label, capital_debit, Decimal("0.00")))
-            if capital_credit:
-                line_ids.append(wizard._prepare_capital_line(capital_label, Decimal("0.00"), capital_credit))
+            adjustment_label = "Apertura saldos clientes %s - ajuste neto" % dict(wizard._fields["report_group"].selection)[wizard.report_group]
+            if adjustment_debit or adjustment_credit:
+                line_ids.append(wizard._prepare_adjustment_line(adjustment_label, adjustment_debit, adjustment_credit))
             if not line_ids:
                 raise UserError(_("No hay líneas válidas para crear el asiento."))
 
