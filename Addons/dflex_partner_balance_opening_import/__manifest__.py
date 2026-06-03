@@ -2,7 +2,7 @@
 {
     "name": "DFlex - Importar saldos iniciales de contactos",
     "summary": "Importa saldos iniciales de clientes separados por FCA e Interno contra Capital integrado",
-    "version": "18.0.1.1.0",
+    "version": "18.0.1.1.1",
     "author": "DFLEX Argentina SAS",
     "website": "https://dflex.com.ar",
     "category": "Accounting",
