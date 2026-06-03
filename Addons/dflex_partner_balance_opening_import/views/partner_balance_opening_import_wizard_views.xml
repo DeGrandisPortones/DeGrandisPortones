@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="view_dflex_partner_balance_opening_import_wizard_form" model="ir.ui.view">
+        <field name="name">dflex.partner.balance.opening.import.wizard.form</field>
+        <field name="model">dflex.partner.balance.opening.import.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Importar saldos iniciales de contactos">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="company_id"/>
+                            <field name="journal_id"/>
+                            <field name="accounting_date"/>
+                            <field name="capital_account_id"/>
+                        </group>
+                        <group>
+                            <field name="fca_receivable_account_id"/>
+                            <field name="interno_receivable_account_id"/>
+                            <field name="dry_run"/>
+                            <field name="post_moves"/>
+                            <field name="create_missing_partners"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="csv_file" filename="csv_filename"/>
+                        <field name="csv_filename" invisible="1"/>
+                    </group>
+                    <group string="Resultado">
+                        <field name="result" nolabel="1" readonly="1"/>
+                    </group>
+                </sheet>
+                <footer>
+                    <button name="action_import" type="object" string="Importar / Simular" class="btn-primary"/>
+                    <button string="Cerrar" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_dflex_partner_balance_opening_import_wizard" model="ir.actions.act_window">
+        <field name="name">Importar saldos iniciales de contactos</field>
+        <field name="res_model">dflex.partner.balance.opening.import.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="context">{}</field>
+    </record>
+
+    <menuitem id="menu_dflex_partner_balance_opening_import"
+              name="Importar saldos iniciales de contactos"
+              parent="account.menu_finance_receivables"
+              action="action_dflex_partner_balance_opening_import_wizard"
+              sequence="96"/>
+</odoo>
