@@ -1,0 +1,86 @@
+﻿grupo;razsoc;cuit;saldo;tipo_documento;journal_sugerido;responsabilidad;source_row;contacto_match;match_method;warnings;nota
+FCA;ABERTURAS BARENGO SRL;30714145270;352793.36;out_invoice;Ventas Preimpreso / FCA;;2;ABERTURAS BARENGO SRL;exact;;Apertura saldo cliente FCA
+FCA;CERBAL;20271501812;6621018.27;out_invoice;Ventas Preimpreso / FCA;;5;CERBAL;exact;;Apertura saldo cliente FCA
+FCA;GRIVEL ABERTURAS;30716301393;7682406.88;out_invoice;Ventas Preimpreso / FCA;;9;GRIVEL ABERTURAS;exact;;Apertura saldo cliente FCA
+FCA;GRUPO SHUTO;30718471822;5826200.85;out_invoice;Ventas Preimpreso / FCA;;11;GRUPO SHUTO;exact;;Apertura saldo cliente FCA
+FCA;MERCALUM;20236516130;39476.86;out_invoice;Ventas Preimpreso / FCA;;12;MERCALUM;exact;;Apertura saldo cliente FCA
+FCA;PEÑA ABERTURAS S.A.;30710039913;-39686.78;out_refund;Ventas Preimpreso / FCA;;13;PEÑA ABERTURAS S.A.;exact;;Apertura saldo cliente FCA
+FCA;QCero;30714645702;2178499.67;out_invoice;Ventas Preimpreso / FCA;;14;QCero;exact;;Apertura saldo cliente FCA
+FCA;WINDOOR;30717517837;6487851.25;out_invoice;Ventas Preimpreso / FCA;;17;WINDOOR;exact;;Apertura saldo cliente FCA
+FCA;ZUPPA HERMANOS;30714203068;663162.54;out_invoice;Ventas Preimpreso / FCA;;18;ZUPPA HERMANOS;exact;;Apertura saldo cliente FCA
+FCA;EXPO LEGNO SRL;30709455865;6747512.56;out_invoice;Ventas Preimpreso / FCA;;19;EXPO LEGNO SRL;exact;;Apertura saldo cliente FCA
+FCA;MANCINELLI HNOS SAS;30718586646;4393322.00;out_invoice;Ventas Preimpreso / FCA;;20;MANCINELLI HNOS SAS;exact;;Apertura saldo cliente FCA
+FCA;Kayfort SRL;30710905300;-479431.17;out_refund;Ventas Preimpreso / FCA;;22;Kayfort SRL;exact;;Apertura saldo cliente FCA
+FCA;Matias Moron;20257317820;650784.96;out_invoice;Ventas Preimpreso / FCA;;23;Matias Moron;exact;;Apertura saldo cliente FCA
+FCA;FRATELLO;20373205592;3114995.61;out_invoice;Ventas Preimpreso / FCA;;24;FRATELLO;exact;;Apertura saldo cliente FCA
+FCA;MEDINA FERNANDO;;2743372.22;out_invoice;Ventas Preimpreso / FCA;;25;;no_match;SIN_CUIT|NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;CANNELLI LEONEL RODRIGO;20248833263;2266717.84;out_invoice;Ventas Preimpreso / FCA;;26;CANNELLI LEONEL RODRIGO;exact;;Apertura saldo cliente FCA
+FCA;Gomez Alejandro Hernán;20333759277;-8560.59;out_refund;Ventas Preimpreso / FCA;;27;Gomez Alejandro Hernán;exact;;Apertura saldo cliente FCA
+FCA;JIMAMOBLAMIENTOS SRL (CC INHABILITADA);;5011023.29;out_invoice;Ventas Preimpreso / FCA;;29;;no_match;SIN_CUIT|NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;BARBIER MATIAS;;7618843.22;out_invoice;Ventas Preimpreso / FCA;;31;;no_match;SIN_CUIT|NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;MELLADO WALTER EMANUEL;;750001.49;out_invoice;Ventas Preimpreso / FCA;;32;;no_match;SIN_CUIT|NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;ABERZANO MALENA;;975062.63;out_invoice;Ventas Preimpreso / FCA;;33;;no_match;SIN_CUIT|NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;PADOVAN LEONARDO EZEQUIEL;;2364646.72;out_invoice;Ventas Preimpreso / FCA;;34;;no_match;SIN_CUIT|NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;MAFFIOTTI FERNANDO JUAN;;1261528.56;out_invoice;Ventas Preimpreso / FCA;;35;;no_match;SIN_CUIT|NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;GUERRERA PABLO LEONARDO;;8173104.28;out_invoice;Ventas Preimpreso / FCA;;36;;no_match;SIN_CUIT|NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;FARES MELISA LUCIANA;;1360005.00;out_invoice;Ventas Preimpreso / FCA;;37;;no_match;SIN_CUIT|NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;JOSE MARIA FRANCHI;20278973809;2724489.37;out_invoice;Ventas Preimpreso / FCA;;38;JOSE MARIA FRANCHI;exact;;Apertura saldo cliente FCA
+FCA;VALINOTI GABRIEL OSCAR;;5314348.34;out_invoice;Ventas Preimpreso / FCA;;39;GABRIEL;fuzzy:0.920;SIN_CUIT|MATCH_FUZZY;Apertura saldo cliente FCA
+FCA;MARCELO Y GERMAN IBALDI SERVICIOS AGROPE;;400005.52;out_invoice;Ventas Preimpreso / FCA;;40;;no_match;SIN_CUIT|NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;PIXET PANTALLAS SRL;;5745001.70;out_invoice;Ventas Preimpreso / FCA;;41;;no_match;SIN_CUIT|NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;QUINTEROS ELIANA DEL CARMEN;;270000.00;out_invoice;Ventas Preimpreso / FCA;;42;;no_match;SIN_CUIT|NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;Manias Walter;;2060918.35;out_invoice;Ventas Preimpreso / FCA;;44;;no_match;SIN_CUIT|NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;DEMARCHI PEDRO ANTONIO;;921000.10;out_invoice;Ventas Preimpreso / FCA;;45;;no_match;SIN_CUIT|NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;MARTINEZ TRUJILLO JHONY;;3744808.60;out_invoice;Ventas Preimpreso / FCA;;46;;no_match;SIN_CUIT|NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;Tresor sas;;5499999.82;out_invoice;Ventas Preimpreso / FCA;;47;;no_match;SIN_CUIT|NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;Arnau Matías Abel (SE FACTURO POR FUERA);;2853082.42;out_invoice;Ventas Preimpreso / FCA;;48;;no_match;SIN_CUIT|NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;Juan Pablo Toscano (SE FACTURO POR FUERA);;2010648.57;out_invoice;Ventas Preimpreso / FCA;;49;;no_match;SIN_CUIT|NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;Gonzalez Ivo Catriel;20439288206;2629663.21;out_invoice;Ventas Preimpreso / FCA;;50;Gonzalez Ivo Catriel;exact;;Apertura saldo cliente FCA
+FCA;Gaston Minutillo;;4260037.84;out_invoice;Ventas Preimpreso / FCA;;51;;no_match;SIN_CUIT|NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;Conal Sacfii SA;;4121934.27;out_invoice;Ventas Preimpreso / FCA;;52;;no_match;SIN_CUIT|NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;Leandro Alvarado;;5346031.48;out_invoice;Ventas Preimpreso / FCA;;53;;no_match;SIN_CUIT|NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;Sticca Gustavo Jose (SE FACTURO POR FUERA);;5346031.48;out_invoice;Ventas Preimpreso / FCA;;54;;no_match;SIN_CUIT|NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;Marcos Perez;;5346031.48;out_invoice;Ventas Preimpreso / FCA;;55;;no_match;SIN_CUIT|NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;Juan Jose Pirri;;5346031.48;out_invoice;Ventas Preimpreso / FCA;;56;;no_match;SIN_CUIT|NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;Olivera Marcos Andres;;5346031.48;out_invoice;Ventas Preimpreso / FCA;;57;;no_match;SIN_CUIT|NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;Consorcio de Prop Avda Avellaneda 1267;;4928724.44;out_invoice;Ventas Preimpreso / FCA;;58;;no_match;SIN_CUIT|NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;Dario Mario Rovasio;;1437279.64;out_invoice;Ventas Preimpreso / FCA;;59;;no_match;SIN_CUIT|NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;Joaquin Orsi;;-300000.00;out_refund;Ventas Preimpreso / FCA;;60;;no_match;SIN_CUIT|NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;ANDROVETTO ANGEL PAOLO;;6719998.51;out_invoice;Ventas Preimpreso / FCA;;61;;no_match;SIN_CUIT|NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;Klein Pablo Nicolas;;4648663.03;out_invoice;Ventas Preimpreso / FCA;;62;;no_match;SIN_CUIT|NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;Guillermo Saravia;;2551111.16;out_invoice;Ventas Preimpreso / FCA;;63;;no_match;SIN_CUIT|NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;Luciana Gabriela Chiurco;;1999998.84;out_invoice;Ventas Preimpreso / FCA;;64;GABRIEL;fuzzy:0.920;SIN_CUIT|MATCH_FUZZY;Apertura saldo cliente FCA
+FCA;MOTOR IMPORT SACIFIA (SE FACTURO POR FUERA);;3497908.67;out_invoice;Ventas Preimpreso / FCA;;65;;no_match;SIN_CUIT|NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;GX2 STORE SAS;;2140000.52;out_invoice;Ventas Preimpreso / FCA;;67;;no_match;SIN_CUIT|NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;Agustin Fernandez Jeansalle;;2208998.87;out_invoice;Ventas Preimpreso / FCA;;69;NSA;fuzzy:0.920;SIN_CUIT|MATCH_FUZZY;Apertura saldo cliente FCA
+FCA;Revelli Sergio D y Revelli Leonardo A So;;1793071.90;out_invoice;Ventas Preimpreso / FCA;;70;;no_match;SIN_CUIT|NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;Busico Humberto Fernando;;998796.79;out_invoice;Ventas Preimpreso / FCA;;71;;no_match;SIN_CUIT|NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;Magallanes Leguizamon Maria Altagracia;;6634174.76;out_invoice;Ventas Preimpreso / FCA;;72;;no_match;SIN_CUIT|NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;MAS RADIO CORDOBA SAS;;378730.07;out_invoice;Ventas Preimpreso / FCA;;74;;no_match;SIN_CUIT|NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;Megatek;20335991118;-49273.51;out_refund;Ventas Preimpreso / FCA;;75;Megatek;exact;;Apertura saldo cliente FCA
+FCA;AZ ABERTURAS;20319765051;3715266.68;out_invoice;Ventas Preimpreso / FCA;;77;AZ ABERTURAS;exact;;Apertura saldo cliente FCA
+FCA;ByB ABERTURAS;30717287726;-17446.66;out_refund;Ventas Preimpreso / FCA;;78;ByB ABERTURAS;exact;;Apertura saldo cliente FCA
+FCA;GAS CARBONICO CHIANTORE S.A.I;30503963171;378521.88;out_invoice;Ventas Preimpreso / FCA;Responsable inscripto;82;;no_match;NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;INDUAL CONSTRUCCIONES S.A.S S.A.S;30716895250;1671285.30;out_invoice;Ventas Preimpreso / FCA;Responsable inscripto;83;INDUAL;fuzzy:0.920;MATCH_FUZZY;Apertura saldo cliente FCA
+FCA;LAZZARINI WALTER RENE;20171166080;358099.97;out_invoice;Ventas Preimpreso / FCA;Responsable inscripto;84;;no_match;NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;Sergio Daniel Lombardo;20237264143;58911.60;out_invoice;Ventas Preimpreso / FCA;Responsable inscripto;85;;no_match;NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;OLIVA MATIAS EZEQUIEL;20289621890;2606712.82;out_invoice;Ventas Preimpreso / FCA;Responsable Monotributo;86;;no_match;NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;SUBILS PABLO HORACIO;20272130729;136000.00;out_invoice;Ventas Preimpreso / FCA;Responsable Monotributo;87;;no_match;NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;Servet SA;30621160261;-21374.11;out_refund;Ventas Preimpreso / FCA;Responsable inscripto;88;;no_match;NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;SUPERMERCADOS GRANJA S.A;30710498772;2131041.49;out_invoice;Ventas Preimpreso / FCA;Responsable inscripto;90;;no_match;NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;YPF GAS S.A;30515488479;1272355.46;out_invoice;Ventas Preimpreso / FCA;Responsable inscripto;91;;no_match;NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;LEVIS OLDANI NEUMATICOS S.A.;30703404959;1422100.00;out_invoice;Ventas Preimpreso / FCA;Responsable inscripto;92;;no_match;NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;BOYERO HNOS S.R.L.;30708543647;8616168.00;out_invoice;Ventas Preimpreso / FCA;Responsable inscripto;93;;no_match;NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;Fidelitytools S.A.;33712462669;1966171.27;out_invoice;Ventas Preimpreso / FCA;Responsable inscripto;94;;no_match;NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;DE ALBERT ALICIA HAYDEE;27173377016;584700.00;out_invoice;Ventas Preimpreso / FCA;Responsable Monotributo;95;;no_match;NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;CANOVAS CRISTIAN JAVIER;20221630212;1350000.00;out_invoice;Ventas Preimpreso / FCA;Responsable Monotributo;96;CRISTIAN (DISTRIBUIDOR);fuzzy:0.920;MATCH_FUZZY;Apertura saldo cliente FCA
+FCA;BAEZ RICARDO LUCIO;23085739239;2124000.00;out_invoice;Ventas Preimpreso / FCA;Responsable Monotributo;97;;no_match;NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;EDENRED ARGENTINAS.A.;30623608677;-6246763.50;out_refund;Ventas Preimpreso / FCA;Responsable inscripto;99;;no_match;NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;YPF S.A.;30546689979;2368367.25;out_invoice;Ventas Preimpreso / FCA;Responsable inscripto;100;;no_match;NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;FERROSOL S.A.S;30719036232;87241.00;out_invoice;Ventas Preimpreso / FCA;Responsable inscripto;102;;no_match;NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;PICCA & GASSMANN S.A.S;30719349478;1815000.00;out_invoice;Ventas Preimpreso / FCA;Responsable inscripto;103;;no_match;NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;GESTION HR S.A.S;33717132969;323227.97;out_invoice;Ventas Preimpreso / FCA;Responsable inscripto;104;;no_match;NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;DEPOSITO PILAR SRL;30715468979;25766.94;out_invoice;Ventas Preimpreso / FCA;Responsable inscripto;105;;no_match;NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;LOS MOLINOS S.R.L;33708068999;347567.43;out_invoice;Ventas Preimpreso / FCA;Responsable inscripto;106;;no_match;NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;EIKON CONSULTORA S.R.L;30712294996;46400.00;out_invoice;Ventas Preimpreso / FCA;Responsable inscripto;107;;no_match;NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA
+FCA;ESTRUCTURASVEGA S.R.L;30707527907;2413370.27;out_invoice;Ventas Preimpreso / FCA;Responsable inscripto;108;;no_match;NO_EN_LISTADO_CLIENTES;Apertura saldo cliente FCA

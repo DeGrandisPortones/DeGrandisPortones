@@ -1,0 +1,24 @@
+﻿grupo;razsoc;cuit;saldo;tipo_documento;journal_sugerido;responsabilidad;source_row;contacto_match;match_method;warnings;nota
+INTERNO;ABERTURAS ALUMIX;20322871857;6713218.01;out_invoice;Venta Interna;;3;ABERTURAS ALUMIX;exact;;Apertura saldo cliente INTERNO
+INTERNO;ALUMINIOS BARRIOS;27296492480;10750936.39;out_invoice;Venta Interna;;4;ALUMINIOS BARRIOS;exact;;Apertura saldo cliente INTERNO
+INTERNO;ABERTURAS ALFA;;2062641.48;out_invoice;Venta Interna;;6;ABERTURAS ALFA;exact;SIN_CUIT;Apertura saldo cliente INTERNO
+INTERNO;ECOALUM;;71737.66;out_invoice;Venta Interna;;7;ECOALUM;exact;SIN_CUIT;Apertura saldo cliente INTERNO
+INTERNO;ESPACIO CONCRETTO SAS;30716927969;385157.00;out_invoice;Venta Interna;;8;ESPACIO CONCRETTO SAS;exact;;Apertura saldo cliente INTERNO
+INTERNO;GRUPO SHUTO;30718471822;720071.79;out_invoice;Venta Interna;;10;GRUPO SHUTO;exact;;Apertura saldo cliente INTERNO
+INTERNO;RINDER ABERTURAS;30547787354;-107002.69;out_refund;Venta Interna;;15;RINDER ABERTURAS;exact;;Apertura saldo cliente INTERNO
+INTERNO;SELEC ABERTURAS;33717508799;1149920.00;out_invoice;Venta Interna;;16;SELEC ABERTURAS;exact;;Apertura saldo cliente INTERNO
+INTERNO;MANCINELLI HNOS SAS;30718586646;22373302.16;out_invoice;Venta Interna;;21;MANCINELLI HNOS SAS;exact;;Apertura saldo cliente INTERNO
+INTERNO;BMA Group SAS;30718733460;11056730.63;out_invoice;Venta Interna;;28;BMA Group SAS;exact;;Apertura saldo cliente INTERNO
+INTERNO;JULIETA GIORDANO;;1500025.92;out_invoice;Venta Interna;;30;;no_match;SIN_CUIT|NO_EN_LISTADO_CLIENTES;Apertura saldo cliente INTERNO
+INTERNO;FRANCO PAPA;;6818345.23;out_invoice;Venta Interna;;43;;no_match;SIN_CUIT|NO_EN_LISTADO_CLIENTES;Apertura saldo cliente INTERNO
+INTERNO;RIZZI SANTIAGO;;2712593.92;out_invoice;Venta Interna;;66;;no_match;SIN_CUIT|NO_EN_LISTADO_CLIENTES;Apertura saldo cliente INTERNO
+INTERNO;Nancy Gianesini;;1800006.67;out_invoice;Venta Interna;;68;;no_match;SIN_CUIT|NO_EN_LISTADO_CLIENTES;Apertura saldo cliente INTERNO
+INTERNO;PAPP ALUMINIOS;;-133715.08;out_refund;Venta Interna;;73;PAPP ALUMINIOS;exact;SIN_CUIT;Apertura saldo cliente INTERNO
+INTERNO;AZ ABERTURAS;20319765051;2226688.96;out_invoice;Venta Interna;;76;AZ ABERTURAS;exact;;Apertura saldo cliente INTERNO
+INTERNO;ALUCAB;;2911823.97;out_invoice;Venta Interna;;79;ALUCAB;exact;SIN_CUIT;Apertura saldo cliente INTERNO
+INTERNO;Portones DIRONI;;7408711.94;out_invoice;Venta Interna;;80;Portones DIRONI;exact;SIN_CUIT;Apertura saldo cliente INTERNO
+INTERNO;METALURGICA PB;;-4784.90;out_refund;Venta Interna;;81;METALURGICA PB;exact;SIN_CUIT;Apertura saldo cliente INTERNO
+INTERNO;BOBBA DANIEL;;356707.16;out_invoice;Venta Interna;;89;;no_match;SIN_CUIT|NO_EN_LISTADO_CLIENTES;Apertura saldo cliente INTERNO
+INTERNO;GATEXPERT INTERNATIONAL TRADE CO., LTD;;23249160.00;out_invoice;Venta Interna;;98;;no_match;SIN_CUIT|NO_EN_LISTADO_CLIENTES;Apertura saldo cliente INTERNO
+INTERNO;MARIO VAZQUEZ;;-9256451.50;out_refund;Venta Interna;;101;;no_match;SIN_CUIT|NO_EN_LISTADO_CLIENTES;Apertura saldo cliente INTERNO
+INTERNO;FERROSIDER SA;;5395956.67;out_invoice;Venta Interna;FERROSIDER SA;109;;no_match;SIN_CUIT|NO_EN_LISTADO_CLIENTES|COL_D_NO_CUIT;Apertura saldo cliente INTERNO
