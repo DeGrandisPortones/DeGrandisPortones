@@ -1,0 +1,24 @@
+--- a/Addons/l10n_ar_tax/models/account_payment.py
++++ b/Addons/l10n_ar_tax/models/account_payment.py
+@@
+-        checks_payments = self.filtered(
+-            lambda x: x.payment_method_code in ["in_third_party_checks", "out_third_party_checks"]
+-        )
++        checks_payments = self.filtered(
++            lambda x: x.payment_method_code in [
++                "in_third_party_checks",
++                "out_third_party_checks",
++                "new_third_party_checks",
++            ]
++        )
+@@
+-        checks_payments = self.filtered(
+-            lambda x: x.payment_method_code in ["in_third_party_checks", "out_third_party_checks"]
+-        )
++        checks_payments = self.filtered(
++            lambda x: x.payment_method_code in [
++                "in_third_party_checks",
++                "out_third_party_checks",
++                "new_third_party_checks",
++            ]
++        )
