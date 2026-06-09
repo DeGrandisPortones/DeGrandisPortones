@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_order_product_search_inherit_invoice_date" model="ir.ui.view">
+        <field name="name">sale.report.search.invoice.date</field>
+        <field name="model">sale.report</field>
+        <field name="inherit_id" ref="sale.view_order_product_search"/>
+        <field name="arch" type="xml">
+            <xpath expr="//search" position="inside">
+                <field name="invoice_date" string="Fecha de facturación"/>
+                <filter string="Fecha de facturación" name="filter_invoice_date" date="invoice_date"/>
+                <filter string="Fecha de facturación" name="group_by_invoice_date" context="{'group_by': 'invoice_date:month'}"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="sale_report_view_tree_inherit_invoice_date" model="ir.ui.view">
+        <field name="name">sale.report.view.list.invoice.date</field>
+        <field name="model">sale.report</field>
+        <field name="inherit_id" ref="sale.sale_report_view_tree"/>
+        <field name="arch" type="xml">
+            <field name="date" position="after">
+                <field name="invoice_date" optional="show"/>
+            </field>
+        </field>
+    </record>
+</odoo>
