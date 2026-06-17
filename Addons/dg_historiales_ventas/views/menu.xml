@@ -15,28 +15,20 @@
             <field name="target">new</field>
         </record>
 
-        <!-- Menú raíz -->
+        <!-- App: Historial de Presupuestos -->
         <menuitem
-            id="menu_historiales_ventas_root"
-            name="Historiales de Ventas"
-            sequence="90"
-        />
-
-        <!-- Submenús -->
-        <menuitem
-            id="menu_historial_presupuestador"
+            id="menu_historial_presupuestador_root"
             name="Historial de Presupuestos"
-            parent="menu_historiales_ventas_root"
             action="action_historial_presupuestador"
-            sequence="10"
+            sequence="88"
         />
 
+        <!-- App: Informe de Ventas -->
         <menuitem
-            id="menu_informe_ventas"
+            id="menu_informe_ventas_root"
             name="Informe de Ventas"
-            parent="menu_historiales_ventas_root"
             action="action_informe_ventas"
-            sequence="20"
+            sequence="89"
         />
 
     </data>
