@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+        <!-- Acciones URL -->
+        <record id="action_historial_presupuestador" model="ir.actions.act_url">
+            <field name="name">Historial de Presupuestos</field>
+            <field name="url">https://presupuestador-degrandisportones.vercel.app/</field>
+            <field name="target">new</field>
+        </record>
+
+        <record id="action_informe_ventas" model="ir.actions.act_url">
+            <field name="name">Informe de Ventas</field>
+            <field name="url">https://informes-dg-portones.vercel.app/</field>
+            <field name="target">new</field>
+        </record>
+
+        <!-- Menú raíz -->
+        <menuitem
+            id="menu_historiales_ventas_root"
+            name="Historiales de Ventas"
+            sequence="90"
+        />
+
+        <!-- Submenús -->
+        <menuitem
+            id="menu_historial_presupuestador"
+            name="Historial de Presupuestos"
+            parent="menu_historiales_ventas_root"
+            action="action_historial_presupuestador"
+            sequence="10"
+        />
+
+        <menuitem
+            id="menu_informe_ventas"
+            name="Informe de Ventas"
+            parent="menu_historiales_ventas_root"
+            action="action_informe_ventas"
+            sequence="20"
+        />
+
+    </data>
+</odoo>
