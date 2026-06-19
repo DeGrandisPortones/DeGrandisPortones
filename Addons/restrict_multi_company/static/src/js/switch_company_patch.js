@@ -5,8 +5,8 @@ import { session } from "@web/session";
 
 patch(CompanySelector.prototype, {
     switchCompany(mode, companyId) {
-        // El administrador puede combinar empresas libremente
-        if (session.is_admin) {
+        // El usuario Administrator (id=2) puede combinar empresas libremente
+        if (session.uid === 2) {
             return super.switchCompany(mode, companyId);
         }
 
