@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+  <!-- Regla multiempresa: dflex.check -->
+  <record id="dflex_check_rule_company" model="ir.rule">
+    <field name="name">Cheque propio: solo empresa activa</field>
+    <field name="model_id" ref="model_dflex_check"/>
+    <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    <field name="groups" eval="[(4, ref('base.group_user'))]"/>
+  </record>
+
+  <!-- Regla multiempresa: dflex.checkbook -->
+  <record id="dflex_checkbook_rule_company" model="ir.rule">
+    <field name="name">Chequera: solo empresa activa</field>
+    <field name="model_id" ref="model_dflex_checkbook"/>
+    <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    <field name="groups" eval="[(4, ref('base.group_user'))]"/>
+  </record>
+</odoo>
