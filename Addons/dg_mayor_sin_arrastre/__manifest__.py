@@ -1,6 +1,6 @@
 {
     "name": "Mayor sin Arrastre",
-    "version": "18.0.1.0.0",
+    "version": "18.0.2.0.0",
     "category": "Accounting/Reporting",
     "summary": "Muestra el Libro mayor de Odoo sin saldos de arrastre anteriores al rango filtrado",
     "author": "Dflex",
