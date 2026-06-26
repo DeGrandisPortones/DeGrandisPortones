@@ -3,7 +3,7 @@
     <record id="action_mayor_sin_arrastre" model="ir.actions.client">
         <field name="name">Mayor Sin Arrastre</field>
         <field name="tag">account_report</field>
-        <field name="context" eval="{'report_id': ref('account_reports.general_ledger_report'), 'sin_arrastre': True}"/>
+        <field name="context" eval="{'report_id': ref('dg_mayor_sin_arrastre.general_ledger_no_carryforward_report')}"/>
     </record>
 
     <menuitem
