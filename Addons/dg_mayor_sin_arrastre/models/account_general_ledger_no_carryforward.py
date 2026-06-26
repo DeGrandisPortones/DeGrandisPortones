@@ -8,9 +8,17 @@ class AccountGeneralLedgerNoCarryForwardHandler(models.AbstractModel):
     _description = 'Mayor General Sin Arrastre'
 
     def _dynamic_lines_generator(self, report, options, all_column_groups_expression_totals, warnings=None):
-        lines = list(super()._dynamic_lines_generator(
-            report, options, all_column_groups_expression_totals, warnings=warnings,
-        ))
+        # Llamar al padre con y sin 'warnings' - el padre puede no aceptarlo
+        try:
+            parent_gen = super()._dynamic_lines_generator(
+                report, options, all_column_groups_expression_totals, warnings=warnings,
+            )
+        except TypeError:
+            parent_gen = super()._dynamic_lines_generator(
+                report, options, all_column_groups_expression_totals,
+            )
+
+        lines = list(parent_gen)
 
         # Buscar metodos del padre que tengan "balance" en el nombre
         parent_cls = type(self).__mro__[1]
@@ -19,7 +27,7 @@ class AccountGeneralLedgerNoCarryForwardHandler(models.AbstractModel):
             if 'balance' in m.lower() and not m.startswith('__')
         )
 
-        # Capturar estructura de las primeras 15 lineas para diagnostico
+        # Capturar estructura de las primeras 15 lineas
         debug = {
             'total_lines': len(lines),
             'balance_methods_in_parent': balance_methods,
