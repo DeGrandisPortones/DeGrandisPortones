@@ -6,13 +6,20 @@ class AccountGeneralLedgerNoCarryForwardHandler(models.AbstractModel):
     _inherit = 'account.general.ledger.report.handler'
     _description = 'Mayor General Sin Arrastre'
 
-    def _custom_options_initializer(self, report, options, previous_options):
-        super()._custom_options_initializer(report, options, previous_options)
-        options['general_ledger_strict_range'] = True
-
-    def _dynamic_lines_generator(self, report, options, all_column_groups_expression_totals, warnings=None):
+    def _get_query_sums(self, report, options):
         root = report.root_report_id or report
-        return super()._dynamic_lines_generator(root, options, all_column_groups_expression_totals, warnings)
+        new_options = dict(options)
+        new_options['general_ledger_strict_range'] = True
+        new_col_groups = {}
+        for key, cg in (options.get('column_groups') or {}).items():
+            new_cg = dict(cg)
+            new_cg['forced_options'] = {
+                **dict(cg.get('forced_options') or {}),
+                'general_ledger_strict_range': True,
+            }
+            new_col_groups[key] = new_cg
+        new_options['column_groups'] = new_col_groups
+        return super()._get_query_sums(root, new_options)
 
     def _get_initial_balance_values(self, report, account_ids, options):
         root = report.root_report_id or report
