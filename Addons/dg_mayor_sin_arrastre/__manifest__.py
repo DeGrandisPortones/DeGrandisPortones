@@ -1,6 +1,6 @@
 {
     "name": "Mayor Sin Arrastre",
-    "version": "18.0.1.7.0",
+    "version": "18.0.1.8.0",
     "category": "Accounting/Reporting",
     "summary": "Mayor General mostrando solo movimientos del período, saldo inicial cero",
     "author": "Dflex Argentina SAS",
