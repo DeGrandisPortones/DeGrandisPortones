@@ -10,8 +10,13 @@ class AccountGeneralLedgerNoCarryForwardHandler(models.AbstractModel):
         super()._custom_options_initializer(report, options, previous_options)
         options['general_ledger_strict_range'] = True
 
+    def _dynamic_lines_generator(self, report, options, all_column_groups_expression_totals, warnings=None):
+        root = report.root_report_id or report
+        return super()._dynamic_lines_generator(root, options, all_column_groups_expression_totals, warnings)
+
     def _get_initial_balance_values(self, report, account_ids, options):
-        result = super()._get_initial_balance_values(report, account_ids, options)
+        root = report.root_report_id or report
+        result = super()._get_initial_balance_values(root, account_ids, options)
         return {
             account_id: (account, {
                 col_key: {
