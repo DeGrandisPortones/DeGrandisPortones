@@ -1,15 +1,14 @@
 {
-    "name": "Mayor Sin Arrastre",
-    "version": "18.0.1.9.0",
+    "name": "Mayor sin Arrastre",
+    "version": "18.0.1.0.0",
     "category": "Accounting/Reporting",
-    "summary": "Mayor General mostrando solo movimientos del período, saldo inicial cero",
-    "author": "Dflex Argentina SAS",
+    "summary": "Muestra el Libro mayor de Odoo sin saldos de arrastre anteriores al rango filtrado",
+    "author": "Dflex",
     "license": "LGPL-3",
-    "depends": ["account_reports"],
-    "data": [
-        "data/account_report_data.xml",
-        "views/menu.xml",
+    "depends": [
+        "account_reports",
     ],
+    "data": [],
     "installable": True,
     "application": False,
 }
