@@ -1,6 +1,6 @@
 {
     "name": "Reporte de Proveedores por Diario",
-    "version": "18.0.1.0.0",
+    "version": "18.0.1.1.0",
     "category": "Accounting/Reporting",
     "summary": "Reporte de deuda con proveedores separado por compras oficiales, internas y saldos iniciales",
     "author": "Dflex",
