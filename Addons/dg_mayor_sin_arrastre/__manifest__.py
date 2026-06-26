@@ -1,14 +1,16 @@
 {
     "name": "Mayor sin Arrastre",
-    "version": "18.0.2.0.0",
+    "version": "18.0.2.1.0",
     "category": "Accounting/Reporting",
-    "summary": "Muestra el Libro mayor de Odoo sin saldos de arrastre anteriores al rango filtrado",
+    "summary": "Agrega acceso al Libro Mayor sin saldos de arrastre del período anterior",
     "author": "Dflex",
     "license": "LGPL-3",
     "depends": [
         "account_reports",
     ],
-    "data": [],
+    "data": [
+        "views/menu.xml",
+    ],
     "installable": True,
     "application": False,
 }
