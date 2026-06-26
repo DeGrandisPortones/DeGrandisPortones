@@ -6,14 +6,17 @@ class AccountGeneralLedgerNoCarryForwardHandler(models.AbstractModel):
     _inherit = 'account.general.ledger.report.handler'
     _description = 'Mayor General Sin Arrastre'
 
-    def _get_initial_balance_values(self, report, options, accounts_results):
-        """Sin arrastre: saldo inicial cero en todas las cuentas.
+    def _get_initial_balance_values(self, report, options, *args, **kwargs):
+        """Sin arrastre: obtiene la lista de cuentas del padre pero pone todos los saldos en 0.
 
-        En Odoo 18 enterprise el método se llama _get_initial_balance_values
-        en account.general.ledger.report.handler. Si al instalar el módulo no
-        tiene efecto, buscar el nombre correcto en el servidor:
-            grep -n "def.*initial_balance" \
-                /path/odoo/enterprise/account_reports/models/account_general_ledger.py
-        y reemplazar el nombre aquí.
+        No devuelve {} porque el handler usa este dict también para saber qué
+        cuentas mostrar — devolver vacío hace que no aparezca nada.
         """
-        return {}
+        result = super()._get_initial_balance_values(report, options, *args, **kwargs)
+        return {
+            account_id: {
+                key: (0.0 if isinstance(val, (int, float)) and not isinstance(val, bool) else val)
+                for key, val in account_data.items()
+            } if isinstance(account_data, dict) else account_data
+            for account_id, account_data in result.items()
+        }
