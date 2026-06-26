@@ -6,10 +6,21 @@ class AccountGeneralLedgerReportHandlerNoCarryForward(models.AbstractModel):
 
     def _custom_options_initializer(self, report, options, previous_options):
         super()._custom_options_initializer(report, options, previous_options)
+
+        sin_arrastre = previous_options.get(
+            'sin_arrastre',
+            self.env.context.get('sin_arrastre', False),
+        )
+        options['sin_arrastre'] = sin_arrastre
+
+        if not sin_arrastre:
+            return
+
         col_groups = options.get('column_groups') or {}
         if not col_groups:
             return
-        new_groups = {
+
+        options['column_groups'] = {
             key: {
                 **dict(cg),
                 'forced_options': {
@@ -20,13 +31,11 @@ class AccountGeneralLedgerReportHandlerNoCarryForward(models.AbstractModel):
             }
             for key, cg in col_groups.items()
         }
-        try:
-            options['column_groups'] = new_groups
-        except TypeError:
-            pass
 
     def _get_initial_balance_values(self, report, account_ids, options):
         result = super()._get_initial_balance_values(report, account_ids, options)
+        if not options.get('sin_arrastre'):
+            return result
         return {
             account_id: (account, {
                 col_key: {
