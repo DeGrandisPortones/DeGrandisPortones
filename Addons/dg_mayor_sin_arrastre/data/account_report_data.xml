@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--
+        Variante del Mayor General que usa el handler sin arrastre.
+        root_report_id hereda columnas y configuración del Mayor General original.
+        custom_handler_model_name apunta a nuestro handler que devuelve saldo inicial = 0.
+    -->
+    <record id="general_ledger_no_carryforward_report" model="account.report">
+        <field name="name">Mayor Sin Arrastre</field>
+        <field name="root_report_id" ref="account_reports.general_ledger_report"/>
+        <field name="custom_handler_model_name">account.general.ledger.no.carryforward.handler</field>
+    </record>
+</odoo>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--
+        Acción que abre la variante "Mayor Sin Arrastre".
+        report_id se resuelve en tiempo de carga XML mediante ref().
+    -->
+    <record id="action_mayor_sin_arrastre" model="ir.actions.client">
+        <field name="name">Mayor Sin Arrastre</field>
+        <field name="tag">account_report</field>
+        <field name="context" eval="{'report_id': ref('dg_mayor_sin_arrastre.general_ledger_no_carryforward_report')}"/>
+    </record>
+
+    <menuitem
+        id="menu_mayor_sin_arrastre"
+        name="Mayor Sin Arrastre"
+        parent="account.menu_finance_reports"
+        action="action_mayor_sin_arrastre"
+        sequence="30"
+        groups="account.group_account_readonly"/>
+</odoo>
