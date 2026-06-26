@@ -1,6 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
 
+    <record id="view_account_form_dg_supplier_report_group" model="ir.ui.view">
+        <field name="name">account.account.form.dg.supplier.report.group</field>
+        <field name="model">account.account</field>
+        <field name="inherit_id" ref="account.view_account_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='account_type']" position="after">
+                <field name="dg_supplier_report_group"/>
+            </xpath>
+        </field>
+    </record>
+
     <record id="view_account_journal_form_dg_supplier_report" model="ir.ui.view">
         <field name="name">account.journal.form.dg.supplier.report</field>
         <field name="model">account.journal</field>

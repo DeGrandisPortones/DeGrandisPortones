@@ -1,6 +1,24 @@
 from odoo import fields, models, tools
 
 
+class AccountAccount(models.Model):
+    _inherit = "account.account"
+
+    dg_supplier_report_group = fields.Selection(
+        selection=[
+            ("fca", "Subtotal FCA"),
+            ("internas", "Subtotal Internas"),
+        ],
+        string="Grupo reporte proveedores",
+        help=(
+            "Clasifica los movimientos de cuentas a pagar en el reporte de proveedores. "
+            "Configurar en las cuentas contables de proveedores (ej: 2.1.1.01.010 = FCA, "
+            "6.2.1.01.010 = Internas)."
+        ),
+        copy=False,
+    )
+
+
 class AccountJournal(models.Model):
     _inherit = "account.journal"
 
@@ -12,7 +30,7 @@ class AccountJournal(models.Model):
         string="Grupo reporte proveedores",
         help=(
             "Clasifica los movimientos de este diario en el reporte de proveedores. "
-            "Si se deja vacio, el reporte intenta clasificar por nombre del diario."
+            "Si se deja vacio, el reporte clasifica por cuenta contable o nombre del diario."
         ),
         copy=False,
     )
@@ -30,7 +48,7 @@ class AccountMoveLine(models.Model):
         help=(
             "Usar para clasificar saldos iniciales, ajustes manuales o pagos/debitos "
             "sin imputar en el reporte de proveedores. Si se deja vacio, el reporte "
-            "clasifica por diario o por la factura conciliada cuando sea posible."
+            "clasifica por cuenta contable, diario o la factura conciliada cuando sea posible."
         ),
         copy=False,
     )
@@ -140,6 +158,7 @@ class DgSupplierReportLine(models.Model):
                         COALESCE(rp.commercial_partner_id, am.partner_id) AS partner_id,
                         COALESCE(
                             aj.dg_supplier_report_group,
+                            payable_acct.dg_supplier_report_group,
                             CASE
                                 WHEN ajn.normalized_journal_name IN ('compras preimpreso', 'diario compras preimpreso') THEN 'fca'
                                 WHEN ajn.normalized_journal_name IN ('compras internas', 'diario compras internas') THEN 'internas'
@@ -180,6 +199,14 @@ class DgSupplierReportLine(models.Model):
                                 )
                             ))) AS normalized_journal_name
                     ) ajn ON TRUE
+                    LEFT JOIN LATERAL (
+                        SELECT aa2.dg_supplier_report_group
+                        FROM account_move_line aml2
+                        JOIN account_account aa2 ON aa2.id = aml2.account_id
+                        WHERE aml2.move_id = am.id
+                            AND aa2.dg_supplier_report_group IS NOT NULL
+                        LIMIT 1
+                    ) payable_acct ON TRUE
                     JOIN res_company company ON company.id = am.company_id
                     LEFT JOIN res_partner rp ON rp.id = am.partner_id
                     WHERE am.state = 'posted'
@@ -195,6 +222,7 @@ class DgSupplierReportLine(models.Model):
                             aml.dg_supplier_report_group,
                             inferred_group.report_group,
                             aj.dg_supplier_report_group,
+                            aa.dg_supplier_report_group,
                             CASE
                                 WHEN ajn.normalized_journal_name IN ('saldos iniciales proveedores fca', 'compras preimpreso', 'diario compras preimpreso') THEN 'fca'
                                 WHEN ajn.normalized_journal_name IN ('saldos iniciales proveedores internas', 'compras internas', 'diario compras internas') THEN 'internas'
@@ -249,6 +277,7 @@ class DgSupplierReportLine(models.Model):
                             SELECT DISTINCT
                                 COALESCE(
                                     counterpart_journal.dg_supplier_report_group,
+                                    counterpart_aa.dg_supplier_report_group,
                                     CASE
                                         WHEN counterpart_journal_names.normalized_journal_name IN ('compras preimpreso', 'diario compras preimpreso') THEN 'fca'
                                         WHEN counterpart_journal_names.normalized_journal_name IN ('compras internas', 'diario compras internas') THEN 'internas'
@@ -262,6 +291,7 @@ class DgSupplierReportLine(models.Model):
                                 END
                             JOIN account_move counterpart_move ON counterpart_move.id = counterpart_line.move_id
                             JOIN account_journal counterpart_journal ON counterpart_journal.id = counterpart_move.journal_id
+                            JOIN account_account counterpart_aa ON counterpart_aa.id = counterpart_line.account_id
                             LEFT JOIN LATERAL (
                                 SELECT
                                     LOWER(TRIM(COALESCE(
