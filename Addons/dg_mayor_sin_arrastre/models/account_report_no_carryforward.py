@@ -4,21 +4,19 @@ from odoo import models
 class AccountReportNoCarryForward(models.Model):
     _inherit = 'account.report'
 
-    def get_options(self, previous_options=None):
-        ref = self.env.ref(
+    def _sin_arrastre_ref(self):
+        return self.env.ref(
             'dg_mayor_sin_arrastre.general_ledger_no_carryforward_report',
             raise_if_not_found=False,
         )
+
+    def get_options(self, previous_options=None):
+        ref = self._sin_arrastre_ref()
         if not ref or self.id != ref.id:
             return super().get_options(previous_options)
 
-        # Llamar al super() sobre self (variante), NO sobre gl_root.
-        # Como self.id == options['report_id'], Odoo no ejecuta el dispatch
-        # de la línea 2039, evitando el loop infinito.
-        # La variante hereda line_ids/column_ids del root => data visible.
         options = super().get_options(previous_options)
 
-        # Forzar strict_range por si _custom_options_initializer ya no lo aplicó
         col_groups = options.get('column_groups') or {}
         if col_groups:
             options['column_groups'] = {
@@ -34,3 +32,17 @@ class AccountReportNoCarryForward(models.Model):
             }
 
         return options
+
+    def get_lines(self, options):
+        ref = self._sin_arrastre_ref()
+        if not ref or self.id != ref.id:
+            return super().get_lines(options)
+
+        # Delegar al GL root para que compute all_column_groups_expression_totals
+        # desde sus line_ids (no vacios). Sin esto, _dynamic_lines_generator recibe
+        # {} y devuelve cero lineas. strict_range ya esta en options['column_groups']
+        # y _get_initial_balance_values detecta sin_arrastre via options['report_id'].
+        gl_root = self.root_report_id
+        if gl_root:
+            return gl_root.get_lines(options)
+        return super().get_lines(options)
