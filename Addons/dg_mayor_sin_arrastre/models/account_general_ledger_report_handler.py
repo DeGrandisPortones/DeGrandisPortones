@@ -4,17 +4,25 @@ from odoo import models
 class AccountGeneralLedgerReportHandlerNoCarryForward(models.AbstractModel):
     _inherit = 'account.general.ledger.report.handler'
 
-    def _is_sin_arrastre(self, report):
+    def _is_sin_arrastre(self, report, options=None):
         ref = self.env.ref(
             'dg_mayor_sin_arrastre.general_ledger_no_carryforward_report',
             raise_if_not_found=False,
         )
-        return bool(ref and report.id == ref.id)
+        if not ref:
+            return False
+        # Caso normal: _custom_options_initializer recibe report=variante
+        if report.id == ref.id:
+            return True
+        # Caso get_lines delegado a gl_root: report=gl_root pero options tiene report_id=variante
+        if options and options.get('report_id') == ref.id:
+            return True
+        return False
 
     def _custom_options_initializer(self, report, options, previous_options):
         super()._custom_options_initializer(report, options, previous_options)
 
-        if not self._is_sin_arrastre(report):
+        if not self._is_sin_arrastre(report, options):
             return
 
         col_groups = options.get('column_groups') or {}
@@ -35,7 +43,7 @@ class AccountGeneralLedgerReportHandlerNoCarryForward(models.AbstractModel):
 
     def _get_initial_balance_values(self, report, account_ids, options):
         result = super()._get_initial_balance_values(report, account_ids, options)
-        if not self._is_sin_arrastre(report):
+        if not self._is_sin_arrastre(report, options):
             return result
         return {
             account_id: (account, {
