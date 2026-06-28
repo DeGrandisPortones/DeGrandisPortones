@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--
+        Elimina el bloqueo "campo requerido" de l10n_latam_identification_type_id
+        (Tipo de Identificación) en la ficha de contacto de Odoo.
+        Esto permite consultar el Estado del Cliente / Estado de Cuenta de
+        clientes Consumidor Final que no tienen CUIT/CUIL/DNI cargado.
+
+        El campo queda visible y editable, solo deja de ser obligatorio.
+        La herencia usa priority=50 (por encima del default 16 de l10n_latam_base)
+        para garantizar que el atributo se aplique después de que l10n_latam_base
+        haya insertado el campo.
+    -->
+    <record id="view_partner_form_id_type_optional" model="ir.ui.view">
+        <field name="name">res.partner.form.id.type.optional</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="priority">50</field>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='l10n_latam_identification_type_id']" position="attributes">
+                <attribute name="required">0</attribute>
+            </xpath>
+        </field>
+    </record>
+</odoo>
