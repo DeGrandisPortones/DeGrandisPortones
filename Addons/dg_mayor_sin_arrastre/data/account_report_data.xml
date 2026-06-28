@@ -1,71 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Reporte standalone (root_report_id=False explícito para limpiar versiones anteriores).
-         Tiene sus propias column_ids para que _init_options_columns llene column_groups. -->
+    <!-- Variante del GL con handler propio.
+         Hereda line_ids, column_ids y filtros del root => data muestra correctamente.
+         get_options override llama super() sobre sí mismo (variante) => sin loop. -->
     <record id="general_ledger_no_carryforward_report" model="account.report">
         <field name="name">Mayor Sin Arrastre</field>
-        <field name="root_report_id" eval="False"/>
+        <field name="root_report_id" ref="account_reports.general_ledger_report"/>
         <field name="custom_handler_model_name">account.general.ledger.report.handler</field>
-        <field name="filter_date_range" eval="True"/>
-        <field name="default_opening_date_filter">this_month</field>
-    </record>
-
-    <record id="general_ledger_sa_col_date" model="account.report.column">
-        <field name="report_id" ref="general_ledger_no_carryforward_report"/>
-        <field name="name">Fecha</field>
-        <field name="expression_label">date</field>
-        <field name="figure_type">date</field>
-        <field name="sequence">1</field>
-    </record>
-
-    <record id="general_ledger_sa_col_communication" model="account.report.column">
-        <field name="report_id" ref="general_ledger_no_carryforward_report"/>
-        <field name="name">Comunicación</field>
-        <field name="expression_label">communication</field>
-        <field name="figure_type">string</field>
-        <field name="sequence">2</field>
-    </record>
-
-    <record id="general_ledger_sa_col_partner" model="account.report.column">
-        <field name="report_id" ref="general_ledger_no_carryforward_report"/>
-        <field name="name">Contacto</field>
-        <field name="expression_label">partner_id</field>
-        <field name="figure_type">string</field>
-        <field name="sequence">3</field>
-    </record>
-
-    <record id="general_ledger_sa_col_debit" model="account.report.column">
-        <field name="report_id" ref="general_ledger_no_carryforward_report"/>
-        <field name="name">Debe</field>
-        <field name="expression_label">debit</field>
-        <field name="figure_type">monetary</field>
-        <field name="blank_if_zero" eval="True"/>
-        <field name="sequence">4</field>
-    </record>
-
-    <record id="general_ledger_sa_col_credit" model="account.report.column">
-        <field name="report_id" ref="general_ledger_no_carryforward_report"/>
-        <field name="name">Haber</field>
-        <field name="expression_label">credit</field>
-        <field name="figure_type">monetary</field>
-        <field name="blank_if_zero" eval="True"/>
-        <field name="sequence">5</field>
-    </record>
-
-    <record id="general_ledger_sa_col_balance" model="account.report.column">
-        <field name="report_id" ref="general_ledger_no_carryforward_report"/>
-        <field name="name">Balance</field>
-        <field name="expression_label">balance</field>
-        <field name="figure_type">monetary</field>
-        <field name="sequence">6</field>
-    </record>
-
-    <record id="general_ledger_sa_col_currency" model="account.report.column">
-        <field name="report_id" ref="general_ledger_no_carryforward_report"/>
-        <field name="name">Moneda</field>
-        <field name="expression_label">amount_currency</field>
-        <field name="figure_type">monetary</field>
-        <field name="blank_if_zero" eval="True"/>
-        <field name="sequence">7</field>
     </record>
 </odoo>
