@@ -1,4 +1,7 @@
+import logging
 from odoo import models
+
+_logger = logging.getLogger(__name__)
 
 
 class AccountGeneralLedgerReportHandlerNoCarryForward(models.AbstractModel):
@@ -11,10 +14,10 @@ class AccountGeneralLedgerReportHandlerNoCarryForward(models.AbstractModel):
         )
         if not ref:
             return False
-        # Caso normal: _custom_options_initializer recibe report=variante
         if report.id == ref.id:
             return True
-        # Caso get_lines delegado a gl_root: report=gl_root pero options tiene report_id=variante
+        if options and options.get('sin_arrastre'):
+            return True
         if options and options.get('report_id') == ref.id:
             return True
         return False
@@ -22,11 +25,18 @@ class AccountGeneralLedgerReportHandlerNoCarryForward(models.AbstractModel):
     def _custom_options_initializer(self, report, options, previous_options):
         super()._custom_options_initializer(report, options, previous_options)
 
-        if not self._is_sin_arrastre(report, options):
+        is_sa = self._is_sin_arrastre(report, options)
+        _logger.warning(
+            'SA _custom_options_initializer: report.id=%s is_sin_arrastre=%s col_groups=%s',
+            report.id, is_sa, list((options.get('column_groups') or {}).keys()),
+        )
+
+        if not is_sa:
             return
 
         col_groups = options.get('column_groups') or {}
         if not col_groups:
+            _logger.warning('SA _custom_options_initializer: col_groups VACIO, no se aplica strict_range')
             return
 
         options['column_groups'] = {
@@ -40,10 +50,16 @@ class AccountGeneralLedgerReportHandlerNoCarryForward(models.AbstractModel):
             }
             for key, cg in col_groups.items()
         }
+        _logger.warning('SA _custom_options_initializer: strict_range aplicado a %s col_groups', len(col_groups))
 
     def _get_initial_balance_values(self, report, account_ids, options):
         result = super()._get_initial_balance_values(report, account_ids, options)
-        if not self._is_sin_arrastre(report, options):
+        is_sa = self._is_sin_arrastre(report, options)
+        _logger.warning(
+            'SA _get_initial_balance_values: report.id=%s is_sin_arrastre=%s cuentas=%s',
+            report.id, is_sa, len(result),
+        )
+        if not is_sa:
             return result
         return {
             account_id: (account, {

@@ -1,4 +1,7 @@
+import logging
 from odoo import models
+
+_logger = logging.getLogger(__name__)
 
 
 class AccountReportNoCarryForward(models.Model):
@@ -16,6 +19,11 @@ class AccountReportNoCarryForward(models.Model):
             return super().get_options(previous_options)
 
         options = super().get_options(previous_options)
+
+        _logger.warning(
+            'SA get_options: report_id=%s ref.id=%s col_groups_keys=%s',
+            options.get('report_id'), ref.id, list((options.get('column_groups') or {}).keys()),
+        )
 
         col_groups = options.get('column_groups') or {}
         if col_groups:
@@ -38,11 +46,22 @@ class AccountReportNoCarryForward(models.Model):
         if not ref or self.id != ref.id:
             return super().get_lines(options)
 
-        # Delegar al GL root para que compute all_column_groups_expression_totals
-        # desde sus line_ids (no vacios). Sin esto, _dynamic_lines_generator recibe
-        # {} y devuelve cero lineas. strict_range ya esta en options['column_groups']
-        # y _get_initial_balance_values detecta sin_arrastre via options['report_id'].
         gl_root = self.root_report_id
+        _logger.warning(
+            'SA get_lines: self.id=%s ref.id=%s gl_root=%s options_report_id=%s col_groups=%s',
+            self.id, ref.id, gl_root.id if gl_root else None,
+            options.get('report_id'),
+            list((options.get('column_groups') or {}).keys()),
+        )
+
         if gl_root:
-            return gl_root.get_lines(options)
+            # Forzar report_id al root para que get_lines use sus line_ids.
+            # sin_arrastre=True permite que _get_initial_balance_values detecte el modo.
+            gl_options = dict(options)
+            gl_options['report_id'] = gl_root.id
+            gl_options['sin_arrastre'] = True
+            lines = gl_root.get_lines(gl_options)
+            _logger.warning('SA get_lines resultado: %s lineas', len(lines))
+            return lines
+
         return super().get_lines(options)
