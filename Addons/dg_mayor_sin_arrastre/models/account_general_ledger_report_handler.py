@@ -11,6 +11,28 @@ class AccountGeneralLedgerReportHandlerNoCarryForward(models.AbstractModel):
         )
         return bool(ref and report.id == ref.id)
 
+    def _custom_options_initializer(self, report, options, previous_options):
+        super()._custom_options_initializer(report, options, previous_options)
+
+        if not self._is_sin_arrastre(report):
+            return
+
+        col_groups = options.get('column_groups') or {}
+        if not col_groups:
+            return
+
+        options['column_groups'] = {
+            key: {
+                **dict(cg),
+                'forced_options': {
+                    **dict(cg.get('forced_options') or {}),
+                    'general_ledger_strict_range': True,
+                },
+                'forced_domain': list(cg.get('forced_domain') or []),
+            }
+            for key, cg in col_groups.items()
+        }
+
     def _get_initial_balance_values(self, report, account_ids, options):
         result = super()._get_initial_balance_values(report, account_ids, options)
         if not self._is_sin_arrastre(report):
