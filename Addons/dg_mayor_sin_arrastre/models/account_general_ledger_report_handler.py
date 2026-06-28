@@ -26,17 +26,12 @@ class AccountGeneralLedgerReportHandlerNoCarryForward(models.AbstractModel):
         super()._custom_options_initializer(report, options, previous_options)
 
         is_sa = self._is_sin_arrastre(report, options)
-        _logger.warning(
-            'SA _custom_options_initializer: report.id=%s is_sin_arrastre=%s col_groups=%s',
-            report.id, is_sa, list((options.get('column_groups') or {}).keys()),
-        )
-
         if not is_sa:
             return
 
         col_groups = options.get('column_groups') or {}
         if not col_groups:
-            _logger.warning('SA _custom_options_initializer: col_groups VACIO, no se aplica strict_range')
+            _logger.warning('SA _custom_options_initializer: col_groups VACIO para report.id=%s', report.id)
             return
 
         options['column_groups'] = {
@@ -50,17 +45,29 @@ class AccountGeneralLedgerReportHandlerNoCarryForward(models.AbstractModel):
             }
             for key, cg in col_groups.items()
         }
-        _logger.warning('SA _custom_options_initializer: strict_range aplicado a %s col_groups', len(col_groups))
+        _logger.warning('SA _custom_options_initializer: strict_range OK para report.id=%s', report.id)
+
+    def _dynamic_lines_generator(self, report, options, all_column_groups_expression_totals, warnings=None):
+        _logger.warning(
+            'SA _dynamic_lines_generator LLAMADO: report.id=%s is_sa=%s '
+            'totals_count=%s col_groups_count=%s',
+            report.id,
+            self._is_sin_arrastre(report, options),
+            len(all_column_groups_expression_totals) if all_column_groups_expression_totals else 0,
+            len(options.get('column_groups') or {}),
+        )
+        result = super()._dynamic_lines_generator(
+            report, options, all_column_groups_expression_totals, warnings
+        )
+        count = len(result) if isinstance(result, (list, tuple)) else 'generador'
+        _logger.warning('SA _dynamic_lines_generator RESULTADO: %s lineas para report.id=%s', count, report.id)
+        return result
 
     def _get_initial_balance_values(self, report, account_ids, options):
         result = super()._get_initial_balance_values(report, account_ids, options)
-        is_sa = self._is_sin_arrastre(report, options)
-        _logger.warning(
-            'SA _get_initial_balance_values: report.id=%s is_sin_arrastre=%s cuentas=%s',
-            report.id, is_sa, len(result),
-        )
-        if not is_sa:
+        if not self._is_sin_arrastre(report, options):
             return result
+        _logger.warning('SA _get_initial_balance_values: zeroing %s cuentas', len(result))
         return {
             account_id: (account, {
                 col_key: {
