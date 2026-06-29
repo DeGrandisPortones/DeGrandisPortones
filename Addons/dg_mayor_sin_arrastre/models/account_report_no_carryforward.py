@@ -47,23 +47,52 @@ class AccountReportNoCarryForward(models.Model):
             return super().get_lines(options)
 
         _logger.warning(
-            'SA get_lines CALLED: report.id=%s report_id_in_options=%s col_groups=%s',
-            self.id, options.get('report_id'), len(options.get('column_groups') or {}),
+            'SA get_lines CALLED: report.id=%s options_report_id=%s',
+            self.id, options.get('report_id'),
         )
 
         gl_root = self.env.ref('account_reports.general_ledger_report', raise_if_not_found=False)
         if gl_root:
-            # Delegar a GL root con report_id=gl_root.id: Odoo usa options['report_id']
-            # para calcular all_column_groups_expression_totals. Si quedara 25 (standalone)
-            # usaria standalone.line_ids (vacio) y _dynamic_lines_generator recibiria {}.
-            # Forzando gl_root.id, usa line_ids del root => expression totals correctos.
-            # sin_arrastre=True => _get_initial_balance_values cerce saldos a cero.
             gl_options = dict(options)
             gl_options['report_id'] = gl_root.id
             gl_options['sin_arrastre'] = True
             lines = gl_root.get_lines(gl_options)
-            _logger.warning('SA get_lines RESULT: %s lineas', len(lines))
+            _logger.warning('SA get_lines RESULT: %s lineas', len(lines) if lines else 0)
             return lines
 
-        _logger.warning('SA get_lines: no se encontro gl_root, fallback a super()')
         return super().get_lines(options)
+
+    def get_report_information_readonly(self, options):
+        ref = self._sin_arrastre_ref()
+        if not ref or self.id != ref.id:
+            return super().get_report_information_readonly(options)
+
+        _logger.warning(
+            'SA get_report_information_readonly CALLED: report.id=%s options_report_id=%s',
+            self.id, options.get('report_id'),
+        )
+
+        gl_root = self.env.ref('account_reports.general_ledger_report', raise_if_not_found=False)
+        if not gl_root:
+            return super().get_report_information_readonly(options)
+
+        # Delegar a GL root con sin_arrastre=True.
+        # El frontend usa options['report_id'] para identificar el reporte activo,
+        # lo restauramos a self.id para que el ciclo de filtros siga pasando por este override.
+        gl_options = dict(options)
+        gl_options['report_id'] = gl_root.id
+        gl_options['sin_arrastre'] = True
+
+        result = gl_root.get_report_information_readonly(gl_options)
+
+        _logger.warning(
+            'SA get_report_information_readonly RESULT: type=%s',
+            type(result).__name__,
+        )
+
+        # Restaurar report_id al standalone para que proximas llamadas (filtros, fechas)
+        # vuelvan a pasar por este override y mantengan sin_arrastre activo.
+        if isinstance(result, dict) and isinstance(result.get('options'), dict):
+            result['options']['report_id'] = self.id
+
+        return result

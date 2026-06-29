@@ -25,9 +25,17 @@ class AccountGeneralLedgerReportHandlerNoCarryForward(models.AbstractModel):
     def _custom_options_initializer(self, report, options, previous_options):
         super()._custom_options_initializer(report, options, previous_options)
 
-        is_sa = self._is_sin_arrastre(report, options)
+        # Detectar modo sin_arrastre desde options (ya procesadas) O desde previous_options
+        # (cuando get_options es re-invocado internamente con gl_options que ya trae el flag).
+        is_sa = self._is_sin_arrastre(report, options) or \
+                bool((previous_options or {}).get('sin_arrastre'))
+
         if not is_sa:
             return
+
+        # Persistir el flag para que _dynamic_lines_generator y _get_initial_balance_values
+        # lo detecten aunque report sea gl_root (id != ref.id).
+        options['sin_arrastre'] = True
 
         col_groups = options.get('column_groups') or {}
         if not col_groups:
