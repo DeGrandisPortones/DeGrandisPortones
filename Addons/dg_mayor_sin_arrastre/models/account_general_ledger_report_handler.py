@@ -71,6 +71,19 @@ class AccountGeneralLedgerReportHandlerNoCarryForward(models.AbstractModel):
         _logger.warning('SA _dynamic_lines_generator RESULTADO: %s lineas para report.id=%s', count, report.id)
         return result
 
+    def _report_expand_unfoldable_line_general_ledger(self, line_dict_id, options, *args, **kwargs):
+        result = super()._report_expand_unfoldable_line_general_ledger(line_dict_id, options, *args, **kwargs)
+        lines = result if isinstance(result, (list, tuple)) else []
+        first_cols = [c.get('column_group_key') for c in (lines[0].get('columns', []) if lines else [])][:3]
+        _logger.warning(
+            'SA _report_expand_unfoldable: is_sa=%s result_lines=%s col_group_keys_sample=%s options_col_groups=%s',
+            self._is_sin_arrastre(self.env['account.report'].browse(options.get('report_id', 0)), options),
+            len(lines),
+            first_cols,
+            list((options.get('column_groups') or {}).keys())[:2],
+        )
+        return result
+
     def _get_initial_balance_values(self, report, account_ids, options):
         result = super()._get_initial_balance_values(report, account_ids, options)
         if not self._is_sin_arrastre(report, options):

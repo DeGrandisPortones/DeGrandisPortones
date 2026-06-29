@@ -50,17 +50,26 @@ class AccountReportNoCarryForward(models.Model):
         if not gl_root:
             return super().get_expanded_lines_readonly(*args, **kwargs)
 
-        # No conocemos la firma exacta, buscamos el dict de options por sus claves.
-        # options es el unico dict que tiene tanto 'report_id' como 'column_groups'.
+        # Diagnostico: loguear tipos y claves de cada arg para entender la firma.
+        _logger.warning(
+            'SA get_expanded_lines_readonly args=%s',
+            [(i, type(a).__name__, sorted(a.keys())[:8] if isinstance(a, dict) else repr(a)[:60])
+             for i, a in enumerate(args)],
+        )
+
+        # Buscar el dict de options. Puede o no tener 'column_groups'.
+        # Criterio: cualquier dict que tenga 'report_id' (solo options lo tiene).
         new_args = []
+        found_options = False
         for arg in args:
-            if isinstance(arg, dict) and 'report_id' in arg and 'column_groups' in arg:
+            if isinstance(arg, dict) and 'report_id' in arg:
                 arg = {**arg, 'report_id': gl_root.id, 'sin_arrastre': True}
+                found_options = True
             new_args.append(arg)
 
         _logger.warning(
-            'SA get_expanded_lines_readonly: args_count=%s delegando a gl_root.id=%s',
-            len(args), gl_root.id,
+            'SA get_expanded_lines_readonly: found_options=%s delegando a gl_root.id=%s',
+            found_options, gl_root.id,
         )
         return gl_root.get_expanded_lines_readonly(*new_args, **kwargs)
 
