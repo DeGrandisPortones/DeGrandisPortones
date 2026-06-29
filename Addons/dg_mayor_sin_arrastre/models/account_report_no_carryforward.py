@@ -41,23 +41,28 @@ class AccountReportNoCarryForward(models.Model):
 
         return options
 
-    def get_expanded_lines_readonly(self, report_action, options, params):
+    def get_expanded_lines_readonly(self, *args, **kwargs):
         ref = self._sin_arrastre_ref()
         if not ref or self.id != ref.id:
-            return super().get_expanded_lines_readonly(report_action, options, params)
-
-        _logger.warning('SA get_expanded_lines_readonly: action=%s', report_action)
+            return super().get_expanded_lines_readonly(*args, **kwargs)
 
         gl_root = self.env.ref('account_reports.general_ledger_report', raise_if_not_found=False)
         if not gl_root:
-            return super().get_expanded_lines_readonly(report_action, options, params)
+            return super().get_expanded_lines_readonly(*args, **kwargs)
 
-        # Delegar a gl_root: la validacion de actions permitidas usa report.line_ids,
-        # que gl_root tiene pero standalone no. Con report_id=11 pasa la validacion.
-        gl_options = dict(options)
-        gl_options['report_id'] = gl_root.id
-        gl_options['sin_arrastre'] = True
-        return gl_root.get_expanded_lines_readonly(report_action, gl_options, params)
+        # No conocemos la firma exacta, buscamos el dict de options por sus claves.
+        # options es el unico dict que tiene tanto 'report_id' como 'column_groups'.
+        new_args = []
+        for arg in args:
+            if isinstance(arg, dict) and 'report_id' in arg and 'column_groups' in arg:
+                arg = {**arg, 'report_id': gl_root.id, 'sin_arrastre': True}
+            new_args.append(arg)
+
+        _logger.warning(
+            'SA get_expanded_lines_readonly: args_count=%s delegando a gl_root.id=%s',
+            len(args), gl_root.id,
+        )
+        return gl_root.get_expanded_lines_readonly(*new_args, **kwargs)
 
     def get_lines(self, options):
         ref = self._sin_arrastre_ref()
