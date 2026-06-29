@@ -53,10 +53,13 @@ class AccountReportNoCarryForward(models.Model):
 
         gl_root = self.env.ref('account_reports.general_ledger_report', raise_if_not_found=False)
         if gl_root:
-            # Delegar a GL root: tiene line_ids → all_column_groups_expression_totals
-            # se computa correctamente → _dynamic_lines_generator genera lineas.
-            # sin_arrastre=True permite que _get_initial_balance_values cerce los saldos.
+            # Delegar a GL root con report_id=gl_root.id: Odoo usa options['report_id']
+            # para calcular all_column_groups_expression_totals. Si quedara 25 (standalone)
+            # usaria standalone.line_ids (vacio) y _dynamic_lines_generator recibiria {}.
+            # Forzando gl_root.id, usa line_ids del root => expression totals correctos.
+            # sin_arrastre=True => _get_initial_balance_values cerce saldos a cero.
             gl_options = dict(options)
+            gl_options['report_id'] = gl_root.id
             gl_options['sin_arrastre'] = True
             lines = gl_root.get_lines(gl_options)
             _logger.warning('SA get_lines RESULT: %s lineas', len(lines))

@@ -1,6 +1,6 @@
 {
     "name": "Mayor sin Arrastre",
-    "version": "18.0.2.12.0",
+    "version": "18.0.2.13.0",
     "category": "Accounting/Reporting",
     "summary": "Agrega acceso al Libro Mayor sin saldos de arrastre del período anterior",
     "author": "Dflex",
