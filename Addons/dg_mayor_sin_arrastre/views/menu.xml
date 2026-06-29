@@ -11,6 +11,6 @@
         name="Mayor Sin Arrastre"
         parent="account.menu_finance_reports"
         action="action_mayor_sin_arrastre"
-        sequence="32"
+        sequence="22"
         groups="account.group_account_readonly"/>
 </odoo>

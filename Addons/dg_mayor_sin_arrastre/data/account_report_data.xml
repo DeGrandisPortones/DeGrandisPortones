@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Variante del GL con handler propio.
-         Hereda line_ids, column_ids y filtros del root => data muestra correctamente.
-         get_options override llama super() sobre sí mismo (variante) => sin loop. -->
+    <!-- Standalone (root_report_id=False): el frontend SÍ llama get_lines para standalone.
+         Para variantes NO llama _dynamic_lines_generator (confirmado por logs v2.11.0).
+         get_lines override delega a gl_root para aprovechar sus line_ids/expression_totals. -->
     <record id="general_ledger_no_carryforward_report" model="account.report">
         <field name="name">Mayor Sin Arrastre</field>
-        <field name="root_report_id" ref="account_reports.general_ledger_report"/>
+        <field name="root_report_id" eval="False"/>
         <field name="custom_handler_model_name">account.general.ledger.report.handler</field>
+        <field name="filter_date_range" eval="True"/>
+        <field name="default_opening_date_filter">this_month</field>
     </record>
 </odoo>
