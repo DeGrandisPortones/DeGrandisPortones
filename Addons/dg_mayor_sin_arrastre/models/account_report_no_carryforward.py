@@ -41,6 +41,24 @@ class AccountReportNoCarryForward(models.Model):
 
         return options
 
+    def get_expanded_lines_readonly(self, report_action, options, params):
+        ref = self._sin_arrastre_ref()
+        if not ref or self.id != ref.id:
+            return super().get_expanded_lines_readonly(report_action, options, params)
+
+        _logger.warning('SA get_expanded_lines_readonly: action=%s', report_action)
+
+        gl_root = self.env.ref('account_reports.general_ledger_report', raise_if_not_found=False)
+        if not gl_root:
+            return super().get_expanded_lines_readonly(report_action, options, params)
+
+        # Delegar a gl_root: la validacion de actions permitidas usa report.line_ids,
+        # que gl_root tiene pero standalone no. Con report_id=11 pasa la validacion.
+        gl_options = dict(options)
+        gl_options['report_id'] = gl_root.id
+        gl_options['sin_arrastre'] = True
+        return gl_root.get_expanded_lines_readonly(report_action, gl_options, params)
+
     def get_lines(self, options):
         ref = self._sin_arrastre_ref()
         if not ref or self.id != ref.id:
