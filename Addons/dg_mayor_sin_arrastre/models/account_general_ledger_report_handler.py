@@ -71,16 +71,23 @@ class AccountGeneralLedgerReportHandlerNoCarryForward(models.AbstractModel):
         _logger.warning('SA _dynamic_lines_generator RESULTADO: %s lineas para report.id=%s', count, report.id)
         return result
 
-    def _report_expand_unfoldable_line_general_ledger(self, line_dict_id, options, *args, **kwargs):
-        result = super()._report_expand_unfoldable_line_general_ledger(line_dict_id, options, *args, **kwargs)
+    def _report_expand_unfoldable_line_general_ledger(self, line_dict_id, groupby, options, progress, offset, unfold_all_batch_data=None):
+        # Firma real (account_report.py:5599):
+        # expand_function(line_dict_id, groupby, options, progress, offset, unfold_all_batch_data=...)
+        result = super()._report_expand_unfoldable_line_general_ledger(
+            line_dict_id, groupby, options, progress, offset, unfold_all_batch_data=unfold_all_batch_data,
+        )
         lines = result if isinstance(result, (list, tuple)) else []
-        first_cols = [c.get('column_group_key') for c in (lines[0].get('columns', []) if lines else [])][:3]
+        first_cols = [c.get('column_group_key') for c in (lines[0].get('columns', []) if lines else [])][:2]
         _logger.warning(
-            'SA _report_expand_unfoldable: is_sa=%s result_lines=%s col_group_keys_sample=%s options_col_groups=%s',
-            self._is_sin_arrastre(self.env['account.report'].browse(options.get('report_id', 0)), options),
+            'SA _report_expand_unfoldable: is_sa=%s lines=%s col_keys=%s col_groups=%s',
+            self._is_sin_arrastre(
+                self.env['account.report'].browse(options.get('report_id', 0)) if options else None,
+                options,
+            ),
             len(lines),
             first_cols,
-            list((options.get('column_groups') or {}).keys())[:2],
+            list((options.get('column_groups') or {}).keys())[:1] if options else None,
         )
         return result
 
