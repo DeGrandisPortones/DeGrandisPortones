@@ -90,9 +90,13 @@ class AccountReportNoCarryForward(models.Model):
             type(result).__name__,
         )
 
-        # Restaurar report_id al standalone para que proximas llamadas (filtros, fechas)
-        # vuelvan a pasar por este override y mantengan sin_arrastre activo.
+        # NO restauramos report_id a 25 (standalone).
+        # Con report_id=11 (gl_root) en el resultado:
+        # - Las acciones de expand van a gl_root => permitidas sin UserError ✓
+        # - Proximos get_options van a gl_root con sin_arrastre=True en previous_options
+        #   => _custom_options_initializer detecta el flag y aplica strict_range ✓
+        # Solo aseguramos que sin_arrastre persiste en las opciones devueltas.
         if isinstance(result, dict) and isinstance(result.get('options'), dict):
-            result['options']['report_id'] = self.id
+            result['options']['sin_arrastre'] = True
 
         return result
