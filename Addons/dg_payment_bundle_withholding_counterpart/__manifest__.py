@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "DG Payment Bundle Withholding Counterpart",
-    "version": "18.0.1.1.1",
+    "version": "18.0.1.2.0",
     "category": "Accounting/Localizations",
     "summary": "Reclasifica retenciones de payment bundle desde la cuenta puente hacia Deudores/Proveedores.",
     "author": "DeGrandis Portones",
