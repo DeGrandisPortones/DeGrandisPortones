@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from collections import defaultdict
+
 from odoo import _, fields, models
 
 
@@ -160,6 +162,95 @@ class AccountPayment(models.Model):
             ],
         }
 
+    def _dg_get_withholding_accounts_amounts(self):
+        """Return withholding accounts and amounts to use when the bundle move has no bridge line."""
+        self.ensure_one()
+
+        amounts_by_account = defaultdict(float)
+        withholding_lines = self.l10n_ar_withholding_line_ids.filtered(
+            lambda line: self._dg_compare_amounts(abs(line.amount), 0.0) > 0
+        )
+
+        for line in withholding_lines:
+            __, account_id, __, __ = line._tax_compute_all_helper()
+            if account_id:
+                amounts_by_account[account_id] += abs(line.amount)
+
+        Account = self.env["account.account"]
+        return [
+            (Account.browse(account_id), amount)
+            for account_id, amount in amounts_by_account.items()
+            if self._dg_compare_amounts(amount, 0.0) > 0
+        ]
+
+    def _dg_prepare_bundle_withholding_direct_adjustment_move_vals(self):
+        """Prepare fallback adjustment using withholding accounts directly.
+
+        This covers payment bundles whose main payment has amount 0.0 and therefore
+        creates a posted move with zero-balance lines only. In that case there is no
+        bridge line to reclassify, but the customer/supplier residual still needs to
+        be cleared by the withholding.
+        """
+        self.ensure_one()
+
+        withholding_accounts_amounts = self._dg_get_withholding_accounts_amounts()
+        if not withholding_accounts_amounts:
+            return False
+
+        name = _("Reclasificación retenciones - %s") % (self.name or self.ref or self.id)
+        line_vals = []
+        total_amount = 0.0
+
+        for withholding_account, amount in withholding_accounts_amounts:
+            total_amount += amount
+            withholding_line_vals = {
+                "name": name,
+                "account_id": withholding_account.id,
+                "partner_id": self.partner_id.id,
+            }
+
+            if self.payment_type == "inbound":
+                withholding_line_vals.update({
+                    "debit": amount,
+                    "credit": 0.0,
+                })
+            else:
+                withholding_line_vals.update({
+                    "debit": 0.0,
+                    "credit": amount,
+                })
+
+            line_vals.append((0, 0, withholding_line_vals))
+
+        destination_line_vals = {
+            "name": name,
+            "account_id": self.destination_account_id.id,
+            "partner_id": self.partner_id.id,
+        }
+
+        if self.payment_type == "inbound":
+            destination_line_vals.update({
+                "debit": 0.0,
+                "credit": total_amount,
+            })
+        else:
+            destination_line_vals.update({
+                "debit": total_amount,
+                "credit": 0.0,
+            })
+
+        line_vals.append((0, 0, destination_line_vals))
+
+        return {
+            "move_type": "entry",
+            "date": self.date or fields.Date.context_today(self),
+            "journal_id": self.journal_id.id,
+            "company_id": self.company_id.id,
+            "ref": name,
+            "dg_bundle_withholding_payment_id": self.id,
+            "line_ids": line_vals,
+        }
+
     def _dg_create_bundle_withholding_adjustment_move(self):
         self.ensure_one()
 
@@ -184,10 +275,13 @@ class AccountPayment(models.Model):
             return False
 
         bridge_line = self._dg_get_bundle_bridge_line_to_adjust()
-        if not bridge_line:
-            return False
+        if bridge_line:
+            move_vals = self._dg_prepare_bundle_withholding_adjustment_move_vals(bridge_line.account_id)
+        else:
+            move_vals = self._dg_prepare_bundle_withholding_direct_adjustment_move_vals()
+            if not move_vals:
+                return False
 
-        move_vals = self._dg_prepare_bundle_withholding_adjustment_move_vals(bridge_line.account_id)
         adjustment_move = self.env["account.move"].create(move_vals)
         adjustment_move.action_post()
         self.dg_bundle_withholding_adjustment_move_id = adjustment_move.id
