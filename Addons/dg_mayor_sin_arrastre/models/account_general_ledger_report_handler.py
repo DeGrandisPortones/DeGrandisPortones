@@ -29,6 +29,18 @@ class AccountGeneralLedgerReportHandlerNoCarryForward(models.AbstractModel):
 
         options['sin_arrastre'] = True
 
+        # El Libro Mayor estandar fuerza unfold_all=True al entrar en print_mode
+        # cuando no hay ninguna linea desplegada. XLSX usa print_mode, por eso un
+        # reporte colapsado terminaba exportandose completamente detallado.
+        #
+        # Para Mayor Sin Arrastre preservamos exactamente el estado de expansion
+        # que llega desde la pantalla:
+        #   - sin cuentas desplegadas -> resumen solamente
+        #   - cuentas desplegadas manualmente -> solo esas quedan desplegadas
+        #   - "Desplegar todo" activo -> se exporta todo desplegado
+        if self._context.get('print_mode'):
+            options['unfold_all'] = bool((previous_options or {}).get('unfold_all', False))
+
         col_groups = options.get('column_groups') or {}
         if not col_groups:
             return

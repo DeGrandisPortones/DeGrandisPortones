@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Standalone (root_report_id=False): el frontend SÍ llama get_lines para standalone.
+    <!-- Standalone (root_report_id=False): el frontend SI llama get_lines para standalone.
          Para variantes NO llama _dynamic_lines_generator (confirmado por logs v2.11.0).
          get_lines override delega a gl_root para aprovechar sus line_ids/expression_totals. -->
     <record id="general_ledger_no_carryforward_report" model="account.report">

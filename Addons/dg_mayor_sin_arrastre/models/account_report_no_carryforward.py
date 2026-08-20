@@ -10,6 +10,16 @@ class AccountReportNoCarryForward(models.Model):
             raise_if_not_found=False,
         )
 
+    def _is_sin_arrastre_report(self, options=None):
+        ref = self._sin_arrastre_ref()
+        return bool(
+            ref
+            and (
+                self.id == ref.id
+                or (options or {}).get('sin_arrastre')
+            )
+        )
+
     def get_options(self, previous_options=None):
         ref = self._sin_arrastre_ref()
         if not ref or self.id != ref.id:
@@ -21,11 +31,38 @@ class AccountReportNoCarryForward(models.Model):
 
         # Devolver opciones de gl_root (report_id del GL oficial) en lugar del standalone.
         # Esto hace que el frontend use gl_root para TODOS los requests siguientes:
-        #   - get_report_information_readonly: va directo a gl_root → columnas correctas
-        #   - get_expanded_lines_readonly: gl_root permite el expand nativamente → valores visibles
+        #   - get_report_information_readonly: va directo a gl_root -> columnas correctas
+        #   - get_expanded_lines_readonly: gl_root permite el expand nativamente -> valores visibles
         # Con sin_arrastre=True en previous_options, _custom_options_initializer aplica strict_range
-        # (solo período actual, sin saldos de arrastre).
+        # (solo periodo actual, sin saldos de arrastre).
         gl_previous = {**(previous_options or {}), 'sin_arrastre': True}
         options = gl_root.get_options(gl_previous)
         options['sin_arrastre'] = True
         return options
+
+    def export_to_xlsx(self, options, response=None):
+        """Exportar respetando exactamente el estado de expansion de la pantalla.
+
+        El Libro Mayor estandar de Odoo activa ``unfold_all`` en print_mode cuando
+        ``unfolded_lines`` esta vacio. El export XLSX usa print_mode, de modo que
+        una pantalla completamente colapsada termina exportandose con todas las
+        cuentas abiertas.
+
+        Para Mayor Sin Arrastre, cuando la pantalla esta colapsada agregamos un
+        id centinela con formato de linea valido que nunca coincide con una linea real. Asi Odoo entiende que
+        no debe ejecutar su auto-unfold de impresion, pero ninguna cuenta queda
+        realmente desplegada. Si hay cuentas desplegadas, se conserva la lista
+        original; y si el usuario activo "Desplegar todo", se conserva unfold_all.
+        """
+        if not self._is_sin_arrastre_report(options):
+            return super().export_to_xlsx(options, response=response)
+
+        export_options = dict(options or {})
+        export_options['sin_arrastre'] = True
+
+        if not export_options.get('unfold_all') and not export_options.get('unfolded_lines'):
+            export_options['unfolded_lines'] = [
+                self._get_generic_line_id(None, None, markup='dg_mayor_sin_arrastre_keep_folded')
+            ]
+
+        return super().export_to_xlsx(export_options, response=response)

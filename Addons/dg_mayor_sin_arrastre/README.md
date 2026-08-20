@@ -1,29 +1,32 @@
 # Mayor sin Arrastre
 
-Modulo para Odoo 18 que afecta solamente el reporte estandar:
+Modulo para Odoo 18 que agrega un reporte de Libro Mayor sin arrastre de saldos anteriores al periodo filtrado.
 
-Contabilidad / Reportes / Libro mayor
+## Exportacion XLSX
 
-Objetivo: que el Libro mayor se vea sin arrastre de saldos anteriores al periodo filtrado.
-Si se filtra un mes, las cuentas deben quedar afectadas solamente por los asientos de ese mes.
+Desde la version 18.0.2.24.0, la exportacion XLSX respeta el estado de expansion visible en pantalla:
 
-## Importante
+- Si ninguna cuenta esta desplegada, exporta solamente el resumen por cuenta.
+- Si se desplegaron cuentas manualmente, exporta el detalle solamente de esas cuentas.
+- Si se activo "Desplegar todo", exporta todas las cuentas desplegadas.
 
-Este modulo NO depende de `dg_resumen_cta_cte` y NO toca el Resumen Cta Cte.
+## Instalacion / actualizacion
 
-## Instalacion
-
-1. Copiar la carpeta `mayor_sin_arrastre` dentro de la carpeta de addons.
+1. Copiar la carpeta `dg_mayor_sin_arrastre` dentro de la carpeta de addons.
 2. Reiniciar Odoo.
-3. Actualizar lista de aplicaciones.
-4. Instalar o actualizar el modulo `Mayor sin Arrastre`.
+3. Actualizar la lista de aplicaciones.
+4. Actualizar el modulo `Mayor sin Arrastre`.
 
 Por consola:
 
 ```bash
-./odoo-bin -d TU_BASE -u mayor_sin_arrastre --stop-after-init
+./odoo-bin -d TU_BASE -u dg_mayor_sin_arrastre --stop-after-init
 ```
 
 ## Dependencia
 
-Requiere `account_reports`, porque modifica el handler del Libro mayor estandar de Odoo.
+Requiere `account_reports`, porque modifica el handler del Libro Mayor estandar de Odoo.
+
+## Correccion 18.0.2.24.0
+
+El centinela usado para evitar el auto-desplegado de Odoo ahora usa el formato interno valido de IDs de lineas (`markup~model~id`). Esto evita el `ValueError` al parsear `unfolded_lines` durante la exportacion XLSX.
