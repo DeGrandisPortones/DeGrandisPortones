@@ -26,4 +26,3 @@ Por consola:
 ## Dependencia
 
 Requiere `account_reports`, porque modifica el handler del Libro Mayor estandar de Odoo.
- cambio
