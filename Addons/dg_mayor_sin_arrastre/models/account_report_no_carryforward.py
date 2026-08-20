@@ -21,10 +21,10 @@ class AccountReportNoCarryForward(models.Model):
 
         # Devolver opciones de gl_root (report_id del GL oficial) en lugar del standalone.
         # Esto hace que el frontend use gl_root para TODOS los requests siguientes:
-        #   - get_report_information_readonly: va directo a gl_root → columnas correctas
-        #   - get_expanded_lines_readonly: gl_root permite el expand nativamente → valores visibles
+        #   - get_report_information_readonly: va directo a gl_root -> columnas correctas
+        #   - get_expanded_lines_readonly: gl_root permite el expand nativamente -> valores visibles
         # Con sin_arrastre=True en previous_options, _custom_options_initializer aplica strict_range
-        # (solo período actual, sin saldos de arrastre).
+        # (solo periodo actual, sin saldos de arrastre).
         gl_previous = {**(previous_options or {}), 'sin_arrastre': True}
         options = gl_root.get_options(gl_previous)
         options['sin_arrastre'] = True
