@@ -4,7 +4,7 @@ Modulo para Odoo 18 que agrega un reporte de Libro Mayor sin arrastre de saldos 
 
 ## Exportacion XLSX
 
-Desde la version 18.0.2.22.0, la exportacion XLSX respeta el estado de expansion visible en pantalla:
+Desde la version 18.0.2.24.0, la exportacion XLSX respeta el estado de expansion visible en pantalla:
 
 - Si ninguna cuenta esta desplegada, exporta solamente el resumen por cuenta.
 - Si se desplegaron cuentas manualmente, exporta el detalle solamente de esas cuentas.
@@ -26,3 +26,7 @@ Por consola:
 ## Dependencia
 
 Requiere `account_reports`, porque modifica el handler del Libro Mayor estandar de Odoo.
+
+## Correccion 18.0.2.24.0
+
+El centinela usado para evitar el auto-desplegado de Odoo ahora usa el formato interno valido de IDs de lineas (`markup~model~id`). Esto evita el `ValueError` al parsear `unfolded_lines` durante la exportacion XLSX.

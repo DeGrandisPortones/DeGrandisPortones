@@ -49,7 +49,7 @@ class AccountReportNoCarryForward(models.Model):
         cuentas abiertas.
 
         Para Mayor Sin Arrastre, cuando la pantalla esta colapsada agregamos un
-        id centinela que nunca coincide con una linea real. Asi Odoo entiende que
+        id centinela con formato de linea valido que nunca coincide con una linea real. Asi Odoo entiende que
         no debe ejecutar su auto-unfold de impresion, pero ninguna cuenta queda
         realmente desplegada. Si hay cuentas desplegadas, se conserva la lista
         original; y si el usuario activo "Desplegar todo", se conserva unfold_all.
@@ -61,6 +61,8 @@ class AccountReportNoCarryForward(models.Model):
         export_options['sin_arrastre'] = True
 
         if not export_options.get('unfold_all') and not export_options.get('unfolded_lines'):
-            export_options['unfolded_lines'] = ['__dg_mayor_sin_arrastre_keep_folded__']
+            export_options['unfolded_lines'] = [
+                self._get_generic_line_id(None, None, markup='dg_mayor_sin_arrastre_keep_folded')
+            ]
 
         return super().export_to_xlsx(export_options, response=response)
