@@ -11,11 +11,6 @@
         "reports/report_actions.xml",
         "reports/report_invoice_dg.xml"
     ],
-    "assets": {
-        "web.report_assets_common": [
-            "dg_document_reports/static/src/css/report_invoice_dg.css",
-        ],
-    },
     "installable": True,
     "application": False
 }
