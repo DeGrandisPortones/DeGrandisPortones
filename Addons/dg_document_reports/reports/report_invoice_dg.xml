@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <template id="report_invoice_dg">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="dg_document_reports.report_invoice_dg_document"/>
+            </t>
+        </t>
+    </template>
+
+    <template id="report_invoice_dg_document">
+        <t t-set="doc_type" t-value="o.l10n_latam_document_type_id"/>
+        <t t-set="doc_letter" t-value="doc_type.l10n_ar_letter if doc_type else ''"/>
+        <t t-set="internal_type" t-value="doc_type.internal_type if doc_type else False"/>
+        <t t-set="doc_label" t-value="'NOTA DE CREDITO' if internal_type == 'credit_note' else ('NOTA DE DEBITO' if internal_type == 'debit_note' else 'FACTURA')"/>
+        <t t-set="orders" t-value="o.invoice_line_ids.mapped('sale_line_ids.order_id')"/>
+
+        <style>
+            .dg-page { font-family: Arial, Helvetica, sans-serif; font-size: 10px; color: #111; line-height: 1.25; }
+            .dg-box { border: 1px solid #222; }
+            .dg-header-table,.dg-client-table,.dg-lines-table,.dg-total-table,.dg-footer-table { width:100%; border-collapse:collapse; }
+            .dg-header-table td { vertical-align:top; padding:6px 8px; }
+            .dg-company { width:45%; }
+            .dg-letter { width:10%; text-align:center; border-left:1px solid #222; border-right:1px solid #222; }
+            .dg-letter .letter { font-size:31px; font-weight:700; line-height:1; }
+            .dg-letter .code { font-size:8px; margin-top:4px; }
+            .dg-document { width:45%; }
+            .dg-logo { max-height:55px; max-width:220px; margin-bottom:6px; }
+            .dg-company-name { font-size:16px; font-weight:700; margin-bottom:4px; }
+            .dg-document-title { font-size:19px; font-weight:700; margin-bottom:7px; }
+            .dg-original { font-size:10px; font-weight:700; margin-bottom:5px; }
+            .dg-client-box { margin-top:7px; }
+            .dg-client-table td { padding:4px 7px; vertical-align:top; }
+            .dg-label { font-weight:700; }
+            .dg-lines { margin-top:7px; }
+            .dg-lines-table { table-layout:fixed; }
+            .dg-lines-table thead { display:table-header-group; }
+            .dg-lines-table th { border:1px solid #222; padding:5px 4px; font-weight:700; text-align:center; background:#f1f1f1; }
+            .dg-lines-table td { border-left:1px solid #222; border-right:1px solid #222; padding:5px 4px; vertical-align:top; }
+            .dg-lines-table tbody tr:last-child td { border-bottom:1px solid #222; }
+            .dg-qty { width:10%; text-align:right; }
+            .dg-description { width:55%; }
+            .dg-unit { width:17%; text-align:right; white-space:nowrap; }
+            .dg-line-total { width:18%; text-align:right; white-space:nowrap; }
+            .dg-nv { margin-top:6px; border:1px solid #222; padding:7px 9px; font-size:12px; font-weight:700; }
+            .dg-reference { margin-top:4px; font-size:9px; }
+            .dg-bottom { margin-top:7px; page-break-inside:avoid; }
+            .dg-amount-words { width:62%; padding-right:10px; vertical-align:top; }
+            .dg-totals-cell { width:38%; vertical-align:top; }
+            .dg-total-table td { padding:3px 6px; }
+            .dg-total-label { text-align:right; font-weight:700; }
+            .dg-total-value { text-align:right; white-space:nowrap; }
+            .dg-grand-total td { border-top:1px solid #222; font-size:13px; font-weight:700; padding-top:6px; }
+            .dg-fiscal { margin-top:8px; border-top:1px solid #222; padding-top:7px; }
+            .dg-footer-table td { vertical-align:middle; }
+            .dg-qr { width:130px; text-align:center; }
+            .dg-qr img { height:105px; width:105px; }
+            .dg-cae { padding-left:10px; font-size:10px; }
+            .dg-page-number { margin-top:8px; text-align:right; font-size:8px; }
+        </style>
+
+        <div class="page dg-page">
+            <div class="dg-box">
+                <table class="dg-header-table">
+                    <tr>
+                        <td class="dg-company">
+                            <div t-if="o.company_id.logo">
+                                <img class="dg-logo" t-att-src="image_data_uri(o.company_id.logo)" alt="Logo"/>
+                            </div>
+                            <div class="dg-company-name"><span t-field="o.company_id.name"/></div>
+                            <div>
+                                <span t-field="o.company_id.partner_id.street"/>
+                                <t t-if="o.company_id.partner_id.street2"><br/><span t-field="o.company_id.partner_id.street2"/></t>
+                            </div>
+                            <div>
+                                <t t-if="o.company_id.partner_id.city"><span t-field="o.company_id.partner_id.city"/></t>
+                                <t t-if="o.company_id.partner_id.state_id"> - <span t-field="o.company_id.partner_id.state_id.name"/></t>
+                            </div>
+                            <div style="margin-top:5px;"><span class="dg-label">IVA:</span> <span t-field="o.company_id.l10n_ar_afip_responsibility_type_id"/></div>
+                            <div><span class="dg-label">CUIT:</span> <span t-field="o.company_id.partner_id.l10n_ar_formatted_vat"/></div>
+                            <div><span class="dg-label">IIBB:</span> <span t-out="o.company_id.l10n_ar_gross_income_number or '-'"/></div>
+                            <div t-if="o.company_id.l10n_ar_afip_start_date"><span class="dg-label">Inicio de actividades:</span> <span t-field="o.company_id.l10n_ar_afip_start_date"/></div>
+                        </td>
+
+                        <td class="dg-letter">
+                            <div class="letter"><span t-out="doc_letter or '-'"/></div>
+                            <div class="code">Cod. <span t-out="doc_type.code if doc_type else '-'"/></div>
+                        </td>
+
+                        <td class="dg-document">
+                            <div class="dg-document-title"><span t-out="doc_label"/></div>
+                            <div class="dg-original">ORIGINAL</div>
+                            <div><span class="dg-label">Numero:</span> <span t-out="o.l10n_latam_document_number or o.name or '-'"/></div>
+                            <div><span class="dg-label">Fecha:</span> <span t-field="o.invoice_date"/></div>
+                            <div t-if="o.invoice_date_due"><span class="dg-label">Vencimiento:</span> <span t-field="o.invoice_date_due"/></div>
+                            <div t-if="o.invoice_payment_term_id"><span class="dg-label">Condicion de venta:</span> <span t-field="o.invoice_payment_term_id.name"/></div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="dg-box dg-client-box">
+                <table class="dg-client-table">
+                    <tr>
+                        <td style="width:60%;"><span class="dg-label">Cliente:</span> <span t-field="o.partner_id.name"/></td>
+                        <td style="width:40%;"><span class="dg-label">Cond. IVA:</span> <span t-field="o.partner_id.l10n_ar_afip_responsibility_type_id"/></td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span class="dg-label">Domicilio:</span>
+                            <t t-if="o.partner_id.street"><span t-field="o.partner_id.street"/></t>
+                            <t t-if="o.partner_id.street2"> - <span t-field="o.partner_id.street2"/></t>
+                            <t t-if="o.partner_id.city"> - <span t-field="o.partner_id.city"/></t>
+                            <t t-if="o.partner_id.state_id"> - <span t-field="o.partner_id.state_id.name"/></t>
+                        </td>
+                        <td>
+                            <t t-if="o.partner_id.l10n_latam_identification_type_id">
+                                <span class="dg-label"><span t-field="o.partner_id.l10n_latam_identification_type_id.name"/>:</span>
+                            </t>
+                            <span t-out="o.partner_id.vat or '-'"/>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="dg-lines">
+                <table class="dg-lines-table">
+                    <thead>
+                        <tr>
+                            <th class="dg-qty">Cantidad</th>
+                            <th class="dg-description">Descripcion</th>
+                            <th class="dg-unit">Precio unitario</th>
+                            <th class="dg-line-total">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <t t-foreach="o.invoice_line_ids" t-as="line">
+                            <tr t-if="line.display_type == 'product' or not line.display_type">
+                                <td class="dg-qty"><span t-field="line.quantity"/></td>
+                                <td class="dg-description"><span t-field="line.name"/></td>
+                                <td class="dg-unit"><span t-field="line.price_unit" t-options="{'widget':'monetary','display_currency':o.currency_id}"/></td>
+                                <td class="dg-line-total"><span t-field="line.price_subtotal" t-options="{'widget':'monetary','display_currency':o.currency_id}"/></td>
+                            </tr>
+                            <tr t-elif="line.display_type == 'line_section'">
+                                <td colspan="4" style="font-weight:700; border-top:1px solid #222;"><span t-field="line.name"/></td>
+                            </tr>
+                            <tr t-elif="line.display_type == 'line_note'">
+                                <td colspan="4" style="font-style:italic;"><span t-field="line.name"/></td>
+                            </tr>
+                        </t>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="dg-nv" t-if="orders">
+                <t t-foreach="orders" t-as="order">
+                    <span>NV </span><span t-out="order.id"/>
+                    <t t-if="not order_last"> / </t>
+                </t>
+            </div>
+
+            <div class="dg-reference" t-if="o.ref"><span class="dg-label">Referencia:</span> <span t-field="o.ref"/></div>
+
+            <table class="dg-bottom" style="width:100%; border-collapse:collapse;">
+                <tr>
+                    <td class="dg-amount-words">
+                        <div class="dg-box" style="padding:8px;">
+                            <span class="dg-label">Son:</span>
+                            <span t-out="o.currency_id.amount_to_text(o.amount_total)"/>
+                        </div>
+                    </td>
+                    <td class="dg-totals-cell">
+                        <div class="dg-box">
+                            <table class="dg-total-table">
+                                <tr>
+                                    <td class="dg-total-label">Neto</td>
+                                    <td class="dg-total-value"><span t-field="o.amount_untaxed" t-options="{'widget':'monetary','display_currency':o.currency_id}"/></td>
+                                </tr>
+                                <t t-foreach="o.tax_totals.get('subtotals', []) if o.tax_totals else []" t-as="subtotal">
+                                    <t t-foreach="subtotal.get('tax_groups', [])" t-as="tax_group">
+                                        <tr>
+                                            <td class="dg-total-label"><span t-out="tax_group.get('group_name')"/></td>
+                                            <td class="dg-total-value"><span t-out="tax_group.get('tax_amount_currency')" t-options="{'widget':'monetary','display_currency':o.currency_id}"/></td>
+                                        </tr>
+                                    </t>
+                                </t>
+                                <tr class="dg-grand-total">
+                                    <td class="dg-total-label">TOTAL</td>
+                                    <td class="dg-total-value"><span t-field="o.amount_total" t-options="{'widget':'monetary','display_currency':o.currency_id}"/></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+
+            <div class="dg-fiscal" t-if="o.company_id.country_id.code == 'AR'">
+                <table class="dg-footer-table">
+                    <tr>
+                        <td class="dg-qr">
+                            <img t-if="o.l10n_ar_afip_qr_code"
+                                 t-att-src="'/report/barcode/?barcode_type=QR&amp;value=%s&amp;width=150&amp;height=150' % o.l10n_ar_afip_qr_code"
+                                 alt="QR ARCA"/>
+                        </td>
+                        <td class="dg-cae">
+                            <div><span class="dg-label">CAE:</span> <span t-out="o.l10n_ar_afip_auth_code or '-'"/></div>
+                            <div t-if="o.l10n_ar_afip_auth_code_due"><span class="dg-label">Vto. CAE:</span> <span t-field="o.l10n_ar_afip_auth_code_due"/></div>
+                            <div style="margin-top:6px;">Comprobante electronico autorizado.</div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="dg-page-number">Pagina <span class="page"/> / <span class="topage"/></div>
+        </div>
+    </template>
+</odoo>
