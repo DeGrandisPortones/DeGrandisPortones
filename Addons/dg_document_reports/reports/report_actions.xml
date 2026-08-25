@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="paperformat_invoice_dg" model="report.paperformat">
+        <field name="name">Factura DG A4</field>
+        <field name="default" eval="False"/>
+        <field name="format">A4</field>
+        <field name="orientation">Portrait</field>
+        <field name="margin_top">8</field>
+        <field name="margin_bottom">10</field>
+        <field name="margin_left">8</field>
+        <field name="margin_right">8</field>
+        <field name="header_line" eval="False"/>
+        <field name="header_spacing">0</field>
+        <field name="dpi">90</field>
+    </record>
+
+    <record id="action_report_invoice_dg" model="ir.actions.report">
+        <field name="name">Factura DG</field>
+        <field name="model">account.move</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">dg_document_reports.report_invoice_dg</field>
+        <field name="report_file">dg_document_reports.report_invoice_dg</field>
+        <field name="print_report_name">'Factura DG - %s' % (object.name or 'Borrador')</field>
+        <field name="binding_model_id" ref="account.model_account_move"/>
+        <field name="binding_type">report</field>
+        <field name="paperformat_id" ref="dg_document_reports.paperformat_invoice_dg"/>
+    </record>
+</odoo>
