@@ -1,0 +1,41 @@
+.dg-page { font-family: Arial, Helvetica, sans-serif; font-size: 9px; color: #111; line-height: 1.2; }
+.dg-box { border: 1px solid #222; }
+.dg-header-table,.dg-client-table,.dg-lines-table,.dg-total-table,.dg-footer-table { width:100%; border-collapse:collapse; }
+.dg-header-table td { vertical-align:top; padding:4px 6px; }
+.dg-company { width:45%; }
+.dg-letter { width:10%; text-align:center; border-left:1px solid #222; border-right:1px solid #222; }
+.dg-letter .letter { font-size:28px; font-weight:700; line-height:1; }
+.dg-letter .code { font-size:8px; margin-top:3px; }
+.dg-document { width:45%; }
+.dg-logo { max-height:165px; max-width:100%; margin-bottom:4px; }
+.dg-company-name { font-size:15px; font-weight:700; margin-bottom:3px; }
+.dg-document-title { font-size:17px; font-weight:700; margin-bottom:5px; }
+.dg-original { font-size:9px; font-weight:700; margin-bottom:4px; }
+.dg-client-box { margin-top:5px; }
+.dg-client-table td { padding:3px 6px; vertical-align:top; }
+.dg-label { font-weight:700; }
+.dg-lines { margin-top:5px; }
+.dg-lines-table { table-layout:fixed; }
+.dg-lines-table thead { display:table-header-group; }
+.dg-lines-table th { border:1px solid #222; padding:3px 4px; font-weight:700; text-align:center; background:#f1f1f1; }
+.dg-lines-table td { border-left:1px solid #222; border-right:1px solid #222; padding:3px 4px; vertical-align:top; }
+.dg-lines-table tbody tr:last-child td { border-bottom:1px solid #222; }
+.dg-qty { width:10%; text-align:right; }
+.dg-description { width:55%; }
+.dg-unit { width:17%; text-align:right; white-space:nowrap; }
+.dg-line-total { width:18%; text-align:right; white-space:nowrap; }
+.dg-nv { margin-top:4px; border:1px solid #222; padding:5px 8px; font-size:11px; font-weight:700; }
+.dg-reference { margin-top:3px; font-size:8px; }
+.dg-bottom { margin-top:5px; page-break-inside:avoid; }
+.dg-amount-words { width:62%; padding-right:10px; vertical-align:top; }
+.dg-totals-cell { width:38%; vertical-align:top; }
+.dg-total-table td { padding:2px 6px; }
+.dg-total-label { text-align:right; font-weight:700; }
+.dg-total-value { text-align:right; white-space:nowrap; }
+.dg-grand-total td { border-top:1px solid #222; font-size:12px; font-weight:700; padding-top:4px; }
+.dg-fiscal { margin-top:5px; border-top:1px solid #222; padding-top:5px; }
+.dg-footer-table td { vertical-align:middle; }
+.dg-qr { width:110px; text-align:center; }
+.dg-qr img { height:90px; width:90px; }
+.dg-cae { padding-left:10px; font-size:9px; }
+.dg-page-number { margin-top:5px; text-align:right; font-size:8px; }
