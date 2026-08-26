@@ -198,8 +198,8 @@
                 <table class="dg-footer-table">
                     <tr>
                         <td class="dg-qr">
-                            <img t-if="o.l10n_ar_afip_qr_code"
-                                 t-att-src="'/report/barcode/?barcode_type=QR&amp;value=%s&amp;width=150&amp;height=150' % o.l10n_ar_afip_qr_code"
+                            <img t-if="o.dg_qr_barcode_url"
+                                 t-att-src="o.dg_qr_barcode_url"
                                  alt="QR ARCA"/>
                         </td>
                         <td class="dg-cae">
