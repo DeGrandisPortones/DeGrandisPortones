@@ -9,7 +9,8 @@
     "depends": ["sale", "l10n_ar_edi", "l10n_ar_ux"],
     "data": [
         "reports/report_actions.xml",
-        "reports/report_invoice_dg.xml"
+        "reports/report_invoice_dg.xml",
+        "reports/report_encoding_test.xml"
     ],
     "installable": True,
     "application": False
