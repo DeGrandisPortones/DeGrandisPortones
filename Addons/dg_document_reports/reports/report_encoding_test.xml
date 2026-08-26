@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <!--
+        Reporte temporal SOLO para diagnosticar el bug de tildes/enie en PDF.
+        No se usa en el reporte real (Factura DG). Se puede borrar este
+        archivo (y sacar la referencia en __manifest__.py) una vez que
+        encontremos la causa.
+    -->
+    <template id="report_dg_encoding_test">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <div class="page">
+                    <h2>Seccion A: SIN estilo custom (solo boilerplate de Odoo)</h2>
+                    <p>Estatico escrito a mano: Córdoba, Ñoño, año, portón, García, número.</p>
+                    <p>Dinamico ciudad cliente: <span t-field="o.partner_id.city"/></p>
+                    <p>Dinamico nombre cliente: <span t-field="o.partner_id.name"/></p>
+                    <p>Dinamico direccion empresa: <span t-field="o.company_id.partner_id.city"/></p>
+                </div>
+
+                <style>
+                    .test-styled { font-family: Arial, Helvetica, sans-serif; font-size: 10px; color: #111; }
+                    .test-box { border: 1px solid #222; padding: 6px 8px; }
+                </style>
+
+                <div class="page test-styled">
+                    <h2>Seccion B: CON el mismo bloque &lt;style&gt; que usa Factura DG</h2>
+                    <div class="test-box">
+                        <p>Estatico escrito a mano: Córdoba, Ñoño, año, portón, García, número.</p>
+                        <p>Dinamico ciudad cliente: <span t-field="o.partner_id.city"/></p>
+                        <p>Dinamico nombre cliente: <span t-field="o.partner_id.name"/></p>
+                        <p>Dinamico direccion empresa: <span t-field="o.company_id.partner_id.city"/></p>
+                    </div>
+                </div>
+            </t>
+        </t>
+    </template>
+
+    <record id="action_report_dg_encoding_test" model="ir.actions.report">
+        <field name="name">TEST encoding (borrar)</field>
+        <field name="model">account.move</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">dg_document_reports.report_dg_encoding_test</field>
+        <field name="report_file">dg_document_reports.report_dg_encoding_test</field>
+        <field name="binding_model_id" ref="account.model_account_move"/>
+        <field name="binding_type">report</field>
+    </record>
+</odoo>
