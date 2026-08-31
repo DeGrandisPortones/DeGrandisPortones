@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem
+        id="menu_dg_mayor_agrupado_wizard"
+        name="Mayor Agrupado por Factura (Excel)"
+        parent="account.menu_finance_reports"
+        action="action_dg_mayor_agrupado_wizard"
+        sequence="23"
+        groups="account.group_account_readonly"/>
+</odoo>
