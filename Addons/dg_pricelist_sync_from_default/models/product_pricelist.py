@@ -220,7 +220,8 @@ class ProductPricelist(models.Model):
         except TypeError:
             source_price = source._get_product_price(product, quantity)
 
-        target_price = float(source_price or 0.0) * (1.0 - (self.dg_sync_discount / 100.0))
+        discount = 0.0 if product.dg_keep_same_price_all_pricelists else self.dg_sync_discount
+        target_price = float(source_price or 0.0) * (1.0 - (discount / 100.0))
         currency = self.currency_id or source.currency_id
         return currency.round(target_price) if currency else target_price
 

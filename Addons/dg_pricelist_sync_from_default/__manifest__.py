@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "DG Sync listas de precios desde principal",
-    "version": "18.0.1.0.0",
+    "version": "18.0.1.1.0",
     "category": "Sales/Sales",
     "summary": "Actualiza listas de precios derivadas desde una lista principal con descuento porcentual.",
     "author": "Dflex Argentina SAS",
@@ -9,6 +9,7 @@
     "depends": ["product", "sale_management"],
     "data": [
         "views/product_pricelist_views.xml",
+        "views/product_template_views.xml",
         "data/ir_cron.xml",
     ],
     "application": False,
