@@ -162,7 +162,13 @@ class ResPartner(models.Model):
         if self.env.user.has_group("sales_team.group_sale_salesman"):
             for partner in self:
                 commercial_partner = partner.commercial_partner_id
-                blocking_move = self._get_invoice_edit_blocking_move(commercial_partner)
+                # Se buscan los comprobantes del contacto que se modifica (y sus
+                # hijos), no los de toda la entidad comercial: al crear una
+                # dirección de entrega/factura Odoo le copia CUIT y responsabilidad
+                # AFIP del principal con un write, y eso no tiene que bloquearse
+                # porque el cliente ya esté facturado. Para el contacto principal
+                # es lo mismo que antes (partner == commercial_partner).
+                blocking_move = self._get_invoice_edit_blocking_move(partner)
                 if blocking_move:
                     self._raise_invoice_edit_validation(commercial_partner, changed_fields, blocking_move)
 
