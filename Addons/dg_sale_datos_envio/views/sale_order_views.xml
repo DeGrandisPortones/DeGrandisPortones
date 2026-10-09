@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_order_form_dg_datos_envio" model="ir.ui.view">
+        <field name="name">sale.order.form.dg.datos.envio</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <!-- Nativamente "Dirección de entrega" muestra solo el nombre del
+                 contacto, que coincide con el del cliente, y parece que
+                 facturación y entrega fueran la misma. Mostramos la dirección. -->
+            <xpath expr="//field[@name='partner_shipping_id']" position="attributes">
+                <attribute name="context">{'default_type': 'delivery', 'show_address': True, 'show_vat': False, 'default_parent_id': partner_id}</attribute>
+            </xpath>
+            <xpath expr="//field[@name='partner_shipping_id']" position="after">
+                <label for="dg_datos_envio_text" string="Datos de envío" invisible="not dg_datos_envio_text"/>
+                <div invisible="not dg_datos_envio_text">
+                    <field name="dg_datos_envio_text" widget="CopyClipboardButton"/>
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>
