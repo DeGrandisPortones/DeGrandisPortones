@@ -2,10 +2,15 @@
 import { patch } from "@web/core/utils/patch";
 import { cookie } from "@web/core/browser/cookie";
 import { router } from "@web/core/browser/router";
+import { user } from "@web/core/user";
 import { companyService } from "@web/webclient/company_service";
 import { CompanySelector } from "@web/webclient/switch_company_menu/switch_company_menu";
 
-// Todos los usuarios, sin excepción, trabajan con una sola empresa activa.
+// El usuario Administrator (id=2) puede combinar empresas libremente.
+// En Odoo 18 `session.uid` se borra al arrancar (web/core/user.js): el id está en `user.userId`.
+function puedeCombinarEmpresas() {
+    return user.userId === 2;
+}
 
 // "1-2" (cookie/URL actual), "1,2" (URLs viejas) o 1 -> primera empresa
 function primeraEmpresa(cids) {
@@ -14,6 +19,10 @@ function primeraEmpresa(cids) {
 
 patch(companyService, {
     start(env, services) {
+        if (puedeCombinarEmpresas()) {
+            return super.start(...arguments);
+        }
+
         // Al cargar la página Odoo toma las empresas activas de la URL o de la
         // cookie `cids`, que es una sola para todas las pestañas. Pueden venir
         // dos empresas (pestañas de distintas empresas que se pisan la cookie
@@ -26,6 +35,25 @@ patch(companyService, {
         const cookieCids = cookie.get("cids");
         if (cookieCids && /[-,]/.test(cookieCids)) {
             cookie.set("cids", String(primeraEmpresa(cookieCids)));
+        }
+
+        const service = super.start(...arguments);
+        const setCompanies = service.setCompanies;
+        service.setCompanies = function (companyIds) {
+            // Además del menú, Odoo cambia las empresas activas solo: al abrir un
+            // registro de otra empresa la SUMA a las activas (form_controller).
+            // Siempre nos quedamos con una: la última, que es la recién agregada.
+            const companyId = companyIds[companyIds.length - 1];
+            return setCompanies.call(this, companyId ? [companyId] : [], false);
+        };
+        return service;
+    },
+});
+
+patch(CompanySelector.prototype, {
+    switchCompany(mode, companyId) {
+        if (puedeCombinarEmpresas()) {
+            return super.switchCompany(mode, companyId);
         }
 
         const service = super.start(...arguments);
