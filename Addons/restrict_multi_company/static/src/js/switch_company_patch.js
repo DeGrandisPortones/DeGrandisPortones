@@ -56,6 +56,21 @@ patch(CompanySelector.prototype, {
             return super.switchCompany(mode, companyId);
         }
 
+        const service = super.start(...arguments);
+        const setCompanies = service.setCompanies;
+        service.setCompanies = function (companyIds) {
+            // Además del menú, Odoo cambia las empresas activas solo: al abrir un
+            // registro de otra empresa la SUMA a las activas (form_controller).
+            // Siempre nos quedamos con una: la última, que es la recién agregada.
+            const companyId = companyIds[companyIds.length - 1];
+            return setCompanies.call(this, companyId ? [companyId] : [], false);
+        };
+        return service;
+    },
+});
+
+patch(CompanySelector.prototype, {
+    switchCompany(mode, companyId) {
         if (mode === "toggle") {
             if (this.selectedCompaniesIds.includes(companyId)) {
                 // No permitir deseleccionar si es la única empresa activa
