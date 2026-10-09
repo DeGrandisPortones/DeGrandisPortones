@@ -2,15 +2,10 @@
 import { patch } from "@web/core/utils/patch";
 import { cookie } from "@web/core/browser/cookie";
 import { router } from "@web/core/browser/router";
-import { user } from "@web/core/user";
 import { companyService } from "@web/webclient/company_service";
 import { CompanySelector } from "@web/webclient/switch_company_menu/switch_company_menu";
 
-// El usuario Administrator (id=2) puede combinar empresas libremente.
-// En Odoo 18 `session.uid` se borra al arrancar (web/core/user.js): el id está en `user.userId`.
-function puedeCombinarEmpresas() {
-    return user.userId === 2;
-}
+// Todos los usuarios, sin excepción, trabajan con una sola empresa activa.
 
 // "1-2" (cookie/URL actual), "1,2" (URLs viejas) o 1 -> primera empresa
 function primeraEmpresa(cids) {
@@ -19,10 +14,6 @@ function primeraEmpresa(cids) {
 
 patch(companyService, {
     start(env, services) {
-        if (puedeCombinarEmpresas()) {
-            return super.start(...arguments);
-        }
-
         // Al cargar la página Odoo toma las empresas activas de la URL o de la
         // cookie `cids`, que es una sola para todas las pestañas. Pueden venir
         // dos empresas (pestañas de distintas empresas que se pisan la cookie
@@ -52,10 +43,6 @@ patch(companyService, {
 
 patch(CompanySelector.prototype, {
     switchCompany(mode, companyId) {
-        if (puedeCombinarEmpresas()) {
-            return super.switchCompany(mode, companyId);
-        }
-
         if (mode === "toggle") {
             if (this.selectedCompaniesIds.includes(companyId)) {
                 // No permitir deseleccionar si es la única empresa activa
